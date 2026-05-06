@@ -12,6 +12,7 @@
             --gold: #d4af37;
             --text-main: #ffffff;
             --text-dim: #babbbd;
+            --success: #2ecc71;
         }
 
         body { 
@@ -80,7 +81,7 @@
         .header-spec h1 { color: var(--accent); font-size: 2.8em; margin: 0; letter-spacing: 2px; }
         .header-spec p { font-style: italic; color: var(--gold); font-weight: bold; text-transform: uppercase; margin-top: 5px;}
 
-        .rog-box, .grid .card-spec, .flex-box, .cta-box, .report-box {
+        .rog-box, .grid .card-spec, .flex-box, .cta-box, .report-box, .analysis-box {
             background: var(--card-bg); 
             border: 1px solid #30363d; 
             padding: 30px; 
@@ -90,7 +91,8 @@
         }
 
         .rog-box { border: 1px solid var(--accent); box-shadow: 0 0 20px rgba(0, 242, 255, 0.1); }
-        .report-box { border: 1px solid var(--gold); background: rgba(212, 175, 55, 0.05); }
+        .report-box { border: 1px solid var(--gold); background: rgba(212, 175, 55, 0.05); margin-bottom: 10px; }
+        .analysis-box { border-top: 2px solid var(--gold); margin-top: -20px; border-radius: 0 0 15px 15px; }
         
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
         .card-spec h3 { color: var(--gold); margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; font-size: 1.3em; }
@@ -108,6 +110,11 @@
 
         .ss-backtest { width: 100%; border-radius: 10px; border: 1px solid #444; transition: 0.3s; cursor: pointer; }
         .ss-backtest:hover { transform: scale(1.02); border-color: var(--gold); }
+
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px; }
+        .stat-item { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #333; }
+        .stat-val { display: block; font-size: 1.4em; font-weight: bold; color: var(--success); }
+        .stat-label { font-size: 0.8em; color: var(--text-dim); text-transform: uppercase; }
 
         footer { text-align: center; padding: 60px 20px; color: var(--text-dim); font-size: 0.85em; }
     </style>
@@ -152,20 +159,36 @@
 
     <div class="report-box">
         <h3 style="text-align: center; color: var(--gold); margin-top: 0;">📊 2-MONTH DEPLOYMENT REPORT (MAR-APR 2026)</h3>
-        <p style="text-align: center; font-size: 0.9em; color: var(--text-dim); margin-bottom: 25px;">Audit performa Arnaid v17 pada Major Pairs dalam kondisi market volatil 60 hari terakhir.</p>
+        <p style="text-align: center; font-size: 0.9em; color: var(--text-dim); margin-bottom: 25px;">Audit performa Arnaid v17 pada <strong>Broker Exness (Raw/Zero)</strong> - Pair <strong>XAUUSD (Gold)</strong>.</p>
         
         <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">
             <div style="flex: 1; min-width: 300px;">
                 <img src="https://raw.githubusercontent.com/newbie6661/falcon-trade/main/Arnaid%20SS%20Backtest%20Mar-Apr%202026.png" 
                      class="ss-backtest" alt="Backtest Mar-Apr Part 1" onclick="window.open(this.src)">
-                <p style="text-align: center; font-size: 0.85em; color: var(--accent); margin-top: 10px;">🛡️ March 2026: Stability Focus</p>
             </div>
             <div style="flex: 1; min-width: 300px;">
                 <img src="https://raw.githubusercontent.com/newbie6661/falcon-trade/main/Arnaid%20SS2%20Backtest%20Mar-Apr%202026.png" 
                      class="ss-backtest" alt="Backtest Mar-Apr Part 2" onclick="window.open(this.src)">
-                <p style="text-align: center; font-size: 0.85em; color: var(--accent); margin-top: 10px;">📈 April 2026: Compounding Growth</p>
             </div>
         </div>
+
+        <div class="stat-grid">
+            <div class="stat-item"><span class="stat-val">$8,366.30</span><span class="stat-label">Total Net Profit</span></div>
+            <div class="stat-item"><span class="stat-val">3.55</span><span class="stat-label">Profit Factor</span></div>
+            <div class="stat-item"><span class="stat-val">87.50%</span><span class="stat-label">Win Rate</span></div>
+            <div class="stat-item"><span class="stat-val">16.58%</span><span class="stat-label">Max Equity DD</span></div>
+        </div>
+    </div>
+
+    <div class="analysis-box">
+        <h3 style="color: var(--gold); margin-top: 0;">🧠 Tactical Performance Analysis</h3>
+        <p style="font-size: 0.95em; color: var(--text-dim);">Berdasarkan data audit di atas, Arnaid v17 menunjukkan performa <strong>"Gacor Parah"</strong> pada pair Gold (XAUUSD):</p>
+        <ul style="padding-left: 20px; font-size: 0.9em; color: var(--text-dim);">
+            <li><strong style="color: var(--success);">The Golden Ratio (PF 3.55):</strong> Setiap risiko $1 menghasilkan keuntungan $3.55. Ini adalah bukti filter Reconquista Protocol sangat sadis dalam menyaring noise market.</li>
+            <li><strong style="color: var(--success);">Execution Precision:</strong> Dengan winrate 87.50%, hampir 9 dari 10 posisi berakhir profit. Sensor Infrared & NightVision terbukti sangat presisi di Gold.</li>
+            <li><strong style="color: var(--success);">Safe Growth:</strong> Profit melebihi 160% dari modal dalam 2 bulan dengan Max Drawdown hanya 16.58%. Rasio risiko yang sangat sehat bagi investor besar.</li>
+            <li><strong style="color: var(--success);">Exness Optimized:</strong> Algoritma disesuaikan sempurna untuk spread ketat Exness, memastikan eksekusi tanpa slippage yang berarti.</li>
+        </ul>
     </div>
 
     <div class="flex-box">
@@ -179,7 +202,7 @@
 
     <div class="cta-box">
         <h2>AKTIFKAN PERTAHANAN FALCON</h2>
-        <p>Jangan biarkan modal Anda tanpa perlindungan Arnaid v17.</p>
+        <p>Gunakan senjata yang sudah teruji di medan tempur Gold yang liar.</p>
         <a href="https://t.me/USERNAMELU" class="btn-order">HUBUNGI MARKAS (TELEGRAM)</a>
     </div>
 
