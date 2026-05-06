@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Falcon Reconquista v1.5 Gold - Official Store</title>
+    <title>Falcon Reconquista v1.5 Gold - Intelligence Radar</title>
     <style>
         :root {
-            --bg-color: #0b0e14; /* Dasar gelap */
-            --card-bg: rgba(22, 27, 34, 0.85); /* Semi-transparan buat card */
+            --bg-color: #0b0e14;
+            --card-bg: rgba(22, 27, 34, 0.9);
             --accent: #2ecc71; /* Falcon Green */
             --gold: #d4af37;
-            --text-main: #ffffff; /* Putih bersih biar tajam */
-            --text-dim: #babbbd; /* Abu-abu terang */
+            --text-main: #ffffff;
+            --text-dim: #babbbd;
+            --success: #00ff88;
         }
 
         body { 
@@ -21,28 +22,25 @@
             color: var(--text-main); 
             line-height: 1.6; 
             position: relative;
+            background-color: var(--bg-color);
         }
 
-        /* 🖼️ BACKGROUND LAYER — Logomu Di Sini Coeg! */
+        /* 🖼️ BACKGROUND LAYER */
         body::before {
             content: "";
-            position: fixed; /* Tetap di tempat pas di-scroll */
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: url('https://raw.githubusercontent.com/newbie6661/falcon-trade/main/falcon-logo.jpg'); /* Panggil gambar gahar lu! */
-            background-size: cover; /* Gambar penuhi layar */
-            background-position: center; /* Center-kan logo */
+            background-image: url('https://raw.githubusercontent.com/newbie6661/falcon-trade/main/falcon-logo.jpg'); 
+            background-size: cover;
+            background-position: center;
             background-repeat: no-repeat;
-            
-            /* 🔥 TRIK KENYAMANAN MATA */
-            filter: blur(8px) brightness(0.15); /* Blur & Gelapin logonya parah */
-            
-            z-index: -2; /* Taruh di paling belakang */
+            filter: blur(10px) brightness(0.12); 
+            z-index: -2;
         }
 
-        /* 🌑 OVERLAY LAYER — Tambahan Gelap biar Teks Kontras */
         body::after {
             content: "";
             position: fixed;
@@ -50,7 +48,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5); /* Gradasi gelap tambahan */
+            background: rgba(0, 0, 0, 0.6);
             z-index: -1;
         }
 
@@ -58,7 +56,7 @@
             max-width: 1000px; 
             margin: auto; 
             padding: 60px 20px; 
-            position: relative; /* Di atas background */
+            position: relative;
             z-index: 1;
         }
         
@@ -66,81 +64,88 @@
         .header-spec h1 { color: var(--accent); font-size: 2.8em; margin: 0; letter-spacing: 2px; }
         .header-spec p { font-style: italic; color: var(--gold); font-weight: bold; text-transform: uppercase; margin-top: 5px;}
 
-        .rog-box, .flex-box, .card-spec, .grid .card-spec, .cta-box {
+        .rog-box, .flex-box, .cta-box, .stat-panel {
             background: var(--card-bg); 
             border: 1px solid #30363d; 
             padding: 30px; 
             border-radius: 15px; 
             margin-bottom: 30px; 
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(5px); /* Efek kaca buram di card */
+            backdrop-filter: blur(10px);
         }
 
-        .rog-box { border: 1px solid var(--accent); box-shadow: 0 0 20px rgba(46, 204, 113, 0.15); }
-        .grid .card-spec h3 { color: var(--gold); margin-top: 0; border-bottom: 1px solid #30363d; padding-bottom: 10px; font-size: 1.3em; }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        td { padding: 12px 5px; border-bottom: 1px solid #21262d; font-size: 0.95em; }
-        .param { color: var(--accent); font-weight: bold; width: 55%; }
+        .rog-box { border: 1px solid var(--accent); box-shadow: 0 0 20px rgba(46, 204, 113, 0.1); }
+        .stat-panel { border-top: 3px solid var(--accent); }
 
         .btn-back { display: inline-block; margin-bottom: 30px; color: var(--text-dim); text-decoration: none; font-weight: bold; transition: 0.3s; }
         .btn-back:hover { color: var(--accent); transform: translateX(-5px); }
         
-        .cta-box { text-align: center; margin-top: 50px; border: 1px solid var(--accent); }
-        .btn-order { background: var(--accent); color: white; padding: 15px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.2em; display: inline-block; transition: 0.3s; }
-        .btn-order:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(46, 204, 113, 0.4); }
+        .ss-tv { width: 100%; border-radius: 10px; border: 1px solid #444; transition: 0.3s; cursor: pointer; margin-top: 15px; }
+        .ss-tv:hover { transform: scale(1.01); border-color: var(--accent); }
 
-        footer { text-align: center; padding: 60px 20px; color: var(--text-dim); font-size: 0.85em; position: relative; z-index: 1; }
+        .analysis-list { list-style: none; padding: 0; margin-top: 20px; }
+        .analysis-list li { margin-bottom: 15px; padding-left: 25px; position: relative; font-size: 0.95em; color: var(--text-dim); }
+        .analysis-list li::before { content: "⚡"; position: absolute; left: 0; color: var(--accent); }
+
+        .stat-badge { background: rgba(46, 204, 113, 0.15); color: var(--success); padding: 5px 15px; border-radius: 50px; font-weight: bold; font-size: 0.9em; border: 1px solid var(--accent); }
+
+        .cta-box { text-align: center; margin-top: 50px; border: 1px solid var(--accent); }
+        .btn-order { background: var(--accent); color: #000; padding: 15px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.2em; display: inline-block; transition: 0.3s; }
+        .btn-order:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(46, 204, 113, 0.5); }
+
+        footer { text-align: center; padding: 60px 20px; color: var(--text-dim); font-size: 0.85em; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <a href="index.html" class="btn-back">← BACK TO MARKAS</a>
+    <a href="index.html" class="btn-back">← BACK TO ARSENAL</a>
     
     <div class="header-spec">
         <h1>RECONQUISTA v1.5</h1>
-        <p>"GOLD & BITCOIN PREDATOR Protocol"</p>
+        <p>"GOLD PREDATOR - TRADINGVIEW RADAR"</p>
     </div>
 
     <div class="rog-box">
-        <h2 style="color: var(--accent); margin-top: 0;">🛡️ Protocol Reconquista: Gold Accuracy</h2>
-        <p>Reconquista v1.5 Gold dirancang khusus untuk pair volatil tinggi seperti <strong>Gold (XAUUSD)</strong> dan <strong>Bitcoin (BTCUSD)</strong>. Menggunakan filter <i>Dual Hakim Pulse</i>, indikator ini mendeteksi titik jenuh momentum dengan presisi ultra.</p>
-        <p>Dengan <strong>Accurate Signal System</strong>, lu nggak bakal telat entri. Sinyal hanya muncul saat momentum MTF (Multi-Timeframe) sejajar sempurna.</p>
+        <h2 style="color: var(--accent); margin-top: 0;">🛡️ Protocol Reconquista: XAUUSD Mastery</h2>
+        <p>Bukan sekadar indikator lagging. Reconquista v1.5 Gold adalah sistem navigasi real-time yang menggabungkan <strong>Hakim Pulse</strong> dan <strong>Momentum Sync</strong> untuk membedah volatilitas Gold.</p>
     </div>
 
-    <div class="flex-box" style="border: 1px solid var(--accent);">
-        <h3 style="text-align: center; color: var(--accent);">📊 TRADINGVIEW STRATEGY SNAPSHOT (XAUUSD)</h3>
-        <p style="text-align: center; font-size: 0.9em; color: var(--text-dim); margin-bottom: 25px;">Visualisasi sinyal entri *Falcon Buy/Sell* dan performa strategi Reconquista v1.5 Gold langsung dari *Strategy Tester* TradingView.</p>
+    <div class="flex-box">
+        <h3 style="color: var(--accent); margin-top: 0;">📊 TRADINGVIEW LIVE RADAR (XAUUSD)</h3>
+        <p style="font-size: 0.9em; color: var(--text-dim);">Visualisasi sinyal entri *Falcon Buy* yang presisi menangkap tren kenaikan Gold secara beruntun.</p>
         
-        <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">
-            <div style="flex: 1; min-width: 300px;">
-                <p style="text-align: center; color: var(--gold); font-weight: bold;">📈 Part 1: Stability Phase</p>
-                <img src="https://raw.githubusercontent.com/newbie6661/falcon-trade/main/Screenshot_falconreconq.png" 
-                     alt="Reconquista TV Proof 1" 
-                     style="width: 100%; border-radius: 10px; border: 1px solid #444; transition: 0.3s; cursor: pointer;"
-                     onclick="window.open(this.src)">
-            </div>
-            <div style="flex: 1; min-width: 300px;">
-                <p style="text-align: center; color: var(--gold); font-weight: bold;">📈 Part 2: Growth Phase</p>
-                <img src="https://raw.githubusercontent.com/newbie6661/falcon-trade/main/Screensho2t_falconreconq.png" 
-                     alt="Reconquista TV Proof 2" 
-                     style="width: 100%; border-radius: 10px; border: 1px solid #444; transition: 0.3s; cursor: pointer;"
-                     onclick="window.open(this.src)">
-            </div>
+        <img src="https://raw.githubusercontent.com/newbie6661/falcon-trade/main/Screensho2t_falconreconq.png" 
+             class="ss-tv" alt="Reconquista Strategy Tester" onclick="window.open(this.src)">
+        
+        <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <span class="stat-badge">Winrate: 68.75%</span>
+            <span class="stat-badge">Total Trades: 32</span>
+            <span class="stat-badge">TP Hit: 22</span>
+            <span class="stat-badge">Status: AKTiF & Gacor</span>
         </div>
     </div>
 
+    <div class="stat-panel">
+        <h3 style="color: var(--gold); margin-top: 0;">🧠 Intelligence Analysis Report</h3>
+        <p style="font-size: 0.95em;">Berdasarkan data radar pada 14,400 bars terakhir:</p>
+        <ul class="analysis-list">
+            <li><strong>Winrate Elit (68.75%):</strong> Di pair Gold yang liar, konsistensi di atas 60% adalah bukti algoritma *Kutuk Palu (G2)* bekerja sangat akurat.</li>
+            <li><strong>Momentum Stack:</strong> Seperti terlihat di screenshot, indikator berhasil menangkap 3-4 sinyal *Falcon Buy* beruntun tanpa terkena Stop Loss sekalipun.</li>
+            <li><strong>Hakim Pulse Confirmation:</strong> Sinyal hanya muncul saat sensor G1 (Hakim Besar) dan G2 (Hakim Kecil) dalam kondisi Bullish yang sinkron.</li>
+            <li><strong>Clean Execution:</strong> Jarak antara titik Entry ke Hit Target tertata rapi, menunjukkan manajemen risiko +10000 pts per trade yang solid.</li>
+        </ul>
+    </div>
+
     <div class="cta-box">
-        <h2>DEPLOY RECONQUISTA NOW</h2>
-        <p>Dapatkan akses TradingView untuk indikator konfirmasi presisi tinggi.</p>
+        <h2>DEPLOY THE RADAR NOW</h2>
+        <p>Jangan buta arah di market Gold. Gunakan Reconquista v1.5 untuk navigasi presisi.</p>
         <a href="https://t.me/USERNAMELU" class="btn-order">HUBUNGI MARKAS (TELEGRAM)</a>
     </div>
 
 </div>
 
 <footer>
-    <p>&copy; 2026 Falcon Ecosystem | Developed & Maintained by <strong>Genz Diego</strong></p>
+    <p>&copy; 2026 Falcon Ecosystem | Authored by <strong>Genz Diego</strong></p>
 </footer>
 
 </body>
