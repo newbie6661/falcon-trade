@@ -3,39 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Falcon ZigTrend v5.4 - Structural Navigation GPS</title>
+    <title>Falcon ZigTrend - Swing Execution System</title>
     <style>
         :root {
-            --bg-color: #0b0e14;
-            --card-bg: #161b22;
-            --accent: #2ecc71; /* Falcon Emerald Green */
-            --gold: #d4af37;
-            --text-main: #c9d1d9;
-            --text-dim: #8b949e;
+            --bg-color: #0d0d0d;
+            --card-bg: rgba(30, 30, 30, 0.9);
+            --accent: #f1c40f; /* ZigTrend Yellow */
+            --sell-color: #e74c3c;
+            --buy-color: #2ecc71;
+            --text-main: #ffffff;
+            --text-dim: #999;
         }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; line-height: 1.6; }
-        .container { max-width: 1000px; margin: auto; padding: 40px 20px; }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            margin: 0; padding: 0; 
+            color: var(--text-main); 
+            line-height: 1.6; 
+            background-color: var(--bg-color);
+            position: relative;
+        }
+
+        /* 🖼️ BACKGROUND LAYER */
+        body::before {
+            content: "";
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('https://raw.githubusercontent.com/newbie6661/falcon-trade/main/falcon-logo.jpg'); 
+            background-size: cover; background-position: center;
+            filter: blur(12px) brightness(0.1); 
+            z-index: -2;
+        }
+
+        .container { max-width: 1000px; margin: auto; padding: 60px 20px; z-index: 1; }
         
         .header-spec { border-left: 5px solid var(--accent); padding-left: 20px; margin-bottom: 40px; }
-        .header-spec h1 { color: var(--accent); font-size: 2.8em; margin: 0; letter-spacing: 2px; }
-        .header-spec p { font-style: italic; color: #fff; font-weight: bold; }
+        .header-spec h1 { color: var(--accent); font-size: 2.5em; margin: 0; }
+        .header-spec p { color: var(--text-dim); font-weight: bold; margin-top: 5px; }
 
-        .nav-box { background: linear-gradient(145deg, #1c2128, #0b0e14); border: 1px solid var(--accent); padding: 30px; border-radius: 15px; margin-bottom: 30px; box-shadow: 0 0 20px rgba(46, 204, 113, 0.15); }
-        
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .card-spec { background: var(--card-bg); border: 1px solid #30363d; padding: 25px; border-radius: 12px; }
-        .card-spec h3 { color: var(--gold); margin-top: 0; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
+        .box {
+            background: var(--card-bg); border: 1px solid #333; 
+            padding: 25px; border-radius: 12px; margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+        }
 
-        .feature-box { background: #1c2128; border-top: 3px solid var(--accent); padding: 25px; border-radius: 12px; margin-top: 30px; }
-        .feature-box h4 { color: var(--accent); margin: 15px 0 5px; }
+        /* 📖 CARA BACA SECTION */
+        .tutorial-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 20px; }
+        .step-card { background: rgba(0,0,0,0.4); padding: 20px; border-radius: 10px; border-left: 3px solid var(--accent); }
+        .step-card h4 { margin-top: 0; color: var(--accent); }
+
+        .ss-img { width: 100%; border-radius: 8px; border: 1px solid #444; margin-top: 15px; cursor: pointer; transition: 0.3s; }
+        .ss-img:hover { transform: scale(1.02); border-color: var(--accent); }
+
+        .rule-list { list-style: none; padding: 0; }
+        .rule-list li { margin-bottom: 12px; padding-left: 30px; position: relative; }
+        .rule-list li::before { content: "✔️"; position: absolute; left: 0; color: var(--accent); }
 
         .btn-back { display: inline-block; margin-bottom: 20px; color: var(--text-dim); text-decoration: none; font-weight: bold; }
-        .btn-back:hover { color: var(--accent); transform: translateX(-5px); }
+        .btn-back:hover { color: var(--accent); }
+        
+        .cta-box { text-align: center; border: 1px solid var(--accent); }
+        .btn-order { background: var(--accent); color: #000; padding: 15px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; }
 
-        .cta-box { text-align: center; margin-top: 50px; padding: 40px; background: var(--card-bg); border-radius: 15px; border: 1px solid var(--accent); }
-        .btn-order { background: var(--accent); color: black; padding: 15px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.2em; display: inline-block; }
-
-        footer { text-align: center; padding: 60px 20px; color: var(--text-dim); font-size: 0.85em; }
+        footer { text-align: center; padding: 40px; color: var(--text-dim); font-size: 0.8em; }
     </style>
 </head>
 <body>
@@ -44,61 +73,63 @@
     <a href="index.html" class="btn-back">← BACK TO ARSENAL</a>
     
     <div class="header-spec">
-        <h1>ZIGTREND v5.4</h1>
-        <p>"Master of Market Structure & Price Action Navigation"</p>
+        <h1>FALCON ZIGTREND</h1>
+        <p>"SWING DYNAMICS & TREND TRACKER"</p>
     </div>
 
-    <div class="nav-box">
-        <h2>🧭 Structural Navigation GPS</h2>
-        <p>Falcon ZigTrend v5.4 dirancang untuk trader yang ingin memahami <strong>Peta Kekuatan Market</strong> secara utuh. Menggunakan teknologi <i>Structural Mapping</i>, indikator ini secara otomatis mengidentifikasi titik-titik krusial seperti HH, HL, LH, dan LL, memberikan Anda panduan navigasi yang jernih di tengah badai market.</p>
-        <p>Digabungkan dengan <strong>Momentum Sync Engine</strong>, ZigTrend memastikan Anda hanya masuk saat arus struktur dan tenaga market bergerak seirama.</p>
-    </div>
-
-    <div class="grid">
-        <div class="card-spec">
-            <h3>🔍 Price Action Lens</h3>
-            <p>Visualisasi struktur harga yang bersih dan presisi:</p>
-            <ul style="padding-left: 20px; font-size: 0.9em; color: var(--text-dim);">
-                <li><strong>Auto-Swing Detection:</strong> Identifikasi Higher High (HH) hingga Lower Low (LL) tanpa perlu menebak manual.</li>
-                <li><strong>Repaint Level Control:</strong> Sesuaikan sensitivitas pemetaan untuk mendapatkan level yang paling relevan.</li>
-                <li><strong>Dynamic Pathing:</strong> Garis navigasi otomatis yang menghubungkan titik-titik suplai dan permintaan.</li>
-            </ul>
-        </div>
-
-        <div class="card-spec">
-            <h3>⚡ Momentum Sync</h3>
-            <p>Sistem konfirmasi ganda untuk akurasi entri tinggi:</p>
-            <ul style="padding-left: 20px; font-size: 0.9em; color: var(--text-dim);">
-                <li><strong>Falcon Entry Labels:</strong> Label penanda entri otomatis (FALCON BUY/SELL) langsung di titik konfirmasi.</li>
-                <li><strong>Trend Highlighter:</strong> Perubahan latar belakang chart yang dinamis mengikuti aliran tenaga market.</li>
-                <li><strong>Dual-Signal Synergy:</strong> Sinyal hanya muncul saat Struktur (GPS) dan Tenaga (Momentum) berada dalam fase yang sama.</li>
-            </ul>
-        </div>
-    </div>
-
-    <div class="feature-box">
-        <h3 style="color: var(--accent); margin-top: 0;">💎 Premium Navigation Features (v5.4)</h3>
+    <div class="box" style="border-top: 3px solid var(--accent);">
+        <h2 style="color: var(--accent); margin-top: 0;">🧭 Navigasi Swing: Cara Baca Indikator</h2>
+        <p>Jangan asal entri! ZigTrend bekerja berdasarkan struktur market. Ikuti protokol ini coeg:</p>
         
-        <h4>🛰️ Intelligent Exit Labels</h4>
-        <p>Tahu kapan harus masuk itu penting, tapi tahu kapan harus keluar itu **krusial**. ZigTrend v5.4 dilengkapi label EXIT pintar yang menghitung estimasi perolehan poin Anda secara otomatis saat struktur berbalik.</p>
-
-        <h4>📏 Customizable Font HUD</h4>
-        <p>Visual yang fleksibel untuk segala jenis layar. Anda bisa mengatur ukuran teks label struktur (HH/LL) hingga label Falcon Entry agar tetap terlihat jelas baik di Monitor Ultra-Wide maupun layar Smartphone.</p>
-
-        <h4>🛡️ Adaptive ATR Calculation</h4>
-        <p>Gunakan metode perhitungan tenaga market yang fleksibel. Pilih antara standar industri atau metode kustom Falcon untuk filter noise yang lebih halus pada market yang volatil.</p>
+        <div class="tutorial-grid">
+            <div class="step-card">
+                <h4>1. Tunggu Swing Terbentuk</h4>
+                <p>Pantau kemunculan label <strong>HH (Higher High)</strong> atau <strong>HL (Higher Low)</strong>. Ini adalah sinyal bahwa ayunan harga sudah mencapai titik jenuh sementara.</p>
+            </div>
+            <div class="step-card">
+                <h4>2. Konfirmasi Panel Entry</h4>
+                <p>Jika muncul <strong>HH (Swing Atas)</strong>, tunggu panel <strong>SELL</strong> muncul. Begitu juga sebaliknya, jika muncul <strong>HL</strong>, tunggu panel <strong>BUY</strong> untuk eksekusi.</p>
+            </div>
+        </div>
     </div>
 
-    <div class="cta-box">
-        <h2>KUASAI STRUKTUR MARKET SEKARANG</h2>
-        <p>Berhenti menebak arah. Gunakan navigasi yang pasti dengan Falcon ZigTrend v5.4.</p>
+    <div class="box">
+        <h3 style="color: var(--accent); margin-top: 0;">📊 MARKET STRUCTURE VISUALIZATION</h3>
+        <p style="font-size: 0.9em; color: var(--text-dim);">Analisa pergerakan Gold (XAUUSD) menggunakan ZigTrend Swing Logic.</p>
+        
+        <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+            <div style="flex: 1; min-width: 300px;">
+                <img src="https://raw.githubusercontent.com/newbie6661/falcon-trade/main/Screenshot_ZigTrend.png" 
+                     class="ss-img" alt="ZigTrend Proof 1" onclick="window.open(this.src)">
+                <p style="text-align: center; font-size: 0.8em; color: var(--accent);">Struktur HH & HL dengan Konfirmasi Entry</p>
+            </div>
+            <div style="flex: 1; min-width: 300px;">
+                <img src="https://raw.githubusercontent.com/newbie6661/falcon-trade/main/Screenshot2_ZigTrend.png" 
+                     class="ss-img" alt="ZigTrend Proof 2" onclick="window.open(this.src)">
+                <p style="text-align: center; font-size: 0.8em; color: var(--accent);">Trend Tracker & Momentum Sync</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="box" style="background: rgba(241, 196, 15, 0.05); border: 1px dashed var(--accent);">
+        <h3 style="color: var(--accent); margin-top: 0;">⚠️ Golden Rules (Wajib Dipatuhi)</h3>
+        <ul class="rule-list">
+            <li><strong>Single Entry Per Swing:</strong> Kamu hanya diwajibkan entri <strong>SEKALI</strong> untuk setiap ayunan satu swing (dari titik lama ke titik terbaru).</li>
+            <li><strong>Stick to the Swing:</strong> Entri wajib sesuai arah swing tersebut, sekalipun indikator memberikan label entri lain di tengah jalan.</li>
+            <li><strong>Patience is Key:</strong> Jika swing belum terbentuk sempurna, dilarang melakukan spekulasi entri.</li>
+        </ul>
+    </div>
+
+    <div class="cta-box box">
+        <h2>KUASAI SWING MARKET SEKARANG</h2>
+        <p>Gunakan ZigTrend untuk entri yang lebih presisi dan terukur.</p>
         <a href="https://t.me/USERNAMELU" class="btn-order">DAPATKAN AKSES (TELEGRAM)</a>
     </div>
 
 </div>
 
 <footer>
-    <p>&copy; 2026 Falcon Ecosystem | Developed & Authored by <strong>Genz Diego</strong></p>
+    <p>&copy; 2026 Falcon Ecosystem | Authored by <strong>Genz Diego</strong></p>
 </footer>
 
 </body>
