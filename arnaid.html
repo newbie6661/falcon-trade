@@ -7,40 +7,111 @@
     <style>
         :root {
             --bg-color: #0b0e14;
-            --card-bg: #161b22;
+            --card-bg: rgba(22, 27, 34, 0.9); /* Semi-transparan buat card */
             --accent: #00f2ff; /* Cyber Aqua */
             --gold: #d4af37;
-            --text-main: #c9d1d9;
-            --text-dim: #8b949e;
+            --danger: #ff4d4d;
+            --text-main: #ffffff; /* Putih bersih biar tajam */
+            --text-dim: #babbbd; /* Abu-abu terang */
         }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; line-height: 1.6; }
-        .container { max-width: 1000px; margin: auto; padding: 40px 20px; }
-        
-        .header-spec { border-left: 5px solid var(--accent); padding-left: 20px; margin-bottom: 40px; }
-        .header-spec h1 { color: var(--accent); font-size: 2.8em; margin: 0; letter-spacing: 2px; }
-        .header-spec p { font-style: italic; color: var(--gold); font-weight: bold; text-transform: uppercase; }
 
-        .rog-box { background: linear-gradient(145deg, #0d1a2a, #0b0e14); border: 1px solid var(--accent); padding: 30px; border-radius: 15px; margin-bottom: 30px; box-shadow: 0 0 25px rgba(0, 242, 255, 0.15); }
-        .rog-box h2 { color: var(--accent); margin-top: 0; display: flex; align-items: center; gap: 10px; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            color: var(--text-main); 
+            line-height: 1.6; 
+            position: relative;
+        }
+
+        /* 🖼️ BACKGROUND LAYER — Pake Logo 2 sebagai Shield! */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('arnaid-logo-2.png'); /* Panggil logo gahar kedua lu! */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            
+            /* 🔥 TRIK KENYAMANAN MATA TERBARU */
+            filter: blur(5px) brightness(0.12); /* Blur & Gelapin logonya parah */
+            
+            z-index: -2; /* Taruh di paling belakang */
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6); /* Gradasi gelap tambahan */
+            z-index: -1;
+        }
+
+        .container { 
+            max-width: 1000px; 
+            margin: auto; 
+            padding: 60px 20px; 
+            position: relative;
+            z-index: 1;
+        }
         
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .card-spec { background: var(--card-bg); border: 1px solid #30363d; padding: 25px; border-radius: 12px; transition: 0.3s; }
-        .card-spec h3 { color: var(--gold); margin-top: 0; border-bottom: 1px solid #30363d; padding-bottom: 10px; font-size: 1.3em; }
+        .header-spec { 
+            border-left: 5px solid var(--accent); 
+            padding-left: 20px; 
+            margin-bottom: 50px; 
+            display: flex; /* Bikin logo & teks berjejer */
+            align-items: center; 
+            gap: 20px;
+        }
+
+        /* 📡 PRIMARY SENTINEL LOGO — Di Header, Coeg! */
+        .header-spec img {
+            width: 130px; /* Ukuran gede dan dominan */
+            height: auto;
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+        }
+
+        .header-spec h1 { color: var(--accent); font-size: 2.8em; margin: 0; letter-spacing: 2px; }
+        .header-spec p { font-style: italic; color: var(--gold); font-weight: bold; text-transform: uppercase; margin-top: 5px;}
+
+        .rog-box, .grid .card-spec, .flex-box, .cta-box {
+            background: var(--card-bg); 
+            border: 1px solid #30363d; 
+            padding: 30px; 
+            border-radius: 15px; 
+            margin-bottom: 30px; 
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(5px); /* Efek kaca buram di card */
+        }
+
+        .rog-box { border: 1px solid var(--accent); box-shadow: 0 0 20px rgba(0, 242, 255, 0.15); }
+        .grid .card-spec h3 { color: var(--gold); margin-top: 0; border-bottom: 1px solid #30363d; padding-bottom: 10px; font-size: 1.3em; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         td { padding: 12px 5px; border-bottom: 1px solid #21262d; font-size: 0.95em; }
         .param { color: var(--accent); font-weight: bold; width: 55%; }
 
-        .feature-box { background: #1c2128; border-top: 3px solid var(--accent); padding: 25px; border-radius: 12px; margin-top: 30px; }
-        .feature-box h4 { color: var(--accent); margin: 15px 0 5px; }
-        
-        .btn-back { display: inline-block; margin-bottom: 20px; color: var(--text-dim); text-decoration: none; font-weight: bold; }
+        .flex-box h3 { color: var(--gold); margin-top: 0;}
+        .flex-box ul { padding-left: 20px; color: var(--text-dim); }
+        .flex-box li { margin-bottom: 10px; }
+        .flex-box li strong { color: var(--text-main); }
+
+        .btn-back { display: inline-block; margin-bottom: 30px; color: var(--text-dim); text-decoration: none; font-weight: bold; transition: 0.3s; }
         .btn-back:hover { color: var(--accent); transform: translateX(-5px); }
         
-        .cta-box { text-align: center; margin-top: 50px; padding: 40px; background: var(--card-bg); border-radius: 15px; border: 1px solid var(--accent); }
-        .btn-order { background: var(--accent); color: black; padding: 15px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.2em; display: inline-block; }
+        .cta-box { text-align: center; margin-top: 50px; border: 1px solid var(--accent); }
+        .btn-order { background: var(--accent); color: white; padding: 15px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.2em; display: inline-block; transition: 0.3s; }
+        .btn-order:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(0, 242, 255, 0.4); }
 
-        footer { text-align: center; padding: 60px 20px; color: var(--text-dim); font-size: 0.85em; }
+        footer { text-align: center; padding: 60px 20px; color: var(--text-dim); font-size: 0.85em; position: relative; z-index: 1; }
     </style>
 </head>
 <body>
@@ -49,17 +120,20 @@
     <a href="index.html" class="btn-back">← BACK TO ARSENAL</a>
     
     <div class="header-spec">
-        <h1>FALCON ARNAID v17</h1>
-        <p>"Blackhawk Down 11 - The Guardian Spirit"</p>
+        <img src="arnaid-logo.png" alt="Falcon Arnaid Primary Sentinel">
+        <div>
+            <h1>FALCON ARNAID v17</h1>
+            <p>"BLACKHAWK DOWN 11 - THE GUARDIAN SPIRIT"</p>
+        </div>
     </div>
 
     <div class="rog-box">
-        <h2>⚖️ Rules Of God: Intraday Mastery</h2>
+        <h2 style="color: var(--accent); margin-top: 0;">⚖️ Rules Of God: Intraday Mastery</h2>
         <p>Arnaid v17 menggunakan sistem <strong>Reconquista Protocol</strong>—sebuah algoritma deteksi arah aliran dana (Money Flow) yang memastikan Anda tidak pernah berada di sisi yang salah. Melalui <i>Dual-Sensor Intelligence</i>, EA ini hanya akan melakukan eksekusi jika seluruh elemen market berada dalam fase <strong>Sejajar Sempurna</strong>.</p>
         <p><strong>"Rules Of God" Active</strong>: Mode tempur aktif hanya jika sensor INFRARED dan NIGHTVISION mendeteksi struktur harga yang solid dan stabil.</p>
     </div>
 
-    <div class="grid">
+    <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
         <div class="card-spec">
             <h3>📡 Dual-Eye Sensors</h3>
             <table>
