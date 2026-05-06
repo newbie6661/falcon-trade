@@ -24,7 +24,7 @@
             background-color: var(--bg-color);
         }
 
-        /* 🖼️ BACKGROUND LAYER — Pake Logo 2 sebagai Shield! */
+        /* 🖼️ BACKGROUND LAYER */
         body::before {
             content: "";
             position: fixed;
@@ -66,10 +66,9 @@
             display: flex;
             align-items: center; 
             gap: 25px;
-            flex-wrap: wrap; /* Biar rapi di HP */
+            flex-wrap: wrap;
         }
 
-        /* 📡 PRIMARY SENTINEL LOGO */
         .header-spec img {
             width: 150px; 
             height: auto;
@@ -81,7 +80,7 @@
         .header-spec h1 { color: var(--accent); font-size: 2.8em; margin: 0; letter-spacing: 2px; }
         .header-spec p { font-style: italic; color: var(--gold); font-weight: bold; text-transform: uppercase; margin-top: 5px;}
 
-        .rog-box, .grid .card-spec, .flex-box, .cta-box {
+        .rog-box, .grid .card-spec, .flex-box, .cta-box, .report-box {
             background: var(--card-bg); 
             border: 1px solid #30363d; 
             padding: 30px; 
@@ -91,6 +90,7 @@
         }
 
         .rog-box { border: 1px solid var(--accent); box-shadow: 0 0 20px rgba(0, 242, 255, 0.1); }
+        .report-box { border: 1px solid var(--gold); background: rgba(212, 175, 55, 0.05); }
         
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
         .card-spec h3 { color: var(--gold); margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; font-size: 1.3em; }
@@ -99,16 +99,15 @@
         td { padding: 12px 5px; border-bottom: 1px solid #333; font-size: 0.95em; }
         .param { color: var(--accent); font-weight: bold; width: 55%; }
 
-        .flex-box h3 { color: var(--gold); margin-top: 0;}
-        .flex-box ul { padding-left: 20px; color: var(--text-dim); }
-        .flex-box li { margin-bottom: 10px; }
-
         .btn-back { display: inline-block; margin-bottom: 30px; color: var(--text-dim); text-decoration: none; font-weight: bold; transition: 0.3s; }
         .btn-back:hover { color: var(--accent); transform: translateX(-5px); }
         
         .cta-box { text-align: center; margin-top: 50px; border: 1px solid var(--accent); }
         .btn-order { background: var(--accent); color: #000; padding: 15px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.2em; display: inline-block; transition: 0.3s; }
         .btn-order:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(0, 242, 255, 0.5); }
+
+        .ss-backtest { width: 100%; border-radius: 10px; border: 1px solid #444; transition: 0.3s; cursor: pointer; }
+        .ss-backtest:hover { transform: scale(1.02); border-color: var(--gold); }
 
         footer { text-align: center; padding: 60px 20px; color: var(--text-dim); font-size: 0.85em; }
     </style>
@@ -128,7 +127,7 @@
 
     <div class="rog-box">
         <h2 style="color: var(--accent); margin-top: 0;">⚖️ Rules Of God: Intraday Mastery</h2>
-        <p>Arnaid v17 menggunakan sistem <strong>Reconquista Protocol</strong>—algoritma deteksi Money Flow yang memastikan Anda berada di sisi market yang tepat. Dengan <i>Dual-Sensor Intelligence</i>, eksekusi hanya dilakukan saat kondisi market benar-benar valid.</p>
+        <p>Arnaid v17 menggunakan sistem <strong>Reconquista Protocol</strong>—algoritma deteksi Money Flow yang memastikan Anda berada di sisi market yang tepat.</p>
     </div>
 
     <div class="grid">
@@ -138,7 +137,6 @@
                 <tr><td class="param">Infrared Lens</td><td>Trend Analyzer</td></tr>
                 <tr><td class="param">NightVision Lens</td><td>Precision Eye</td></tr>
                 <tr><td class="param">Stability Sync</td><td>Formation Lock</td></tr>
-                <tr><td class="param">Scan Interval</td><td>Real-time Tick</td></tr>
             </table>
         </div>
 
@@ -147,24 +145,41 @@
             <table>
                 <tr><td class="param">Noise Filter</td><td>Spread Guard</td></tr>
                 <tr><td class="param">Tactical Profit</td><td>5,000 Points</td></tr>
-                <tr><td class="param">Mission Target</td><td>6,500 Points/Day</td></tr>
-                <tr><td class="param">Damage Limit</td><td>Hard DD Stop</td></tr>
+                <tr><td class="param">Mission Target</td><td>6,500 Pts/Day</td></tr>
             </table>
+        </div>
+    </div>
+
+    <div class="report-box">
+        <h3 style="text-align: center; color: var(--gold); margin-top: 0;">📊 2-MONTH DEPLOYMENT REPORT (MAR-APR 2026)</h3>
+        <p style="text-align: center; font-size: 0.9em; color: var(--text-dim); margin-bottom: 25px;">Audit performa Arnaid v17 pada Major Pairs dalam kondisi market volatil 60 hari terakhir.</p>
+        
+        <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">
+            <div style="flex: 1; min-width: 300px;">
+                <img src="https://raw.githubusercontent.com/newbie6661/falcon-trade/main/Arnaid%20SS%20Backtest%20Mar-Apr%202026.png" 
+                     class="ss-backtest" alt="Backtest Mar-Apr Part 1" onclick="window.open(this.src)">
+                <p style="text-align: center; font-size: 0.85em; color: var(--accent); margin-top: 10px;">🛡️ March 2026: Stability Focus</p>
+            </div>
+            <div style="flex: 1; min-width: 300px;">
+                <img src="https://raw.githubusercontent.com/newbie6661/falcon-trade/main/Arnaid%20SS2%20Backtest%20Mar-Apr%202026.png" 
+                     class="ss-backtest" alt="Backtest Mar-Apr Part 2" onclick="window.open(this.src)">
+                <p style="text-align: center; font-size: 0.85em; color: var(--accent); margin-top: 10px;">📈 April 2026: Compounding Growth</p>
+            </div>
         </div>
     </div>
 
     <div class="flex-box">
         <h3 style="color: var(--gold);">💎 Advanced Defense Protocols</h3>
-        <ul>
-            <li><strong>Auto-Eject Infrared:</strong> Tutup posisi instan jika struktur market patah secara mendadak.</li>
-            <li><strong>AI Calibration:</strong> Menyesuaikan <i>Thrust Power</i> secara otomatis berdasarkan volatilitas.</li>
-            <li><strong>JASSM-ER Interceptor:</strong> Pengunci keuntungan dinamis untuk melindungi ekuitas dari koreksi tajam.</li>
+        <ul style="padding-left: 20px; color: var(--text-dim);">
+            <li><strong>Auto-Eject Infrared:</strong> Proteksi modal otomatis saat struktur market patah.</li>
+            <li><strong>AI Calibration:</strong> Penyesuaian <i>Thrust Power</i> real-time terhadap volatilitas.</li>
+            <li><strong>JASSM-ER Interceptor:</strong> Pengunci profit dinamis (Dynamic Trailing).</li>
         </ul>
     </div>
 
     <div class="cta-box">
         <h2>AKTIFKAN PERTAHANAN FALCON</h2>
-        <p>Kuasai market dengan perlindungan berlapis Arnaid v17.</p>
+        <p>Jangan biarkan modal Anda tanpa perlindungan Arnaid v17.</p>
         <a href="https://t.me/USERNAMELU" class="btn-order">HUBUNGI MARKAS (TELEGRAM)</a>
     </div>
 
