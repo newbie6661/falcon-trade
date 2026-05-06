@@ -7,82 +7,129 @@
     <style>
         :root {
             --bg-color: #0b0e14;
-            --card-bg: #161b22;
-            --accent: #d4af37; /* Gold color */
+            --card-bg: rgba(22, 27, 34, 0.85); /* Semi-transparan buat glassmorphism */
             --text-main: #c9d1d9;
-            --text-dim: #8b949e;
+            --text-title: #ffffff;
+            --accent: #2ecc71; /* Falcon Green */
+            -- gold: #d4af37;
         }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; }
-        .container { max-width: 1100px; margin: auto; padding: 20px; }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: var(--bg-color); 
+            color: var(--text-main); 
+            position: relative;
+        }
+
+        /* 🖼️ BACKGROUND WATERMARK LAYER — Logomu Di Sini Coeg! */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('falcon-logo.jpg'); /* Panggil gambar gahar lu! */
+            background-size: contain; /* Gambar full di layar */
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.1; /* Transparan parah biar ngefek watermark */
+            z-index: -1; /* Taruh di paling belakang */
+        }
+
+        header { text-align: center; padding: 60px 20px; }
+        header img { width: 120px; border-radius: 50%; box-shadow: 0 0 20px rgba(46, 204, 113, 0.3); }
+        header h1 { color: var(--gold); font-size: 2.8em; margin-top: 15px; }
+
+        .container { max-width: 1000px; margin: auto; padding: 0 20px 60px; }
         
-        /* HEADER */
-        .header { text-align: center; padding: 80px 20px; border-bottom: 1px solid #30363d; background: radial-gradient(circle, #1c2128 0%, #0b0e14 100%); }
-        .header h1 { font-size: 3em; color: var(--accent); letter-spacing: 2px; margin: 0; }
-        .header p { font-size: 1.2em; color: var(--text-dim); }
+        .section { margin-bottom: 50px; }
+        .section-header { border-bottom: 2px solid #30363d; padding-bottom: 15px; margin-bottom: 30px; }
+        .section-header h2 { color: var(--text-title); font-size: 1.8em; display: inline-block; }
+        .section-header span { color: var(--text-main); font-size: 0.8em; text-transform: uppercase; margin-left: 10px; }
 
-        /* PRODUCT SECTIONS */
-        .section-title { text-align: center; margin: 50px 0 30px; font-size: 2em; color: white; position: relative; }
-        .section-title::after { content: ''; display: block; width: 60px; height: 3px; background: var(--accent); margin: 10px auto; }
-
-        .product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; }
-        .product-card { background: var(--card-bg); border: 1px solid #30363d; border-radius: 15px; padding: 30px; transition: 0.4s; position: relative; overflow: hidden; }
-        .product-card:hover { transform: translateY(-10px); border-color: var(--accent); box-shadow: 0 10px 30px rgba(212, 175, 55, 0.1); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
         
-        .badge { position: absolute; top: 15px; right: 15px; background: var(--accent); color: black; padding: 3px 12px; border-radius: 20px; font-size: 0.7em; font-weight: bold; }
-        .product-card h3 { font-size: 1.5em; margin-top: 0; color: var(--accent); }
-        .product-card p { font-size: 0.95em; color: var(--text-dim); min-height: 60px; }
+        .product-card { 
+            background: var(--card-bg); 
+            border: 1px solid #30363d; 
+            padding: 25px; 
+            border-radius: 12px; 
+            transition: 0.3s; 
+            backdrop-filter: blur(5px); /* Efek kaca buram di card */
+        }
+        .product-card:hover { transform: translateY(-5px); border-color: var(--accent); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); }
+        .product-card h3 { color: var(--gold); margin-top: 0; }
+        .product-card p { font-size: 0.95em; color: var(--text-main); line-height: 1.6; }
+        
+        .cta-group { display: flex; gap: 10px; margin-top: 20px; }
+        
+        /* 🔥 NEON GLOW BUTTONS */
+        .btn { text-decoration: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 0.9em; transition: 0.3s; display: inline-block; }
+        
+        .btn-primary { background: var(--accent); color: white; box-shadow: 0 0 10px rgba(46, 204, 113, 0.3); }
+        .btn-primary:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(46, 204, 113, 0.6); }
 
-        /* BUTTONS */
-        .btn { display: inline-block; width: 100%; text-align: center; padding: 12px 0; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 15px; transition: 0.3s; }
-        .btn-primary { background: var(--accent); color: black; }
-        .btn-secondary { border: 1px solid var(--accent); color: var(--accent); }
-        .btn:hover { filter: brightness(1.2); }
+        .btn-secondary { background: #30363d; color: white; border: 1px solid #c9d1d9; }
+        .btn-secondary:hover { background: #444d56; }
 
-        footer { text-align: center; padding: 60px 20px; border-top: 1px solid #30363d; color: var(--text-dim); font-size: 0.85em; }
+        footer { text-align: center; padding: 40px; color: var(--text-main); font-size: 0.85em; border-top: 1px solid #30363d; }
     </style>
 </head>
 <body>
 
-<div class="header" style="padding: 100px 20px;"> <div class="container" style="text-align: center;">
-        <img src="falcon-logo.jpg" alt="Falcon Trading Logo" style="width: 280px; height: auto; margin-bottom: 35px; border-radius: 50%; box-shadow: 0 0 25px rgba(212, 175, 55, 0.6);">
-        
-        <h1 style="margin-top: 0; margin-bottom: 15px;">FALCON TRADING</h1>
-        <p style="margin-top: 0;">Premium Trading Tools for Professional Traders</p>
-    </div>
-</div>
+<header>
+    <img src="falcon-logo.jpg" alt="Falcon Trading Logo">
+    <h1>FALCON TRADING</h1>
+    <p><em>Premium Trading Tools for Professional Traders</em></p>
+</header>
 
 <div class="container">
-    <h2 class="section-title">Falcon Expert Advisors (EA)</h2>
-    <div class="product-grid">
-        <div class="product-card">
-            <span class="badge">MT4/MT5</span>
-            <h3>Falcon Ravager</h3>
-            <p>EA Agresif dengan algoritma adaptif. Dirancang untuk memaksimalkan profit di market dengan volatilitas tinggi.</p>
-            <a href="ravager.html" class="btn btn-primary">Lihat Detail</a>
-            <a href="https://t.me/FalconSupport" class="btn btn-secondary">Konsultasi</a>
+    <div class="section">
+        <div class="section-header">
+            <h2>Falcon Expert Advisors (EA)</h2><span>MT4/MT5</span>
         </div>
-        <div class="product-card">
-            <span class="badge">MT4/MT5</span>
-            <h3>Falcon Arnaid</h3>
-            <p>EA Konservatif yang mengutamakan keamanan modal (Safety First). Menggunakan manajemen risiko super ketat.</p>
-            <a href="arnaid.html" class="btn btn-primary">Lihat Detail</a>
-            <a href="https://t.me/FalconSupport" class="btn btn-secondary">Konsultasi</a>
+        <div class="grid">
+            <div class="product-card">
+                <h3>Falcon Ravager</h3>
+                <p>EA Agresif dengan algoritma adaptif. Dirancang untuk memaksimalkan profit di market dengan volatilitas tinggi.</p>
+                <div class="cta-group">
+                    <a href="ravager.html" class="btn btn-primary">Lihat Detail</a>
+                    <a href="https://t.me/Genz_Diego" class="btn btn-secondary">Konsultasi</a>
+                </div>
+            </div>
+            <div class="product-card">
+                <h3>Falcon Arnaid</h3>
+                <p>EA Konservatif yang mengutamakan keamanan modal (Safety First). Menggunakan manajemen risiko super ketat.</p>
+                <div class="cta-group">
+                    <a href="arnaid.html" class="btn btn-primary">Lihat Detail</a>
+                    <a href="https://t.me/Genz_Diego" class="btn btn-secondary">Konsultasi</a>
+                </div>
+            </div>
         </div>
     </div>
 
-    <h2 class="section-title">TradingView Indicators</h2>
-    <div class="product-grid">
-        <div class="product-card">
-            <span class="badge">TradingView</span>
-            <h3>Falcon Reconquista v1.5</h3>
-            <p>Indikator konfirmasi Multi-Timeframe terbaik untuk Gold & Bitcoin. Akurasi tinggi dengan filter Dual Hakim.</p>
-            <a href="reconquista.html" class="btn btn-primary">Lihat Detail</a>
+    <div class="section">
+        <div class="section-header">
+            <h2>TradingView Indicators</h2><span>TradingView</span>
         </div>
-        <div class="product-card">
-            <span class="badge">TradingView</span>
-            <h3>Falcon ZigTrend</h3>
-            <p>Master of Market Structure. Membantu lu membaca pola trend dan pembalikan harga dengan jauh lebih jernih.</p>
-            <a href="zigtrend.html" class="btn btn-primary">Lihat Detail</a>
+        <div class="grid">
+            <div class="product-card">
+                <h3>Falcon Reconquista v1.5</h3>
+                <p>Indikator konfirmasi Multi-Timeframe terbaik untuk Gold & Bitcoin. Akurasi tinggi dengan filter Dual Hakim.</p>
+                <div class="cta-group">
+                    <a href="reconquista.html" class="btn btn-primary">Lihat Detail</a>
+                </div>
+            </div>
+            <div class="product-card">
+                <h3>Falcon ZigTrend</h3>
+                <p>Master of Market Structure. Membantu lu membaca pola trend dan pembalikan harga dengan jauh lebih jernih.</p>
+                <div class="cta-group">
+                    <a href="zigtrend.html" class="btn btn-primary">Lihat Detail</a>
+                </div>
+            </div>
         </div>
     </div>
 </div>
