@@ -3,54 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Falcon Ravager v5.2 - Tactical War Machine</title>
+    <title>Falcon Ravager v5.2 B2 Spirit - Official Detail</title>
     <style>
         :root {
             --bg-color: #0b0e14;
             --card-bg: #161b22;
             --accent: #ff4d4d; /* Agresif Red */
             --gold: #d4af37;
+            --blue-box: #0088cc;
             --text-main: #c9d1d9;
             --text-dim: #8b949e;
         }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; line-height: 1.6; }
         .container { max-width: 1000px; margin: auto; padding: 40px 20px; }
         
-        /* HEADER SECTION */
         .header-spec { border-left: 5px solid var(--accent); padding-left: 20px; margin-bottom: 40px; }
         .header-spec h1 { color: var(--accent); font-size: 2.8em; margin: 0; letter-spacing: 2px; }
         .header-spec p { font-style: italic; color: var(--gold); font-weight: bold; text-transform: uppercase; }
 
-        /* LOGIC BOX */
         .logic-box { background: linear-gradient(145deg, #1c2128, #0b0e14); border: 1px solid var(--accent); padding: 30px; border-radius: 15px; margin-bottom: 30px; box-shadow: 0 0 20px rgba(255, 77, 77, 0.1); }
-        .logic-box h2 { color: var(--accent); margin-top: 0; display: flex; align-items: center; gap: 10px; }
-        
-        /* GRID SYSTEM */
+        .blackbox-box { background: linear-gradient(145deg, #0d1a2a, #0b0e14); border: 1px solid var(--blue-box); padding: 30px; border-radius: 15px; margin-bottom: 30px; box-shadow: 0 0 20px rgba(0, 136, 204, 0.2); }
+
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .card-spec { background: var(--card-bg); border: 1px solid #30363d; padding: 25px; border-radius: 12px; transition: 0.3s; }
-        .card-spec:hover { border-color: var(--gold); }
+        .card-spec { background: var(--card-bg); border: 1px solid #30363d; padding: 25px; border-radius: 12px; }
         .card-spec h3 { color: var(--gold); margin-top: 0; border-bottom: 1px solid #30363d; padding-bottom: 10px; font-size: 1.3em; }
 
-        /* PARAMETER TABLE */
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         td { padding: 12px 5px; border-bottom: 1px solid #21262d; font-size: 0.95em; }
-        .param { color: var(--gold); font-weight: bold; width: 50%; }
+        .param { color: var(--gold); font-weight: bold; width: 55%; }
 
-        /* FLEXIBILITY SECTION */
         .flex-box { background: #1c2128; border-top: 3px solid var(--gold); padding: 25px; border-radius: 12px; margin-top: 30px; }
-        .flex-box ul { padding-left: 20px; color: var(--text-dim); }
-        .flex-box li { margin-bottom: 10px; }
-        .flex-box li strong { color: var(--text-main); }
-
-        /* FOOTER & BUTTONS */
-        .btn-back { display: inline-block; margin-bottom: 20px; color: var(--text-dim); text-decoration: none; font-weight: bold; transition: 0.3s; }
-        .btn-back:hover { color: var(--accent); transform: translateX(-5px); }
+        .btn-back { display: inline-block; margin-bottom: 20px; color: var(--text-dim); text-decoration: none; font-weight: bold; }
+        .btn-back:hover { color: var(--accent); }
         
         .cta-box { text-align: center; margin-top: 50px; padding: 40px; background: var(--card-bg); border-radius: 15px; border: 1px solid var(--accent); }
-        .btn-order { background: var(--accent); color: white; padding: 15px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.2em; display: inline-block; transition: 0.3s; }
-        .btn-order:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(255, 77, 77, 0.4); }
+        .btn-order { background: var(--accent); color: white; padding: 15px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.2em; display: inline-block; }
 
-        .footer { text-align: center; padding: 60px 20px; color: var(--text-dim); font-size: 0.85em; }
+        footer { text-align: center; padding: 60px 20px; color: var(--text-dim); font-size: 0.85em; }
     </style>
 </head>
 <body>
@@ -60,71 +49,63 @@
     
     <div class="header-spec">
         <h1>FALCON RAVAGER v5.2</h1>
-        <p>"B2 Spirit - Operation Global Dome"</p>
+        <p>"Operation Odyssey Dawn - America Operation"</p>
+    </div>
+
+    <div class="blackbox-box">
+        <h2 style="color: var(--blue-box); margin-top: 0;">🛰️ Integrated BlackBox System (CSV Logger)</h2>
+        <p>Bukan bot buta. Versi ini dilengkapi dengan <strong>BlackBox Intelligence</strong> yang mencatat setiap lonjakan tick, dominasi buyer/seller, dan power market ke dalam file audit .csv secara real-time.</p>
+        <p style="color: #66ccff; font-size: 0.9em;"><i>Fitur: Snapshot Interval, Event Logging, dan Radar Noise Monitoring.</i></p>
     </div>
 
     <div class="logic-box">
-        <h2>🛰️ Tactical Logic: Total Adaptive Domination</h2>
-        <p>Ravager bukan sekadar EA kaku yang berjalan di atas timeframe. Ini adalah <strong>Tactical Engine</strong> yang membedah market lewat <i>Tick Flow Analysis</i>. Dengan algoritma <i>Dominance Power</i>, lu punya kendali penuh untuk menentukan kapan mesin ini harus menyerang atau bertahan.</p>
-        <p><strong>Semua parameter bersifat Open-Architect</strong>, artinya lu adalah Pilot-nya—lu yang menentukan agresivitas, batas risiko, hingga manuver pembalikan arah secara absolut.</p>
+        <h2>🔥 Strike Logic: Tick Window Precision</h2>
+        <p>Dengan <strong>Tick Window 65ms</strong> dan <strong>Dominance 58%</strong>, Ravager v5.2 mampu mendeteksi "Engine Thrust" market lebih cepat. Pilot bisa mengatur sensitivitas masuk market lewat parameter <i>Min Power</i> dan <i>Slippage Control</i>.</p>
     </div>
 
     <div class="grid">
         <div class="card-spec">
-            <h3>🚀 Strike Execution</h3>
+            <h3>🚀 America Ops Specs</h3>
             <table>
-                <tr><td class="param">Tick Trigger</td><td>100 (Adjustable)</td></tr>
-                <tr><td class="param">Dominance</td><td>> 65% Power</td></tr>
-                <tr><td class="param">Max Layers</td><td>10 Levels</td></tr>
-                <tr><td class="param">Layer Step</td><td>1000 Points</td></tr>
-                <tr><td class="param">Tick Window</td><td>90 ms</td></tr>
+                <tr><td class="param">Tick Window</td><td>65 ms (Ultra Fast)</td></tr>
+                <tr><td class="param">Min Power</td><td>75 Units</td></tr>
+                <tr><td class="param">Tick Trigger</td><td>90 Ticks</td></tr>
+                <tr><td class="param">Dominance</td><td>> 58%</td></tr>
             </table>
         </div>
 
         <div class="card-spec">
-            <h3>🛡️ Defense & Safety</h3>
+            <h3>🛡️ Tactical Safety</h3>
             <table>
-                <tr><td class="param">Max Spread</td><td>800 Pips</td></tr>
+                <tr><td class="param">Lock Profit</td><td>75,000 Points</td></tr>
+                <tr><td class="param">Daily DD Limit</td><td>-1,000,000</td></tr>
+                <tr><td class="param">Trailing Step</td><td>800 Pips</td></tr>
                 <tr><td class="param">Spike Filter</td><td>3000 Pips</td></tr>
-                <tr><td class="param">Daily Target</td><td>Customizable</td></tr>
-                <tr><td class="param">Daily Max DD</td><td>Hard Stop</td></tr>
-                <tr><td class="param">Auto-Abort</td><td>Active</td></tr>
             </table>
         </div>
     </div>
 
     <div class="flex-box">
-        <h3 style="color: var(--gold); margin-top: 0;">🎮 Ultimate Flexibility: Full Parameter Access</h3>
-        <p>Gak ada fitur yang dikunci. Lu punya akses total ke jeroan mesin Ravager untuk modifikasi strategi tanpa batas:</p>
-        <ul>
-            <li><strong>Custom Tick Trigger:</strong> Tentukan sendiri sensitivitas entri berdasarkan volatilitas market pilihan lu.</li>
-            <li><strong>Dynamic Layering:</strong> Atur jarak (Step) dan jumlah layer secara presisi sesuai dengan ketahanan modal lu.</li>
-            <li><strong>Reverse Signal (Invert):</strong> Fitur manuver untuk membalikkan logika arah entri hanya dengan satu klik (Invert Mode).</li>
-            <li><strong>Counter Mechanism:</strong> Modifikasi target recovery, lot multiplier, dan cooldown saat market sedang anomali.</li>
-            <li><strong>Pullback vs Breakout:</strong> Pilih gaya serangan lu, apakah ingin menghajar saat harga tembus atau saat harga koreksi.</li>
+        <h3 style="color: var(--gold); margin-top: 0;">🎮 Total Adaptive Control</h3>
+        <p>Sesuaikan senjata lu dengan kondisi market yang dinamis:</p>
+        <ul style="padding-left: 20px; color: var(--text-dim);">
+            <li><strong>Invert Signal Mode:</strong> Balikkan arah strategi (Reverse Entry) dalam satu klik jika market mengalami anomali harga.</li>
+            <li><strong>Pullback Entry:</strong> Aktifkan mode entri saat harga mengalami koreksi untuk mendapatkan titik entri yang lebih presisi.</li>
+            <li><strong>Session Control:</strong> Atur jam operasional otomatis (07:00 - 04:59) untuk menghindari market sideway yang tidak menguntungkan.</li>
         </ul>
-        <p style="font-size: 0.9em; font-style: italic; color: var(--accent); text-align: center; border-top: 1px solid #30363d; padding-top: 15px; margin-top: 15px;">
-            "Mesin ini adalah senjata, tapi lu adalah otaknya. Sesuaikan, modifikasi, dan kuasai market dengan gaya lu sendiri."
-        </p>
-    </div>
-
-    <div class="card-spec" style="margin-top: 30px; border-left: 4px solid #00d4ff;">
-        <h3 style="color: #00d4ff;">🔄 Reverse Counter Mode (The Bomber)</h3>
-        <p>Fitur paling mematikan di versi B2 Spirit. Jika arah market berubah drastis saat posisi sedang floating, sistem akan secara otomatis mendeteksi <i>Direction Lock</i> yang baru dan melepaskan <strong>Counter Drop</strong> menggunakan Magic Number terpisah untuk memulihkan ekuitas secara instan sebelum kerugian membesar.</p>
     </div>
 
     <div class="cta-box">
-        <h2>SIAP MENJADI PILOT RAVAGER?</h2>
-        <p>Ambil kendali penuh atas akun lu sekarang. Lisensi tersedia untuk paket Bulanan & Lifetime.</p>
+        <h2>DEPLOY THE RAVAGER NOW</h2>
+        <p>Dapatkan lisensi resmi untuk EA paling fleksibel dengan fitur audit BlackBox.</p>
         <a href="https://t.me/USERNAMELU" class="btn-order">HUBUNGI MARKAS (TELEGRAM)</a>
     </div>
 
 </div>
 
-<div class="footer">
-    <p>&copy; 2026 Falcon Ecosystem | Developed & Authored by <strong>Genz Diego</strong></p>
-    <p style="font-size: 0.8em; margin-top: 10px; opacity: 0.5;">Trading melibatkan risiko tinggi. Pastikan lu memahami parameter sebelum melakukan Take-Off.</p>
-</div>
+<footer style="text-align: center; padding: 40px;">
+    <p>&copy; 2026 Falcon Ecosystem | Developed by <strong>Genz Diego</strong></p>
+</footer>
 
 </body>
 </html>
