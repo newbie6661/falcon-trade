@@ -7,12 +7,13 @@
     <style>
         :root {
             --bg-color: #0b0e14;
-            --card-bg: rgba(22, 27, 34, 0.9);
-            --accent: #00f2ff; /* Cyber Aqua */
+            --card-bg: rgba(22, 27, 34, 0.95);
+            --accent: #00f2ff;
             --gold: #d4af37;
             --text-main: #ffffff;
             --text-dim: #babbbd;
             --success: #2ecc71;
+            --danger: #e74c3c;
         }
 
         body {
@@ -21,39 +22,55 @@
             padding: 0;
             color: var(--text-main);
             line-height: 1.6;
-            position: relative;
             background-color: var(--bg-color);
+            position: relative;
         }
 
-        /* 🖼️ BACKGROUND LAYER */
+        /* 🖼️ BACKGROUND MENGGUNAKAN FILE ASLI */
         body::before {
             content: "";
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url('https://raw.githubusercontent.com/newbie6661/falcon-trade/main/arnaid-logo-2.png');
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('arnaid-logo-2.png.png');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            filter: blur(8px) brightness(0.12);
+            filter: blur(8px) brightness(0.1);
             z-index: -2;
         }
 
+        /* 🟢 SCANNER EFFECT */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent), 0 0 20px var(--accent);
+            animation: scan 4s linear infinite;
+            z-index: -1;
+            opacity: 0.5;
+        }
+
+        @keyframes scan {
+            0% { top: -10%; }
+            100% { top: 110%; }
+        }
+
         .container {
-            max-width: 900px;
+            max-width: 950px;
             margin: 40px auto;
             padding: 20px;
+            position: relative;
+            z-index: 1;
         }
 
         .card {
             background: var(--card-bg);
             border: 1px solid rgba(0, 242, 255, 0.15);
-            border-radius: 12px;
-            padding: 30px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-radius: 16px;
+            padding: 35px;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
             margin-bottom: 30px;
         }
 
@@ -61,74 +78,79 @@
             color: var(--accent);
             text-transform: uppercase;
             letter-spacing: 2px;
+            margin-top: 0;
         }
 
-        .gold-text { color: var(--gold); font-weight: bold; }
-        .accent-text { color: var(--accent); }
+        .logo-header { text-align: center; margin-bottom: 20px; }
+        .main-logo {
+            width: 150px;
+            height: auto;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 0 15px var(--accent));
+        }
+
+        /* 📊 STYLE GAMBAR BACKTEST */
+        .ss-backtest {
+            width: 100%;
+            border-radius: 8px;
+            margin: 25px 0;
+            border: 1px solid rgba(0, 242, 255, 0.3);
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.1);
+        }
 
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin: 20px 0;
+            gap: 25px;
+            margin: 30px 0;
         }
 
         .stat-item {
-            background: rgba(255,255,255,0.03);
-            padding: 15px;
-            border-left: 3px solid var(--accent);
-            border-radius: 4px;
+            background: rgba(255,255,255,0.02);
+            padding: 20px;
+            border-left: 4px solid var(--accent);
+            border-radius: 8px;
         }
 
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: bold;
-            display: block;
-        }
-
-        .stat-label {
-            font-size: 0.8rem;
-            color: var(--text-dim);
-            text-transform: uppercase;
-        }
+        .stat-value { font-size: 1.8rem; font-weight: 800; display: block; }
+        .stat-label { font-size: 0.85rem; color: var(--text-dim); text-transform: uppercase; }
 
         .btn {
             display: inline-block;
-            padding: 12px 25px;
-            background: var(--accent);
-            color: #000;
+            padding: 15px 35px;
+            color: var(--accent);
             text-decoration: none;
-            border-radius: 5px;
+            border-radius: 50px;
             font-weight: bold;
             transition: 0.3s;
             text-transform: uppercase;
+            border: 2px solid var(--accent);
         }
 
         .btn:hover {
-            background: #fff;
-            box-shadow: 0 0 20px var(--accent);
+            background: var(--accent);
+            color: #000;
+            box-shadow: 0 0 25px var(--accent);
         }
 
-        footer {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-dim);
-            font-size: 0.9rem;
-        }
+        footer { text-align: center; padding: 50px; color: var(--text-dim); }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="card" style="text-align: center;">
-        <img src="https://raw.githubusercontent.com/newbie6661/falcon-trade/main/arnaid-logo-2.png" alt="Arnaid Logo" style="width: 120px; margin-bottom: 20px;">
+    
+    <div class="card logo-header">
+        <img src="arnaid-logo-2.png.png" alt="Arnaid Logo" class="main-logo">
         <h1>Falcon Arnaid v17</h1>
         <p class="accent-text">THE GUARDIAN FORTRESS • TICK-BASED SCALPER</p>
     </div>
 
     <div class="card">
         <h2>🛡️ MISSION BRIEFING</h2>
-        <p><strong>Falcon Arnaid v17</strong> adalah puncak evolusi algoritma <em>Scalping Intelligence</em>. Berbeda dengan EA konvensional, Arnaid menggunakan <strong>Dual-Eye Sensors (Infrared & NightVision)</strong> untuk membaca struktur pasar pada micro-level, menjamin setiap entri memiliki probabilitas tinggi dengan risiko minimal.</p>
+        <p><strong>Falcon Arnaid v17</strong> adalah puncak evolusi algoritma <em>Scalping Intelligence</em>. Berbeda dengan EA konvensional, Arnaid menggunakan <strong>Dual-Eye Sensors</strong> untuk menjamin eksekusi presisi di akun Standard maupun Raw.</p>
+        
+        <img src="Arnaid SS Backtest Mar-Apr 2026.png" alt="Backtest Report 1" class="ss-backtest">
         
         <ul>
             <li><strong>Primary Target:</strong> XAUUSD (Gold)</li>
@@ -138,60 +160,47 @@
     </div>
 
     <div class="card">
-        <h2>📊 2-MONTH DEPLOYMENT REPORT</h2>
-        <p>Audit performa Arnaid v17 dilakukan secara real-time untuk membuktikan ketahanan algoritma terhadap kondisi market yang ekstrim.</p>
-        
+        <h2>📊 DEPLOYMENT AUDIT</h2>
         <div class="stats-grid">
             <div class="stat-item">
                 <span class="stat-label">Total Profit</span>
                 <span class="stat-value" style="color: var(--success);">$8,366.30</span>
             </div>
             <div class="stat-item">
-                <span class="stat-label">Profit Factor</span>
-                <span class="stat-value">3.55</span>
-            </div>
-            <div class="stat-item">
                 <span class="stat-label">Win Rate</span>
                 <span class="stat-value">87.50%</span>
             </div>
             <div class="stat-item">
+                <span class="stat-label">Profit Factor</span>
+                <span class="stat-value">3.55</span>
+            </div>
+            <div class="stat-item">
                 <span class="stat-label">Max Drawdown</span>
-                <span class="stat-value" style="color: #e74c3c;">16.58%</span>
+                <span class="stat-value" style="color: var(--danger);">16.58%</span>
             </div>
         </div>
-        <p><small>*Data berdasarkan audit deploy Januari - Maret 2026.</small></p>
     </div>
 
     <div class="card">
         <h2>🧠 TACTICAL PERFORMANCE ANALYSIS</h2>
         <ul>
-            <li><strong>Reconquista Protocol:</strong> Filter trend berlapis yang memastikan EA hanya menyerang saat volatilitas dan struktur market searah.</li>
-            <li><strong>Smart Layering System:</strong> Penambahan posisi yang terukur (bukan martingale buta) untuk memaksimalkan profit saat terjadi <em>price rejection</em>.</li>
-            <li><strong>Precision Exit:</strong> Menggunakan <em>JASSM-ER Interceptor</em> untuk pengamanan profit secara dinamis mengikuti kekuatan arus harga.</li>
-            <li><strong>Universal Adaptability:</strong> Algoritma cerdas yang mampu melakukan <strong>Self-Calibration</strong> terhadap spread broker. Menjamin eksekusi tetap "Gacor Parah" di akun <strong>Standard maupun Raw</strong> tanpa terpengaruh pelebaran spread sesaat.</li>
+            <li><strong>Universal Adaptability:</strong> Algoritma cerdas yang melakukan <strong>Self-Calibration</strong> terhadap spread broker. Menjamin eksekusi tetap "Gacor Parah" di akun <strong>Standard</strong>.</li>
+            <li><strong>Precision Exit:</strong> Menggunakan <em>JASSM-ER Interceptor</em> untuk pengamanan profit secara dinamis.</li>
+            <li><strong>Spread-Sync Engine:</strong> Proteksi otomatis yang menyesuaikan entry point berdasarkan real-time spread broker Anda.</li>
         </ul>
-    </div>
-
-    <div class="card">
-        <h2>💎 ADVANCED DEFENSE PROTOCOLS</h2>
-        <p>Arnaid v17 dilengkapi dengan fitur keamanan militer untuk menjaga keberlangsungan akun Anda:</p>
-        <ul>
-            <li><strong>Platinum Dome Shield:</strong> Penghenti otomatis jika kerugian harian mencapai ambang batas yang ditentukan.</li>
-            <li><strong>Spread-Sync Engine:</strong> Proteksi otomatis yang menyesuaikan entry point berdasarkan real-time spread broker Anda untuk menjaga akurasi win-rate.</li>
-            <li><strong>News-Aversion Logic:</strong> Sensor deteksi volatilitas tinggi untuk menghindari jebakan harga saat rilis berita besar.</li>
-        </ul>
+        
+        <img src="Arnaid SS2 Backtest Mar-Apr 2026.png" alt="Backtest Report 2" class="ss-backtest">
     </div>
 
     <div class="card" style="text-align: center; border: 1px solid var(--gold);">
         <h2 class="gold-text">READY TO DEPLOY?</h2>
         <p>Dapatkan akses penuh ke Falcon Arnaid v17 dan biarkan Sang Penjaga bekerja untuk portofolio Anda.</p>
         <br>
-        <a href="https://linktr.ee/falcontradesystem" class="btn">GET ACCESS NOW</a>
+        <a href="https://t.me/falcon_trader666" class="btn">GET ACCESS NOW</a>
     </div>
 
     <footer>
-        <p>&copy; 2026 FALCON TRADING SYSTEM. ALL RIGHTS RESERVED.<br>
-        Powered by Arnaid Labs • Genz Diego</p>
+        <p>&copy; 2026 FALCON TRADING SYSTEM • Powered by Genz Diego</p>
     </footer>
 </div>
 
