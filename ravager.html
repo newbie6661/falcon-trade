@@ -3,231 +3,331 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Falcon Ravager v5.4 B2 SPIRIT Revolution - Operation WW III</title>
+    <title>EA FALCON RAVAGER v5.4 B2R - OPERATION WW III</title>
     <style>
+        /* ── GLOBAL TACTICAL STYLES ── */
         :root {
-            --bg-color: #05070a;
-            --card-bg: rgba(10, 12, 18, 0.95);
-            --accent: #ff3e3e; 
-            --border-color: #1a1f2b;
-            --text-main: #e0e0e0;
-            --text-dim: #8892b0;
-            --glow: 0 0 15px rgba(255, 62, 62, 0.3);
-            --matrix: #00ff41;
+            --bg-color: #030406; /* Ultra Black */
+            --tactical-black: #0a0c10;
+            --cyber-red: #ff3e3e; /* Crimson Pulse */
+            --text-main: #e0e6ed;
+            --text-dim: #7a869a;
+            --border: #13171f;
+            --glow: 0 0 20px rgba(255, 62, 62, 0.3);
+            --font-main: 'Inter', 'Segoe UI', sans-serif;
+            --font-mono: 'JetBrains Mono', 'Courier New', monospace;
         }
 
         body {
-            font-family: 'Inter', 'Segoe UI', sans-serif;
+            font-family: var(--font-main);
             margin: 0;
             padding: 0;
             background-color: var(--bg-color);
             color: var(--text-main);
             line-height: 1.6;
+            overflow-x: hidden;
         }
 
+        /* 🖼️ TACTICAL BACKGROUND GRID */
         body::before {
             content: "";
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at 50% 50%, rgba(20, 25, 40, 0.8), var(--bg-color)),
-                        url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+            background: 
+                radial-gradient(circle at 50% 50%, rgba(15, 20, 30, 0.9), var(--bg-color)),
+                url('https://www.transparenttextures.com/patterns/dark-dot-grid.png');
             z-index: -1;
+            opacity: 0.5;
         }
 
         .container {
-            max-width: 1000px;
+            max-width: 1100px;
             margin: auto;
-            padding: 40px 20px;
+            padding: 20px;
         }
 
-        header {
+        /* ── HERO SECTION: THE ARTIFACT ── */
+        .artifact-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
             text-align: center;
-            margin-bottom: 50px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 30px;
+            margin-bottom: 60px;
+            position: relative;
+        }
+
+        /* Wadah untuk menampung gambar agar terlihat premium */
+        .artifact-frame {
+            position: relative;
+            background-color: var(--tactical-black);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: 0.3s;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.8);
+        }
+
+        .artifact-frame:hover {
+            border-color: var(--cyber-red);
+            box-shadow: var(--glow);
+        }
+
+        /* Sudut-sudut tactical di luar frame */
+        .artifact-frame::before, .artifact-frame::after {
+            content: "";
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-color: var(--cyber-red);
+            border-style: solid;
+            opacity: 0.7;
+        }
+
+        .artifact-frame::before {
+            top: -5px; left: -5px;
+            border-width: 2px 0 0 2px;
+        }
+
+        .artifact-frame::after {
+            bottom: -5px; right: -5px;
+            border-width: 0 2px 2px 0;
+        }
+
+        /* 🔥 GAMBAR UTAMA LU COEG! */
+        .artifact-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            display: block;
+            /* Tambahin glitch effect halus samar-samar pas hover */
+            filter: drop-shadow(0 0 5px rgba(255, 62, 62, 0.2));
         }
 
         .status-badge {
             display: inline-block;
-            padding: 5px 15px;
-            background: rgba(255, 62, 62, 0.1);
-            border: 1px solid var(--accent);
+            margin-top: 30px;
+            padding: 6px 18px;
+            background: rgba(255, 62, 62, 0.08);
+            border: 1px solid var(--cyber-red);
             border-radius: 4px;
-            font-size: 0.75rem;
-            color: var(--accent);
+            font-size: 0.8rem;
+            color: var(--cyber-red);
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 2.5px;
+            font-weight: 800;
             animation: pulse 2s infinite;
         }
 
-        h1 {
-            font-size: 2.8rem;
-            margin: 20px 0 5px;
-            background: linear-gradient(to right, #fff, var(--text-dim));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .tagline {
-            color: var(--text-dim);
-            font-style: italic;
-            font-size: 1.2rem;
-            letter-spacing: 1px;
-        }
-
-        .grid {
+        /* ── FEATURE ARSENAL: TACTICAL CARDS ── */
+        .arsenal-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
-            margin-top: 40px;
+            margin-top: 60px;
         }
 
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            padding: 25px;
-            border-radius: 10px;
-            transition: 0.3s;
+        .arsenal-card {
+            background-color: var(--tactical-black);
+            border: 1px solid var(--border);
+            padding: 30px;
+            border-radius: 12px;
+            transition: all 0.3s ease-out;
+            position: relative;
+            overflow: hidden;
         }
 
-        .card:hover {
-            border-color: var(--accent);
+        .arsenal-card:hover {
+            border-color: var(--cyber-red);
+            transform: translateY(-5px);
             box-shadow: var(--glow);
-            transform: translateY(-3px);
         }
 
-        .card h3 {
-            color: var(--accent);
+        /* Garis vertical tactical di samping h3 */
+        .arsenal-card h3 {
+            color: var(--cyber-red);
+            margin: 0 0 15px 0;
+            font-size: 1.2rem;
             text-transform: uppercase;
-            font-size: 1.1rem;
-            margin-bottom: 15px;
-            border-left: 3px solid var(--accent);
-            padding-left: 10px;
+            letter-spacing: 1.5px;
+            border-left: 3px solid var(--cyber-red);
+            padding-left: 12px;
         }
 
-        .card p {
-            font-size: 0.9rem;
+        .arsenal-card p {
+            font-size: 0.95rem;
             color: var(--text-dim);
+            margin: 0;
         }
 
-        .changelog {
-            margin-top: 50px;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 25px;
-            border-radius: 8px;
-            border-left: 4px solid var(--matrix);
-            font-family: 'Consolas', monospace;
+        /* ── BLACKBOX LOG: MATRIX STYLE ── */
+        .blackbox-log {
+            margin-top: 70px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px dashed #333;
+            padding: 30px;
+            border-radius: 10px;
+            font-family: var(--font-mono);
         }
 
-        .changelog h2 {
-            font-size: 1rem;
+        .blackbox-log h2 {
+            font-size: 1.1rem;
             color: #fff;
-            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
         }
 
-        .changelog ul {
+        .blackbox-log ul {
             list-style: none;
             padding: 0;
+            margin: 0;
             font-size: 0.85rem;
-            color: var(--matrix);
+            color: #00ff41; /* Matrix Green */
         }
 
-        .changelog li::before {
-            content: ">> ";
+        .blackbox-log li {
+            margin-bottom: 8px;
         }
 
-        .cta-section {
+        .blackbox-log li::before {
+            content: "[OK] > ";
+            color: #008f11;
+        }
+
+        /* ── ACTION / CONTACT FOOTER ── */
+        .command-center {
             text-align: center;
-            margin-top: 70px;
-            padding: 40px;
-            background: linear-gradient(180deg, transparent, rgba(255,62,62,0.05));
+            margin-top: 90px;
+            padding: 50px 20px;
+            background: linear-gradient(180deg, transparent, rgba(255, 62, 62, 0.04));
             border-radius: 20px;
+            border: 1px solid var(--border);
         }
 
-        .btn-tg {
+        .command-center h2 {
+            font-size: 1.8rem;
+            letter-spacing: -0.5px;
+            margin-bottom: 10px;
+        }
+
+        .command-center p {
+            color: var(--text-dim);
+            margin-bottom: 35px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .btn-command {
             display: inline-block;
-            padding: 18px 45px;
-            background: var(--accent);
+            padding: 18px 50px;
+            background: var(--cyber-red);
             color: #fff;
             text-decoration: none;
             font-weight: 800;
-            border-radius: 5px;
+            border-radius: 4px;
             font-size: 1.1rem;
             transition: 0.3s;
             text-transform: uppercase;
-            box-shadow: 0 4px 15px rgba(255, 62, 62, 0.4);
+            letter-spacing: 1px;
+            box-shadow: 0 5px 20px rgba(255, 62, 62, 0.5);
         }
 
-        .btn-tg:hover {
+        .btn-command:hover {
             background: #fff;
-            color: var(--accent);
-            box-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
-            transform: scale(1.05);
+            color: var(--cyber-red);
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.6);
+            transform: scale(1.03);
         }
 
         footer {
             text-align: center;
             margin-top: 60px;
-            padding-bottom: 40px;
-            color: #444;
+            padding-bottom: 30px;
+            color: #333;
             font-size: 0.8rem;
+            font-family: var(--font-mono);
         }
 
+        footer a { color: #444; text-decoration: none; }
+
+        /* Keyframes */
         @keyframes pulse {
             0% { opacity: 1; }
-            50% { opacity: 0.4; }
+            50% { opacity: 0.3; }
             100% { opacity: 1; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 { font-size: 2.2rem; }
+            .artifact-frame { max-width: 90%; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <header>
-        <div class="status-badge">Mission Status: Operation WW III Active</div>
-        <h1>FALCON RAVAGER v5.4 B2R</h1>
-        <p class="tagline">"The Revised Spirit: Untraceable & Unstoppable"</p>
+    
+    <header style="text-align:center; margin-bottom: 30px; padding-top: 30px;">
+        <p style="font-size: 0.9rem; color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; margin: 0;">PROJECT CLASSIFIED</p>
     </header>
 
-    <div class="grid">
-        <div class="card">
+    <section class="artifact-section">
+        <div class="artifact-frame">
+            <img src="https://raw.githubusercontent.com/newbie6661/falcon-trade/main/Ravager-logo-new.jpg" alt="Falcon Ravager v5.4 B2R Tactical Box" class="artifact-image">
+        </div>
+        
+        <div class="status-badge">OPERATION WW III: ACTIVE</div>
+        
+        <p style="max-width: 700px; color: var(--text-dim); font-size: 1.1rem; margin-top: 30px;">
+            "The Revised Spirit: Untraceable & Unstoppable." Dominasi mutlak di market XAUUSD melalui eksekusi presisi tingkat milidetik.
+        </p>
+    </section>
+
+    <div class="arsenal-grid">
+        <div class="arsenal-card">
             <h3>Deep-Clean Protocol</h3>
-            <p>Algoritma pembersihan 3-lapis yang menghapus setiap <i>orphan pending order</i> secara otomatis. Menjaga integritas akun dari akumulasi order sampah.</p>
+            <p>Sistem keamanan 3-lapis yang mendeteksi dan menghapus setiap <i>orphan pending order</i> secara otomatis.</p>
         </div>
-        <div class="card">
-            <h3>Tactical Guardian Mode</h3>
-            <p>Sistem evakuasi profit otomatis yang mengunci pergerakan saat target harian tercapai atau mendekati jam kritis market.</p>
+        <div class="arsenal-card">
+            <h3>Guardian Mode v2.0</h3>
+            <p>Mekanisme evakuasi profit otomatis yang memblokir entri baru saat mendekati jam kritis atau target harian tercapai.</p>
         </div>
-        <div class="card">
+        <div class="arsenal-card">
             <h3>Quantum Session Sync</h3>
-            <p>Sinkronisasi waktu tingkat tinggi untuk memastikan akurasi data P&L harian tanpa hambatan ganti hari broker.</p>
+            <p>Sinkronisasi waktu tingkat tinggi yang memahami pergantian hari broker dengan presisi atomik.</p>
         </div>
-        <div class="card">
+        <div class="arsenal-card">
             <h3>Kinetic Recovery</h3>
-            <p>Transformasi volatilitas market menjadi peluang profit melalui mekanisme <i>State-Machine Hedging</i> yang adaptif.</p>
+            <p>Mekanisme pemulihan aktif yang mengubah volatilitas market menjadi peluang profit melalui sistem <i>State-Machine Hedging</i> .</p>
         </div>
     </div>
 
-    <div class="changelog">
-        <h2>DECRYPTED LOGS [v5.4 B2 SPIRIT REVOLUTION]</h2>
+    <div class="blackbox-log">
+        <h2>DECRYPTED BLACKBOX v5.4 B2 Revised</h2>
         <ul>
-            <li>Session ID based daily reset (Robust Midnight Logic)</li>
-            <li>Orphan Pending Order Protection - 3 Strategic Layers</li>
-            <li>Periodic Orphan Cleanup in OnTimer every 30s</li>
-            <li>Startup Orphan Cleanup Protocol enabled on OnInit</li>
-            <li>Guardian Mode: Strategic Entry Block v2.0</li>
-            <li>Blackbox Logging: Comprehensive Tick Data Analysis</li>
+            <li>SESSION ID BASED DAILY RESET [OK]</li>
+            <li>ORPHAN PENDING ORDER PROTECTION (3 LAYERS) [OK]</li>
+            <li>PERIODIC ORPHAN CLEANUP [30s TIMER] [OK]</li>
+            <li>STARTUP ORPHAN PROTOCOL ON INIT [OK]</li>
+            <li>BLACKBOX TICK DATA ANALYSIS ENABLED [OK]</li>
+            <li>GUARDIAN MODE ENTRY BLOCK ACTIVE [OK]</li>
         </ul>
     </div>
 
-    <div class="cta-section">
-        <h2 style="margin-bottom: 10px;">DO YOU HAVE THE ACCESS KEY?</h2>
-        <p style="color: var(--text-dim); margin-bottom: 30px;">Akses terbatas untuk operator yang siap mendominasi XAUUSD.</p>
-        <a href="https://t.me/falcon_trader666" class="btn-tg">Contact Command Center (TG)</a>
+    <div class="cta-section command-center">
+        <h2>DO YOU HAVE THE ACCESS KEY?</h2>
+        <p>Akses terbatas hanya untuk operator yang siap mendominasi pergerakan harga emas. Hubungi Command Center.</p>
+        <a href="https://t.me/falcon_trader666" class="btn-command">Contact Command Center (TG)</a>
     </div>
 
     <footer>
-        <p>© 2026 Falcon Ecosystem | [Falcon Ravager](https://newbie6661.github.io/falcon-trade/ravager.html) | Classified Project | Developed by Genz Diego</p>
+        <p>© 2026 Falcon Ecosystem | [Falcon Ravager](https://newbie6661.github.io/falcon-trade/ravager.html) | Classified Project | developed by Genz Diego</p>
     </footer>
 </div>
 
