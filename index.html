@@ -149,14 +149,26 @@
     </a>
 
     <div class="video-showcase">
-        <div class="video-wrapper" style="background: #000;">
-            <video autoplay loop muted playsinline poster="falcon-logo.jpg">
+        <div class="video-wrapper" style="background: #000; min-height: 200px; display: flex; align-items: center; justify-content: center;">
+            <video id="falconVideo" autoplay loop muted playsinline poster="falcon-logo.jpg" style="width: 100%; height: auto; display: block;">
                 <source src="ea-falcon-edition.mp4" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
             <div class="video-overlay"></div>
         </div>
     </div>
+
+    <script>
+        window.onload = function() {
+            var v = document.getElementById('falconVideo');
+            v.play().catch(function(error) {
+                console.log("Auto-play was prevented, trying again...");
+                // Kalau gagal autoplay karena browser, kita coba play lagi
+                v.muted = true;
+                v.play();
+            });
+        };
+    </script>
 
     <div class="section">
         <div class="section-header">
