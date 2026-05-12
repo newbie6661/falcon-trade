@@ -84,7 +84,9 @@
             padding: 30px;
             position: relative;
             transition: 0.3s;
-            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 400px;
         }
         .product-card:hover { transform: translateY(-5px); border-color: var(--accent-color); }
 
@@ -94,10 +96,10 @@
         }
 
         .ea-logo-box { text-align: center; margin-bottom: 20px; }
-        .ea-logo-box img { width: 100px; height: 100px; border-radius: 15px; }
+        .ea-logo-box img { width: 100px; height: 100px; border-radius: 15px; object-fit: cover; }
 
         h3 { margin: 10px 0; font-size: 1.5rem; }
-        p { color: var(--text-dim); font-size: 0.95rem; }
+        p { color: var(--text-dim); font-size: 0.95rem; flex-grow: 1; }
 
         .cta-group { margin-top: 25px; display: flex; gap: 10px; }
         .btn {
@@ -108,7 +110,6 @@
         .btn-secondary { border: 1px solid var(--border-color); color: #fff; }
         .btn:hover { opacity: 0.8; }
 
-        /* BLINK ANIMATION FOR MONITORING */
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
         footer {
@@ -220,11 +221,11 @@
         </p>
     </div>
 
-</div>
+    <footer>
+        <p>&copy; 2026 Falcon Ecosystem | Developed & Maintained by <strong>Genz Diego</strong></p>
+    </footer>
 
-<footer>
-    <p>&copy; 2026 Falcon Ecosystem | Developed & Maintained by <strong>Genz Diego</strong></p>
-</footer>
+</div>
 
 </body>
 </html>
