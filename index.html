@@ -10,29 +10,36 @@
             --card-bg: rgba(22, 27, 34, 0.85);
             --text-main: #c9d1d9;
             --text-title: #ffffff;
-            --accent: #2ecc71; 
+            --accent: #2ecc71;
             --gold: #d4af37;
             --labs-bg: rgba(212, 175, 55, 0.05);
-            /* Warna Khas EA */
             --ravager-red: #e74c3c;
             --vultura-purple: #8e44ad;
             --arnaid-blue: #00d2ff;
         }
 
-        body { 
-            font-family: 'Inter', sans-serif; 
-            margin: 0; padding: 0; 
-            background-color: var(--bg-color); 
-            color: var(--text-main); 
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
             position: relative;
         }
 
         body::before {
             content: "";
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background-image: url('falcon-logo.jpg');
-            background-size: contain; background-position: center; background-repeat: no-repeat;
-            opacity: 0.08; z-index: -1;
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.08;
+            z-index: -1;
         }
 
         header { text-align: center; padding: 60px 20px; }
@@ -40,13 +47,49 @@
         header h1 { color: var(--gold); font-size: 2.8em; margin-top: 15px; letter-spacing: 2px; }
 
         .container { max-width: 1100px; margin: auto; padding: 0 20px 60px; }
-        
+
+        /* Video Showcase Style */
+        .video-showcase {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        .video-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+            max-width: 900px;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            box-shadow: 0 0 40px rgba(0,0,0,0.6);
+        }
+        .video-wrapper video {
+            width: 100%;
+            display: block;
+        }
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent 70%, var(--bg-color));
+            pointer-events: none;
+        }
+
         .labs-banner {
-            background: var(--labs-bg); border: 1px solid var(--gold);
-            border-radius: 15px; padding: 30px; margin-bottom: 50px;
-            display: flex; align-items: center; gap: 25px;
-            backdrop-filter: blur(10px); transition: 0.3s;
-            text-decoration: none; color: inherit;
+            background: var(--labs-bg);
+            border: 1px solid var(--gold);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 50px;
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            backdrop-filter: blur(10px);
+            transition: 0.3s;
+            text-decoration: none;
+            color: inherit;
         }
         .labs-banner:hover { transform: scale(1.01); background: rgba(212, 175, 55, 0.1); }
         .labs-banner img { width: 100px; filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.3)); }
@@ -59,20 +102,23 @@
         .section-header span { color: #888; font-size: 0.8em; text-transform: uppercase; margin-left: 10px; }
 
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; }
-        
-        .product-card { 
-            background: var(--card-bg); border: 1px solid #30363d; 
-            padding: 25px; border-radius: 12px; transition: 0.3s; 
-            backdrop-filter: blur(5px); display: flex; flex-direction: column;
-            position: relative; overflow: hidden;
+
+        .product-card {
+            background: var(--card-bg);
+            border: 1px solid #30363d;
+            padding: 25px;
+            border-radius: 12px;
+            transition: 0.3s;
+            backdrop-filter: blur(5px);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
         }
         .product-card:hover { transform: translateY(-5px); }
-
         .ea-badge { position: absolute; top: 12px; right: 12px; color: white; padding: 4px 12px; border-radius: 5px; font-size: 0.7em; font-weight: bold; z-index: 2; }
-        
         .ea-logo-box { text-align: center; margin-bottom: 20px; padding: 10px; border-radius: 10px; background: rgba(0,0,0,0.2); }
         .ea-logo-box img { width: 100%; max-width: 160px; border-radius: 8px; transition: 0.3s; }
-        .product-card:hover .ea-logo-box img { transform: scale(1.05); }
 
         .cta-group { display: flex; gap: 10px; margin-top: auto; padding-top: 20px; }
         .btn { text-decoration: none; padding: 10px 15px; border-radius: 20px; font-weight: bold; font-size: 0.85em; transition: 0.3s; text-align: center; flex: 1; }
@@ -80,6 +126,8 @@
         .btn-secondary { background: #30363d; color: white; border: 1px solid #c9d1d9; }
 
         footer { text-align: center; padding: 40px; color: #555; font-size: 0.8em; border-top: 1px solid #1a1d23; }
+
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -99,13 +147,21 @@
             <p style="margin: 5px 0 0; font-size: 0.9em; color: var(--text-main);">Eksplorasi Divisi Forensik Intelligence & AI Research Falcon Ecosystem.</p>
         </div>
     </a>
-           
+
+    <div class="video-showcase">
+        <div class="video-wrapper">
+            <video autoplay loop muted playsinline>
+                <source src="ea-falcon-edition.mp4" type="video/mp4">
+            </video>
+            <div class="video-overlay"></div>
+        </div>
+    </div>
+
     <div class="section">
         <div class="section-header">
             <h2>Expert Advisors (EA)</h2><span>High-Performance Automations</span>
         </div>
         <div class="grid">
-            
             <div class="product-card" style="border-color: var(--ravager-red);">
                 <div class="ea-badge" style="background: var(--ravager-red);">HOT ITEM</div>
                 <div class="ea-logo-box">
@@ -144,7 +200,6 @@
                     <a href="https://t.me/falcon_trader666" class="btn btn-secondary">Konsultasi</a>
                 </div>
             </div>
-
         </div>
     </div>
 
@@ -175,9 +230,7 @@
             <span style="color: red; animation: blink 1s infinite;">●</span> LIVE TRADING PERFORMANCE
         </h2>
         <p style="color: var(--text-main); font-size: 0.95em; max-width: 750px; margin: 0 auto 25px; line-height: 1.6; font-style: italic; opacity: 0.8;">
-            "Visualisasi di bawah adalah bukti nyata eksekusi manual yang dipandu sepenuhnya oleh sinyal presisi 
-            <strong>Reconquista v1.5</strong> dan konfirmasi struktur <strong>ZigTrend v5.4</strong>. 
-            Setiap pips yang diraih mencerminkan sinergi antara disiplin trader dan akurasi indikator Falcon Ecosystem."
+            "Visualisasi di bawah adalah bukti nyata eksekusi manual yang dipandu sepenuhnya oleh sinyal presisi <strong>Reconquista v1.5</strong> dan konfirmasi struktur <strong>ZigTrend v5.4</strong>. Setiap pips yang diraih mencerminkan sinergi antara disiplin trader dan akurasi indikator Falcon Ecosystem."
         </p>
         <div style="overflow-x: auto;">
             <a href="https://www.myfxbook.com/members/falcon25/scalpinghfm/12034587">
@@ -188,10 +241,7 @@
             Verified by <a href="https://www.myfxbook.com" style="color: var(--accent); text-decoration: none;">Myfxbook.com</a>
         </p>
     </div>
-        
-    <style>
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
-    </style>
+
 </div>
 
 <footer>
