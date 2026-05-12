@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Falcon ZigTrend v5.4 - Market Structure Decoder</title>
+    <title>Falcon ZigTrend v5.4 - Market Structure Navigator</title>
     <style>
         :root {
-            --bg-color: #070503; /* Hitam kecokelatan sangat gelap */
+            --bg-color: #070503;
             --card-bg: rgba(20, 15, 10, 0.85);
             --zig-amber: #f39c12; /* Atomic Amber khas ZigTrend */
             --gold: #d4af37;
@@ -17,20 +17,18 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
             color: var(--text-main);
             line-height: 1.6;
             background-color: var(--bg-color);
             overflow-x: hidden;
         }
 
-        /* 🖼️ BACKGROUND ELEGAN: NAVIGATOR GRID + WATERMARK LOGO */
+        /* 🖼️ BACKGROUND ELEGAN */
         body::before {
             content: "";
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            /* Efek Grid Kuning Redup */
             background-image: 
                 linear-gradient(rgba(243, 156, 18, 0.03) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(243, 156, 18, 0.03) 1px, transparent 1px);
@@ -48,7 +46,7 @@
             background-repeat: no-repeat;
             background-position: center;
             transform: translate(-50%, -50%);
-            opacity: 0.04; /* Sangat tipis biar elegan */
+            opacity: 0.04;
             filter: grayscale(1) brightness(2);
             z-index: -3;
         }
@@ -61,16 +59,15 @@
             z-index: 1;
         }
 
-        /* 🟠 HEADER WITH LOGO ON THE RIGHT */
         .header-spec {
             display: flex;
             align-items: center;
-            justify-content: space-between; /* Dorong logo ke kanan */
+            justify-content: space-between;
             gap: 20px;
-            border-right: 5px solid var(--zig-amber); /* Garis aksen di kanan */
+            border-right: 5px solid var(--zig-amber);
             padding-right: 30px;
             margin-bottom: 50px;
-            text-align: right; /* Tulisan rata kanan biar sinkron sama logo */
+            text-align: right;
         }
         
         .header-text h1 {
@@ -91,7 +88,7 @@
         }
 
         .header-logo {
-            width: 120px; /* Ukuran pas untuk pendamping teks */
+            width: 120px;
             height: 120px;
             border-radius: 20px;
             border: 2px solid var(--zig-amber);
@@ -99,7 +96,7 @@
             object-fit: cover;
         }
 
-        .rog-box, .flex-box, .cta-box, .stat-panel {
+        .rog-box, .flex-box, .cta-box {
             background: var(--card-bg);
             border: 1px solid rgba(243, 156, 18, 0.1);
             padding: 30px;
@@ -111,6 +108,18 @@
 
         .rog-box { border-top: 1px solid var(--zig-amber); }
 
+        /* 📸 STYLE UNTUK SCREENSHOT */
+        .ss-container { margin: 25px 0; text-align: center; }
+        .ss-img {
+            width: 100%;
+            max-width: 900px;
+            border-radius: 10px;
+            border: 1px solid rgba(243, 156, 18, 0.3);
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            transition: 0.3s;
+        }
+        .ss-img:hover { transform: scale(1.01); border-color: var(--zig-amber); }
+
         .btn-back {
             display: inline-block;
             margin-bottom: 30px;
@@ -121,7 +130,7 @@
         }
         .btn-back:hover { color: var(--zig-amber); transform: translateX(-5px); }
 
-        .analysis-list { list-style: none; padding: 0; margin-top: 20px; }
+        .analysis-list { list-style: none; padding: 0; margin-top: 20px; text-align: left; }
         .analysis-list li { margin-bottom: 15px; padding-left: 35px; position: relative; }
         .analysis-list li::before { 
             content: "➔"; 
@@ -163,26 +172,42 @@
     <header class="header-spec">
         <div class="header-text">
             <h1>FALCON ZIGTREND v5.4</h1>
-            <p>"The Ultimate Market Structure Decoder"</p>
+            <p>"The Ultimate Market Structure Navigator"</p>
         </div>
         <img src="zigtrend-logo-2.jpg" alt="ZigTrend Navigator Logo" class="header-logo">
     </header>
 
     <section class="rog-box">
         <h2>🗺️ The Map Maker Protocol</h2>
-        <p>Market seringkali terlihat seperti benang kusut yang acak. <strong>ZigTrend v5.4</strong> hadir untuk mengurai kerumitan tersebut dengan memetakan struktur <em>High & Low</em> secara mekanis, menghilangkan bias emosional dalam analisis tren Anda.</p>
+        <p>Market seringkali terlihat seperti benang kusut yang acak. <strong>ZigTrend v5.4</strong> hadir untuk mengurai kerumitan tersebut dengan memetakan struktur <em>Swing High & Low</em> secara mekanis, menghilangkan bias emosional dalam analisis tren Anda.</p>
     </section>
 
     <section class="flex-box">
-        <h2 style="color: var(--zig-amber);">🧭 Navigator Dashboard</h2>
-        <p>Didesain untuk trader yang membutuhkan konfirmasi objektif sebelum melakukan eksekusi.</p>
+        <h2 style="color: var(--zig-amber);">🧭 Visualisasi Struktur Swing</h2>
+        <p>Halaman ini menampilkan bagaimana algoritma <strong>ZigTrend</strong> memetakan letak ayunan *swing* (HL, HH, LL, LH) secara akurat.</p>
+        
+        <div class="ss-container">
+            <img src="Screenshot2_ZigTrend.png" alt="ZigTrend Swing Mapping Visual" class="ss-img">
+        </div>
+
+        <p style="margin-top: 20px; font-style: italic;">"ZigTrend mengidentifikasi *puncak* dan *lembah* ayunan harga secara objektif, memberikan dasar yang kuat untuk memahami tren saat ini."</p>
+    </section>
+
+    <section class="flex-box" style="border-top: 1px solid rgba(243, 156, 18, 0.1);">
+        <h2 style="color: var(--zig-amber);">⏱️ Timing Entry Presisi</h2>
+        <p>Kunci dari ZigTrend adalah konsep **Single-valid Entry** untuk setiap ayunan swing.</p>
+        
+        <div class="ss-container">
+            <img src="Screenshot_ZigTrend.png" alt="ZigTrend Timing Entry Visual" class="ss-img">
+        </div>
+
         <ul class="analysis-list">
-            <li><strong>Auto-Detection BOS/CHoCH:</strong> Mengidentifikasi perpindahan karakter market secara instan.</li>
-            <li><strong>Swing Mapping:</strong> Menarik garis <em>High/Low</em> yang valid berdasarkan algoritma volume dan volatilitas.</li>
-            <li><strong>Atomic Alert System:</strong> Memberikan notifikasi saat struktur krusial berhasil ditembus.</li>
+            <li><strong>Entry Pertama & Valid:</strong> Ketika swing baru terbentuk (misal: HL ke HH, atau LH ke LL), entry pertama yang muncul setelahnya adalah satu-satunya entry tunggal yang valid untuk ayunan tersebut.</li>
+            <li><strong>Akurasi & Potensi Optimal:</strong> Sinyal entry ini memiliki potensi akurasi yang sangat tinggi dan disarankan untuk entry segera setelah candle tersebut close.</li>
+            <li><strong>Optimalisasi Beberapa TF:</strong> Anda dapat menyesuaikan sinyal di beberapa *timeframe* untuk mendapatkan hasil yang optimal dan mengurangi noise.</li>
         </ul>
-        <p style="background: rgba(243, 156, 18, 0.05); padding: 15px; border-radius: 10px; border: 1px solid rgba(243, 156, 18, 0.2); font-style: italic; text-align: center;">
-            "Mengetahui ke mana arah peta adalah setengah dari kemenangan trading."
+        <p style="background: rgba(243, 156, 18, 0.05); padding: 15px; border-radius: 10px; border: 1px solid rgba(243, 156, 18, 0.2); font-style: italic; text-align: center; margin-top: 20px;">
+            "Single Entry valid memberikan kedisiplinan dan mengurangi trade yang tidak perlu."
         </p>
     </section>
 
