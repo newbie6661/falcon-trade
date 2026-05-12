@@ -69,6 +69,8 @@
             background: var(--card-bg); border: 1px solid #30363d; 
             padding: 25px; border-radius: 12px; transition: 0.3s; 
             backdrop-filter: blur(5px);
+            position: relative;
+            overflow: hidden;
         }
         .product-card:hover { transform: translateY(-5px); border-color: var(--accent); }
         .product-card h3 { color: var(--gold); margin-top: 0; }
@@ -78,6 +80,9 @@
         .btn-primary { background: var(--accent); color: #000; }
         .btn-primary:hover { box-shadow: 0 0 15px var(--accent); }
         .btn-secondary { background: #30363d; color: white; border: 1px solid #c9d1d9; }
+
+        /* Style khusus Vultura */
+        .vultura-badge { position: absolute; top: 10px; right: 10px; background: #8e44ad; color: white; padding: 3px 12px; border-radius: 5px; font-size: 0.7em; font-weight: bold; z-index: 2; }
 
         footer { text-align: center; padding: 40px; color: #555; font-size: 0.8em; border-top: 1px solid #1a1d23; }
 
@@ -117,16 +122,20 @@
                     <a href="https://t.me/falcon_trader666" class="btn btn-secondary">Konsultasi</a>
                 </div>
             </div>
-            <div class="card" style="border: 1px solid #8e44ad; background: rgba(142, 68, 173, 0.05);">
-                <div class="card-status" style="background: #8e44ad; color: #fff;">NEW RELEASE</div>
-                <img src="ravager-logo.png" alt="Falcon Vultura" style="filter: hue-rotate(270deg);"> 
-                <h3>Falcon Vultura v6.0</h3>
+
+            <div class="product-card" style="border-color: #8e44ad;">
+                <div class="vultura-badge">NEW RELEASE</div>
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <img src="Vultura-logo.jpg" alt="Falcon Vultura" style="width: 100%; max-width: 180px; border-radius: 8px; box-shadow: 0 0 15px rgba(142, 68, 173, 0.3);">
+                </div>
+                <h3 style="color: #bb8fce;">Falcon Vultura v6.0</h3>
                 <p>The Hunter Spirit. Strategi Dynamic Trail & Flash Lock untuk memaksimalkan profit run.</p>
-                <div class="card-links">
-                    <a href="vultura.html" class="btn">Lihat Detail</a>
-                    <a href="https://t.me/falcon_trader666" class="btn btn-outline">Konsultasi</a>
+                <div class="cta-group">
+                    <a href="vultura.html" class="btn btn-primary" style="background: #8e44ad; color: white;">Lihat Detail</a>
+                    <a href="https://t.me/falcon_trader666" class="btn btn-secondary">Konsultasi</a>
                 </div>
             </div>
+
             <div class="product-card">
                 <h3>Falcon Arnaid v17</h3>
                 <p>The Guardian Spirit. Pertahanan berlapis dengan drawdown yang sangat terukur.</p>
@@ -159,28 +168,29 @@
             </div>
         </div>
     </div>
-<div style="text-align: center; margin: 40px 0; padding: 20px; background: rgba(255, 255, 255, 0.03); border-radius: 15px; border: 1px dashed var(--accent);">
-            <h2 style="color: var(--gold); font-family: sans-serif; letter-spacing: 2px; margin-bottom: 20px;">
-                <span style="color: red; animation: blink 1s infinite;">●</span> LIVE TRADING PERFORMANCE
-            </h2>
-            <p style="color: var(--text-main); font-size: 0.95em; max-width: 750px; margin: 0 auto 25px; line-height: 1.6; font-style: italic; opacity: 0.8;">
-                "Visualisasi di bawah adalah bukti nyata eksekusi manual yang dipandu sepenuhnya oleh sinyal presisi 
-                <strong>Reconquista v1.5</strong> dan konfirmasi struktur <strong>ZigTrend v5.4</strong>. 
-                Setiap pips yang diraih mencerminkan sinergi antara disiplin trader dan akurasi indikator Falcon Ecosystem."
-            </p>
-            <div style="overflow-x: auto;">
-                <a href="https://www.myfxbook.com/members/falcon25/scalpinghfm/12034587">
-                    <img alt="widget" src="https://widget.myfxbook.com/widget/widget.png?accountOid=12034587&type=6"/>
-                </a>
-            </div>
-            <p style="color: #888; font-size: 0.8em; margin-top: 15px;">
-                Verified by <a href="https://www.myfxbook.com" style="color: var(--accent); text-decoration: none;">Myfxbook.com</a>
-            </p>
+
+    <div style="text-align: center; margin: 40px 0; padding: 20px; background: rgba(255, 255, 255, 0.03); border-radius: 15px; border: 1px dashed var(--accent);">
+        <h2 style="color: var(--gold); font-family: sans-serif; letter-spacing: 2px; margin-bottom: 20px;">
+            <span style="color: red; animation: blink 1s infinite;">●</span> LIVE TRADING PERFORMANCE
+        </h2>
+        <p style="color: var(--text-main); font-size: 0.95em; max-width: 750px; margin: 0 auto 25px; line-height: 1.6; font-style: italic; opacity: 0.8;">
+            "Visualisasi di bawah adalah bukti nyata eksekusi manual yang dipandu sepenuhnya oleh sinyal presisi 
+            <strong>Reconquista v1.5</strong> dan konfirmasi struktur <strong>ZigTrend v5.4</strong>. 
+            Setiap pips yang diraih mencerminkan sinergi antara disiplin trader dan akurasi indikator Falcon Ecosystem."
+        </p>
+        <div style="overflow-x: auto;">
+            <a href="https://www.myfxbook.com/members/falcon25/scalpinghfm/12034587">
+                <img alt="widget" src="https://widget.myfxbook.com/widget/widget.png?accountOid=12034587&type=6"/>
+            </a>
         </div>
+        <p style="color: #888; font-size: 0.8em; margin-top: 15px;">
+            Verified by <a href="https://www.myfxbook.com" style="color: var(--accent); text-decoration: none;">Myfxbook.com</a>
+        </p>
+    </div>
         
-        <style>
-            @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
-        </style>
+    <style>
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+    </style>
 </div>
 
 <footer>
