@@ -149,17 +149,11 @@
     </a>
 
     <div class="video-showcase">
-    <script>
-        window.onload = function() {
-            var v = document.getElementById('falconVideo');
-            v.play().catch(function(error) {
-                console.log("Auto-play was prevented, trying again...");
-                // Kalau gagal autoplay karena browser, kita coba play lagi
-                v.muted = true;
-                v.play();
-            });
-        };
-    </script>
+        <div class="video-wrapper" style="background: #000; border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 20px; overflow: hidden; box-shadow: 0 0 30px rgba(212, 175, 55, 0.1); padding: 15px; max-width: 800px; margin: auto;">
+            <img src="ea-falcon-edition.gif" alt="Falcon EA Showcase" style="width: 100%; display: block; transform: scale(0.95); transform-origin: center; transition: 0.3s;">
+            <div class="video-overlay" style="bottom: 15px; left: 15px; right: 15px;"></div>
+        </div>
+    </div>
 
     <div class="section">
         <div class="section-header">
