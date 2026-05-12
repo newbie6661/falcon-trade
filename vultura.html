@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLASSIFIED: FALCON VULTURA v6.0 - THE SPIRIT</title>
+    <style>
+        :root {
+            --neon-purple: #8e44ad;
+            --spirit-glow: rgba(142, 68, 173, 0.6);
+            --bg-dark: #0a050f;
+            --text-main: #d7bde2;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+
+        /* HEADER SECTION */
+        .header-box {
+            border: 1px solid var(--neon-purple);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 0 15px var(--spirit-glow);
+            margin-bottom: 30px;
+            background: rgba(20, 10, 30, 0.8);
+        }
+
+        .status-badge {
+            color: #2ecc71;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink { 0% {opacity: 1;} 50% {opacity: 0.3;} 100% {opacity: 1;} }
+
+        h1 {
+            color: #fff;
+            text-shadow: 0 0 10px var(--neon-purple);
+            margin: 10px 0;
+        }
+
+        /* CLASSIFIED LOGS */
+        .blackbox-log {
+            border: 2px solid var(--neon-purple);
+            background: rgba(30, 15, 50, 0.4);
+            padding: 25px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .blackbox-log h2 {
+            color: #bb8fce;
+            border-bottom: 1px solid var(--neon-purple);
+            padding-bottom: 10px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        ul li {
+            margin-bottom: 12px;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        ul li::before {
+            content: '▶';
+            position: absolute;
+            left: 0;
+            color: var(--neon-purple);
+        }
+
+        /* TECH SPECS */
+        .tech-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .tech-card {
+            background: rgba(142, 68, 173, 0.1);
+            border-left: 3px solid var(--neon-purple);
+            padding: 15px;
+            font-size: 0.9em;
+        }
+
+        /* FOOTER QUOTE */
+        .quote-box {
+            margin-top: 40px;
+            padding: 20px;
+            border-top: 1px dashed #444;
+            text-align: center;
+            font-style: italic;
+            color: #9b59b6;
+        }
+
+        .btn-contact {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 30px;
+            border: 1px solid var(--neon-purple);
+            color: #fff;
+            text-decoration: none;
+            transition: 0.3s;
+            background: transparent;
+        }
+
+        .btn-contact:hover {
+            background: var(--neon-purple);
+            box-shadow: 0 0 20px var(--neon-purple);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header-box">
+            <div class="status-badge">● PREDATOR DETECTED</div>
+            <h1>FALCON VULTURA v6.0</h1>
+            <p><i>"The Ghost in the Market: Unseen, Calculated, Lethal."</i></p>
+        </div>
+
+        <div class="blackbox-log">
+            <h2>[ DECRYPTED VULTURA SPIRIT ]</h2>
+            <ul>
+                <li><b>Vulture Radar GxG:</b> Engine pencari momentum presisi tinggi. [OK]</li>
+                <li><b>Flash Lock Protocol:</b> Kunci profit di 1R secara instan saat target tercapai. [OK]</li>
+                <li><b>Dynamic Trail TP:</b> Melepaskan limit profit, mengikuti arus market terjauh. [OK]</li>
+                <li><b>Basket Trailing:</b> Jaring pengaman otomatis untuk multi-posisi. [OK]</li>
+                <li><b>Arnaid Labs Integration:</b> Data Blackbox siap diolah AI Labs. [OK]</li>
+            </ul>
+
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <strong>STEALTH EXECUTION</strong><br>
+                    Trailing hanya naik, tidak pernah turun. Proteksi modal level maksimal.
+                </div>
+                <div class="tech-card">
+                    <strong>BLACKBOX LOGGING</strong><br>
+                    Setiap pergerakan SL, Flash Lock, dan TP dicatat dalam format CSV.
+                </div>
+            </div>
+        </div>
+
+        <div class="quote-box">
+            "If you don't find a way to make money while you sleep, you will work until you die."<br>
+            <br>
+            <a href="https://t.me/falcon_trader666" class="btn-contact">CONTACT COMMAND CENTER</a>
+        </div>
+
+        <footer style="margin-top: 50px; font-size: 0.7em; color: #444; text-align: center;">
+            © 2026 Falcon Ecosystem | Vultura Division | Developed by Genz Diego
+        </footer>
+    </div>
+
+</body>
+</html>
