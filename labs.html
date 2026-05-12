@@ -4,156 +4,268 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Arnaid Labs - Forensic Intelligence Division</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
     <style>
         :root {
-            --bg-color: #030508;
-            --accent: #d4af37; /* Labs Gold */
-            --text-main: #e0e0e0;
-            --text-dim: #666;
+            --bg-color: #0d1117; /* Slate Dark */
+            --card-bg: rgba(22, 27, 34, 0.95);
+            --lab-white: #f0f6fc; /* Digital White */
+            --text-main: #8b949e;
+            --border-color: #30363d;
+            --glow-white: rgba(255, 255, 255, 0.2);
         }
 
-        body { 
-            font-family: 'Inter', sans-serif; 
-            margin: 0; padding: 0; 
-            background-color: var(--bg-color); 
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0; padding: 0;
+            background-color: var(--bg-color);
             color: var(--text-main);
             overflow-x: hidden;
         }
 
-        /* 🔬 AMBIENCE BACKGROUND */
+        /* 🔬 BACKGROUND SCIENTIFIC GRID */
         body::before {
             content: "";
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at center, #1a1a1a 0%, #030508 100%);
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 50px 50px;
             z-index: -1;
         }
 
-        .container { 
-            max-width: 1100px; 
-            margin: auto; 
-            padding: 80px 20px; 
-            text-align: center;
-        }
-
-        .labs-hero { margin-bottom: 50px; }
-
-        /* 📦 THE BOX ART */
-        .box-art {
-            width: 100%;
-            max-width: 500px;
-            margin: 0 auto 40px;
-            filter: drop-shadow(0 0 30px rgba(212, 175, 55, 0.15));
-            transition: 0.5s ease;
-            cursor: crosshair;
-        }
-        .box-art:hover {
-            transform: scale(1.02) translateY(-10px);
-            filter: drop-shadow(0 0 50px rgba(212, 175, 55, 0.3));
-        }
-
-        h1 { 
-            font-size: 3.5rem; 
-            letter-spacing: 10px; 
-            color: var(--accent); 
-            margin: 0; 
-            text-transform: uppercase;
+        /* 🚧 DEVELOPMENT RIBBON */
+        .dev-ribbon {
+            position: fixed;
+            top: 40px;
+            right: -50px;
+            background: var(--lab-white);
+            color: #000;
+            padding: 10px 60px;
+            transform: rotate(45deg);
             font-weight: 900;
-        }
-
-        .tagline { 
-            font-size: 1.2rem; 
-            letter-spacing: 3px; 
-            color: var(--text-dim); 
-            margin-bottom: 50px;
+            font-size: 0.75rem;
+            letter-spacing: 3px;
+            z-index: 9999;
+            box-shadow: 0 0 20px rgba(255,255,255,0.4);
+            border: 1px solid #000;
             text-transform: uppercase;
         }
 
-        .content-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 40px;
-            text-align: left;
+        .container { max-width: 1100px; margin: auto; padding: 60px 20px; }
+
+        .btn-back { 
+            color: var(--lab-white); 
+            text-decoration: none; 
+            font-size: 0.85em; 
+            opacity: 0.5; 
+            transition: 0.3s;
+            display: inline-block;
+            margin-bottom: 40px;
+            letter-spacing: 1px;
+        }
+        .btn-back:hover { opacity: 1; transform: translateX(-5px); }
+
+        /* 🦅 HEADER SECTION */
+        header { text-align: center; margin-bottom: 80px; }
+        
+        .lab-logo {
+            width: 150px;
+            height: auto;
+            border-radius: 50%;
+            border: 2px solid var(--lab-white);
+            margin-bottom: 30px;
+            filter: grayscale(1) brightness(1.5) drop-shadow(0 0 30px rgba(255,255,255,0.25));
+            transition: 0.5s;
+        }
+
+        header h1 { 
+            color: var(--lab-white); 
+            font-size: 3.5rem; 
+            letter-spacing: 12px; 
+            margin: 10px 0;
+            font-weight: 900;
+            text-shadow: 0 0 25px rgba(255,255,255,0.15);
+        }
+
+        .tagline {
+            font-style: italic;
+            letter-spacing: 4px;
+            font-size: 1.1rem;
+            color: var(--lab-white);
+            opacity: 0.7;
+            margin-bottom: 30px;
+        }
+
+        .status-banner {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px dashed var(--lab-white);
+            padding: 12px 30px;
+            border-radius: 4px;
+            color: var(--lab-white);
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            animation: pulseFade 2s infinite;
+        }
+
+        /* 📊 LAB GRID & LOCKED CARDS */
+        .lab-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
+            gap: 30px; 
             margin-top: 60px;
         }
 
-        .card {
-            border: 1px solid #1a1a1a;
-            padding: 30px;
-            border-radius: 4px;
-            background: rgba(255,255,255,0.02);
-            transition: 0.3s;
+        .lab-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 40px;
+            border-radius: 2px;
+            position: relative;
+            transition: 0.4s;
+            overflow: hidden;
         }
-        .card:hover { border-color: var(--accent); background: rgba(212, 175, 55, 0.03); }
-        .card h3 { color: var(--accent); margin-top: 0; letter-spacing: 2px; }
-        .card p { font-size: 0.9rem; color: #aaa; line-height: 1.8; }
 
-        .status-badge {
-            display: inline-block;
-            padding: 5px 20px;
-            border: 1px solid var(--accent);
-            color: var(--accent);
-            font-size: 0.8rem;
+        .locked-card {
+            filter: blur(5px) grayscale(1);
+            opacity: 0.5;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        .lock-overlay {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            background: #000;
+            color: var(--lab-white);
+            padding: 8px 18px;
+            font-size: 0.7rem;
             font-weight: bold;
-            margin-bottom: 20px;
             letter-spacing: 2px;
+            border: 1px solid var(--lab-white);
+            white-space: nowrap;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
         }
 
-        .btn-back {
-            display: block;
+        .card-tag {
+            position: absolute; top: 0; left: 0;
+            background: var(--lab-white);
+            color: #000;
+            font-size: 0.65rem;
+            font-weight: bold;
+            padding: 6px 15px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .lab-card h3 { color: var(--lab-white); margin-top: 20px; font-size: 1.4rem; letter-spacing: 1px; }
+        
+        .data-visual {
+            width: 100%; height: 160px;
+            background: #000;
+            border: 1px solid #1f242b;
+            margin: 25px 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem; letter-spacing: 4px;
+            color: #222;
+            font-weight: bold;
+        }
+
+        /* 💡 PHILOSOPHY SECTION */
+        .philosophy {
             margin-top: 100px;
-            color: var(--text-dim);
-            text-decoration: none;
-            font-size: 0.8rem;
-            letter-spacing: 2px;
-            transition: 0.3s;
+            padding: 60px;
+            border: 1px solid var(--border-color);
+            background: rgba(255,255,255,0.01);
+            position: relative;
         }
-        .btn-back:hover { color: var(--accent); }
+        .philosophy h2 { color: var(--lab-white); letter-spacing: 5px; margin-bottom: 30px; text-transform: uppercase; }
+        .philosophy p { max-width: 850px; margin: auto; line-height: 2; font-size: 1.1rem; text-align: justify; }
 
-        footer { padding: 80px 0 40px; font-size: 0.7rem; color: #333; letter-spacing: 2px; }
+        footer { text-align: center; padding: 80px 40px; font-size: 0.7rem; opacity: 0.3; border-top: 1px solid var(--border-color); margin-top: 80px; letter-spacing: 2px; }
+
+        @keyframes pulseFade {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
 
         @media (max-width: 768px) {
-            h1 { font-size: 2rem; letter-spacing: 5px; }
+            header h1 { font-size: 2.2rem; letter-spacing: 6px; }
+            .dev-ribbon { display: none; }
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="status-badge">PROJECT UNDER DEVELOPMENT</div>
-    
-    <div class="labs-hero">
-        <img src="https://raw.githubusercontent.com/newbie6661/falcon-trade/main/arnaid-logo-2.png.png" alt="Arnaid Labs Forensic Intelligence" class="box-art">
-        <h1>ARNAID LABS</h1>
-        <p class="tagline">The Forensic Intelligence Division</p>
-    </div>
+    <div class="dev-ribbon">IN DEVELOPMENT</div>
 
-    <div class="box" style="max-width: 700px; margin: auto; padding: 0 20px;">
-        <p style="font-size: 1.1rem; line-height: 2; color: #ccc;">
-            Arnaid Labs bukan sekadar fitur. Ini adalah fasilitas riset digital di mana setiap algoritma, eksekusi, dan anomali market dibedah secara forensik untuk menciptakan presisi mutlak.
-        </p>
-    </div>
+    <div class="container">
+        <a href="index.html" class="btn-back">◄ RETURN TO COMMAND CENTER</a>
+        
+        <header>
+            <img src="arnaid-labs-logo.jpg" alt="Arnaid Labs Quantitative Core" class="lab-logo">
+            <h1>ARNAID LABS</h1>
+            <p class="tagline">"Data Doesn't Lie, It's Audited Here."</p>
+            
+            <div class="status-banner">
+                <i class="fa-solid fa-flask-vial"></i> &nbsp; CURRENT PHASE: <strong>01 - QUANTITATIVE ARCHITECTURE</strong>
+            </div>
+        </header>
 
-    <div class="content-grid">
-        <div class="card">
-            <h3>FORENSIC EVALUATION</h3>
-            <p>Menganalisa setiap <i>trace</i> dari Blackbox eksekusi untuk mendeteksi inefisiensi yang tidak terlihat oleh mata manusia.</p>
+        <div class="lab-grid">
+            <div style="position: relative;">
+                <div class="lock-overlay">🔒 CLASSIFIED / UNDER DEV</div>
+                <div class="lab-card locked-card">
+                    <span class="card-tag">AUDIT: ENCRYPTED</span>
+                    <h3>Ravager v5.4 Forensic</h3>
+                    <p>Stress-test algoritma pada volatilitas ekstrem XAUUSD selama News High Impact 10 tahun terakhir.</p>
+                    <div class="data-visual">ACCESS_DENIED_BY_PROTOCOL</div>
+                </div>
+            </div>
+
+            <div style="position: relative;">
+                <div class="lock-overlay">🔒 CLASSIFIED / UNDER DEV</div>
+                <div class="lab-card locked-card">
+                    <span class="card-tag">AUDIT: ENCRYPTED</span>
+                    <h3>Vultura v6.0 Metrics</h3>
+                    <p>Audit efisiensi Dynamic Trailing dalam memaksimalisasi profit retention pada pergerakan trend masif.</p>
+                    <div class="data-visual">ACCESS_DENIED_BY_PROTOCOL</div>
+                </div>
+            </div>
+
+            <div style="position: relative;">
+                <div class="lock-overlay">🔒 CLASSIFIED / UNDER DEV</div>
+                <div class="lab-card locked-card">
+                    <span class="card-tag">AUDIT: ENCRYPTED</span>
+                    <h3>ZigTrend v5.4 Logic</h3>
+                    <p>Verifikasi matematis pemetaan Swing Structure dan validasi Single-Entry tunggal tanpa bias.</p>
+                    <div class="data-visual">ACCESS_DENIED_BY_PROTOCOL</div>
+                </div>
+            </div>
         </div>
-        <div class="card">
-            <h3>AI INCUBATION</h3>
-            <p>Tempat di mana algoritma Ravager dan Arnaid dilatih ulang dengan data market terbaru untuk menjaga dominasi.</p>
-        </div>
-        <div class="card">
-            <h3>STRESS-TEST UNIT</h3>
-            <p>Menguji setiap protokol pertahanan dalam kondisi volatilitas ekstrem sebelum dideploy ke akun real Anda.</p>
-        </div>
+
+        <section class="philosophy">
+            <div style="position: absolute; top: 10px; left: 10px; opacity: 0.1; font-size: 3rem;"><i class="fa-solid fa-quote-left"></i></div>
+            <h2>The Science of Survival</h2>
+            <p>
+                Arnaid Labs bukan sekadar pusat pamer profit. Ini adalah fasilitas riset digital di mana setiap baris kodingan, setiap variabel eksekusi, dan setiap anomali market dibedah secara forensik. Kami percaya bahwa di balik angka-angka profit, terdapat struktur risiko yang harus dipahami. Di sini, kami tidak mencari "Holy Grail", melainkan presisi mutlak dalam manajemen risiko. Proyek ini sedang dalam tahap pengembangan intensif untuk menciptakan transparansi trading otomatis yang sesungguhnya.
+            </p>
+        </section>
+
+        <footer>
+            PROTOCOL: ARNAID_LABS_2026 | CLASSIFIED RESEARCH | DO NOT DISTRIBUTE
+        </footer>
     </div>
-
-    <a href="index.html" class="btn-back">← RETURN TO MAIN HUB</a>
-
-    <footer>
-        ARNAID LABS BY GENZ DIEGO // EST 2026 // CLASSIFIED INFORMATION
-    </footer>
-</div>
 
 </body>
 </html>
