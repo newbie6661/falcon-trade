@@ -4,254 +4,217 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Falcon Trading Ecosystem - Official Store</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root {
-            --bg-color: #0b0e14;
-            --card-bg: rgba(22, 27, 34, 0.85);
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --accent-color: #58a6ff;
             --text-main: #c9d1d9;
-            --text-title: #ffffff;
-            --accent: #2ecc71;
-            --gold: #d4af37;
-            --labs-bg: rgba(212, 175, 55, 0.05);
+            --text-dim: #8b949e;
+            --border-color: #30363d;
+            --success: #238636;
             --ravager-red: #e74c3c;
-            --vultura-purple: #8e44ad;
-            --arnaid-blue: #00d2ff;
+            --vultura-gold: #f1c40f;
+            --arnaid-cyan: #00f2ff;
             --recon-green: #2ecc71;
-            --zig-amber: #f39c12; /* Warna Khas ZigTrend */
+            --zig-amber: #f39c12;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
-            position: relative;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
         }
 
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url('falcon-logo.jpg');
-            background-size: contain;
-            background-position: center;
-            background-repeat: no-repeat;
-            opacity: 0.08;
-            z-index: -1;
+        .container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
+
+        header { text-align: center; margin-bottom: 50px; }
+        .main-logo { width: 150px; margin-bottom: 20px; filter: drop-shadow(0 0 15px rgba(88, 166, 255, 0.3)); }
+        h1 { font-size: 2.8rem; margin: 0; color: #fff; letter-spacing: -1px; }
+
+        /* ⚠️ REALITY CHECK BOX */
+        .disclaimer-box {
+            max-width: 900px;
+            margin: 0 auto 40px;
+            padding: 25px;
+            background: rgba(231, 76, 60, 0.05);
+            border: 1px solid rgba(231, 76, 60, 0.2);
+            border-radius: 8px;
+            text-align: center;
         }
 
-        header { text-align: center; padding: 60px 20px; }
-        header img { width: 120px; border-radius: 50%; box-shadow: 0 0 20px rgba(46, 204, 113, 0.3); }
-        header h1 { color: var(--gold); font-size: 2.8em; margin-top: 15px; letter-spacing: 2px; }
-
-        .container { max-width: 1100px; margin: auto; padding: 0 20px 60px; }
-
+        /* ⚪ ARNAID LABS BANNER */
         .labs-banner {
-            background: var(--labs-bg);
-            border: 1px solid var(--gold);
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 50px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px dashed #f0f6fc;
+            border-radius: 8px;
             display: flex;
             align-items: center;
-            gap: 25px;
-            backdrop-filter: blur(10px);
-            transition: 0.3s;
+            padding: 15px 25px;
             text-decoration: none;
-            color: inherit;
+            margin-bottom: 50px;
+            transition: 0.4s;
         }
-        .labs-banner:hover { transform: scale(1.01); background: rgba(212, 175, 55, 0.1); }
-        .labs-banner img { width: 100px; filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.3)); }
-        .labs-banner h2 { color: var(--gold); margin: 0; font-size: 1.5em; }
-        .labs-badge { background: var(--gold); color: #000; padding: 2px 10px; border-radius: 4px; font-size: 0.6em; vertical-align: middle; }
+        .labs-banner:hover { background: rgba(255, 255, 255, 0.06); transform: translateY(-3px); }
 
-        .section { margin-bottom: 50px; }
-        .section-header { border-bottom: 2px solid #30363d; padding-bottom: 15px; margin-bottom: 30px; }
-        .section-header h2 { color: var(--text-title); font-size: 1.8em; margin: 0; display: inline-block; }
-        .section-header span { color: #888; font-size: 0.8em; text-transform: uppercase; margin-left: 10px; }
+        .section-title {
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin: 60px 0 30px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 1.2rem;
+            color: #fff;
+        }
 
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; }
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+        }
 
         .product-card {
             background: var(--card-bg);
-            border: 1px solid #30363d;
-            padding: 25px;
+            border: 1px solid var(--border-color);
             border-radius: 12px;
-            transition: 0.3s;
-            backdrop-filter: blur(5px);
-            display: flex;
-            flex-direction: column;
+            padding: 30px;
             position: relative;
+            transition: 0.3s;
             overflow: hidden;
         }
-        .product-card:hover { transform: translateY(-5px); }
-        .ea-badge { position: absolute; top: 12px; right: 12px; color: white; padding: 4px 12px; border-radius: 5px; font-size: 0.7em; font-weight: bold; z-index: 2; }
-        .ea-logo-box { text-align: center; margin-bottom: 20px; padding: 10px; border-radius: 10px; background: rgba(0,0,0,0.2); }
-        .ea-logo-box img { width: 100%; max-width: 160px; border-radius: 8px; transition: 0.3s; }
+        .product-card:hover { transform: translateY(-5px); border-color: var(--accent-color); }
 
-        .cta-group { display: flex; gap: 10px; margin-top: auto; padding-top: 20px; }
-        .btn { text-decoration: none; padding: 10px 15px; border-radius: 20px; font-weight: bold; font-size: 0.85em; transition: 0.3s; text-align: center; flex: 1; }
-        .btn-primary { background: var(--accent); color: #000; }
-        .btn-secondary { background: #30363d; color: white; border: 1px solid #c9d1d9; }
+        .ea-badge {
+            position: absolute; top: 0; right: 0;
+            padding: 5px 15px; font-size: 0.7rem; font-weight: bold; border-bottom-left-radius: 12px;
+        }
 
-        footer { text-align: center; padding: 40px; color: #555; font-size: 0.8em; border-top: 1px solid #1a1d23; }
+        .ea-logo-box { text-align: center; margin-bottom: 20px; }
+        .ea-logo-box img { width: 100px; height: 100px; border-radius: 15px; }
 
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        h3 { margin: 10px 0; font-size: 1.5rem; }
+        p { color: var(--text-dim); font-size: 0.95rem; }
+
+        .cta-group { margin-top: 25px; display: flex; gap: 10px; }
+        .btn {
+            flex: 1; padding: 12px; text-align: center; text-decoration: none;
+            border-radius: 6px; font-weight: bold; font-size: 0.9rem; transition: 0.2s;
+        }
+        .btn-primary { background: var(--accent-color); color: #0d1117; }
+        .btn-secondary { border: 1px solid var(--border-color); color: #fff; }
+        .btn:hover { opacity: 0.8; }
+
+        /* BLINK ANIMATION FOR MONITORING */
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        footer {
+            text-align: center; padding: 60px 20px; color: var(--text-dim);
+            border-top: 1px solid var(--border-color); margin-top: 80px;
+        }
     </style>
 </head>
 <body>
 
-<header>
-    <img src="falcon-logo.jpg" alt="Falcon Trading Logo">
-    <h1>FALCON TRADING</h1>
-    <p><em>Premium Trading Intelligence Tools</em></p>
-</header>
-
 <div class="container">
-    
-  <a href="labs.html" class="labs-banner" style="
-    background: rgba(255, 255, 255, 0.03); 
-    border: 1px dashed #f0f6fc; 
-    border-radius: 8px; 
-    display: flex; 
-    align-items: center; 
-    padding: 15px 25px; 
-    text-decoration: none; 
-    margin-bottom: 30px; 
-    transition: 0.4s;
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);">
-    
-    <img src="arnaid-labs-logo-2.jpg" alt="Arnaid Labs" style="
-        width: 120px; /* Ukuran lebar proporsional kotak */
-        height: auto; 
-        border: 1px solid rgba(240, 246, 252, 0.3); 
-        margin-right: 25px; 
-        filter: grayscale(0.5) brightness(1.1); /* Sedikit warna biar gak mati banget */
-        border-radius: 4px; /* Sudut halus dikit biar gak tajam bgt */">
-      
-    <div style="max-width: 900px; margin: 0 auto 40px; padding: 25px; background: rgba(231, 76, 60, 0.05); border: 1px solid rgba(231, 76, 60, 0.2); border-radius: 8px; text-align: center;">
-        <h3 style="color: #e74c3c; margin-top: 0; letter-spacing: 2px; font-size: 0.9rem;">
-            <i class="fa-solid fa-triangle-exclamation"></i> TRADING REALITY CHECK
+    <header>
+        <img src="falcon-logo.jpg" alt="Falcon Trade Logo" class="main-logo">
+        <h1>FALCON TRADING</h1>
+        <p style="color: var(--text-dim); font-style: italic; letter-spacing: 2px;">Premium Trading Intelligence Tools</p>
+    </header>
+
+    <div class="disclaimer-box">
+        <h3 style="color: #e74c3c; margin-top: 0; letter-spacing: 2px; font-size: 0.9rem; text-transform: uppercase;">
+            <i class="fa-solid fa-triangle-exclamation"></i> Trading Reality Check
         </h3>
         <p style="color: #d1d5db; font-size: 0.95rem; line-height: 1.6; margin: 10px 0 0; font-style: italic;">
             "Trading bukan jalan pintas jadi sultan dalam semalam. Alat yang kami sediakan adalah instrumen presisi, bukan mesin cetak uang untuk orang tamak. Jika Anda mencari kekayaan instan tanpa manajemen risiko dan tidak bersyukur dengan profit kecil yang konsisten, silakan tinggalkan halaman ini. <strong>Ketamakan Anda adalah musuh terbesar, bukan market.</strong>"
         </p>
     </div>
-    
-    <div>
-        <h2 style="color: #f0f6fc; margin: 0; letter-spacing: 2px; font-size: 1.3rem; font-weight: 800;">
-            ARNAID LABS <span style="
-                background: #f0f6fc; 
-                color: #000; 
-                font-size: 0.6rem; 
-                padding: 2px 8px; 
-                border-radius: 2px; 
-                vertical-align: middle; 
-                margin-left: 10px; 
-                font-weight: 900;">IN DEVELOPMENT</span>
-        </h2>
-        <p style="margin: 5px 0 0; font-size: 0.85em; color: #8b949e; font-style: italic;">
-            "Data Doesn't Lie, It's Audited Here." — Divisi Riset Forensik & AI Falcon.
-        </p>
-    </div>
-</a>
 
-    <div class="section">
-        <div class="section-header">
-            <h2>Expert Advisors (EA)</h2><span>High-Performance Automations</span>
+    <a href="labs.html" class="labs-banner">
+        <img src="arnaid-labs-logo-2.jpg" alt="Arnaid Labs" style="width: 120px; height: auto; border: 1px solid rgba(240, 246, 252, 0.3); margin-right: 25px; filter: grayscale(0.5) brightness(1.1); border-radius: 4px;">
+        <div>
+            <h2 style="color: #f0f6fc; margin: 0; letter-spacing: 2px; font-size: 1.3rem; font-weight: 800;">
+                ARNAID LABS <span style="background: #f0f6fc; color: #000; font-size: 0.6rem; padding: 2px 8px; border-radius: 2px; vertical-align: middle; margin-left: 10px; font-weight: 900;">IN DEVELOPMENT</span>
+            </h2>
+            <p style="margin: 5px 0 0; font-size: 0.85em; color: #8b949e; font-style: italic;">
+                "Data Doesn't Lie, It's Audited Here." — Divisi Riset Forensik & AI Falcon.
+            </p>
         </div>
-        <div class="grid">
-            <div class="product-card" style="border-color: var(--ravager-red);">
-                <div class="ea-badge" style="background: var(--ravager-red);">HOT ITEM</div>
-                <div class="ea-logo-box">
-                    <img src="Ravager-logo-new.jpg" alt="Falcon Ravager" style="box-shadow: 0 0 15px rgba(231, 76, 60, 0.3);">
-                </div>
-                <h3 style="color: var(--ravager-red);">Falcon Ravager v5.4</h3>
-                <p>The Silent Predator. Algoritma adaptif murni tanpa intervensi manual untuk agresivitas maksimal.</p>
-                <div class="cta-group">
-                    <a href="ravager.html" class="btn btn-primary" style="background: var(--ravager-red); color: white;">Lihat Detail</a>
-                    <a href="https://t.me/falcon_trader666" class="btn btn-secondary">Konsultasi</a>
-                </div>
-            </div>
+    </a>
 
-            <div class="product-card" style="border-color: var(--vultura-purple);">
-                <div class="ea-badge" style="background: var(--vultura-purple);">NEW RELEASE</div>
-                <div class="ea-logo-box">
-                    <img src="Vultura-logo.jpg" alt="Falcon Vultura" style="box-shadow: 0 0 15px rgba(142, 68, 173, 0.3);">
-                </div>
-                <h3 style="color: #bb8fce;">Falcon Vultura v6.0</h3>
-                <p>The Hunter Spirit. Strategi Dynamic Trail & Flash Lock untuk memaksimalkan profit run.</p>
-                <div class="cta-group">
-                    <a href="vultura.html" class="btn btn-primary" style="background: var(--vultura-purple); color: white;">Lihat Detail</a>
-                    <a href="https://t.me/falcon_trader666" class="btn btn-secondary">Konsultasi</a>
-                </div>
+    <h2 class="section-title">Expert Advisors (EA) <span style="font-size: 0.7rem; background: var(--ravager-red); padding: 2px 8px; border-radius: 10px; margin-left: 10px; vertical-align: middle;">HOT ITEM</span></h2>
+    <div class="product-grid">
+        <div class="product-card" style="border-color: var(--ravager-red);">
+            <div class="ea-badge" style="background: var(--ravager-red); color: #fff;">NEW RELEASE</div>
+            <div class="ea-logo-box"><img src="ravager-logo.png" alt="Falcon Ravager"></div>
+            <h3 style="color: var(--ravager-red);">Falcon Ravager v5.4</h3>
+            <p>The Silent Predator. Algoritma adaptif murni tanpa intervensi manual untuk agresivitas maksimal.</p>
+            <div class="cta-group">
+                <a href="ravager.html" class="btn btn-primary" style="background: var(--ravager-red); color: #fff;">Lihat Detail</a>
+                <a href="https://t.me/falcon_trader666" class="btn btn-secondary">Konsultasi</a>
             </div>
+        </div>
 
-            <div class="product-card" style="border-color: var(--arnaid-blue);">
-                <div class="ea-badge" style="background: var(--arnaid-blue);">STABLE</div>
-                <div class="ea-logo-box">
-                    <img src="arnaid-logo-2.png.png" alt="Falcon Arnaid" style="box-shadow: 0 0 15px rgba(0, 210, 255, 0.3);">
-                </div>
-                <h3 style="color: var(--arnaid-blue);">Falcon Arnaid v17</h3>
-                <p>The Guardian Spirit. Pertahanan berlapis dengan drawdown yang sangat terukur dan aman.</p>
-                <div class="cta-group">
-                    <a href="arnaid.html" class="btn btn-primary" style="background: var(--arnaid-blue); color: #000;">Lihat Detail</a>
-                    <a href="https://t.me/falcon_trader666" class="btn btn-secondary">Konsultasi</a>
-                </div>
+        <div class="product-card" style="border-color: var(--vultura-gold);">
+            <div class="ea-badge" style="background: var(--vultura-gold); color: #000;">STABLE</div>
+            <div class="ea-logo-box"><img src="Vultura-logo.jpg" alt="Falcon Vultura"></div>
+            <h3 style="color: var(--vultura-gold);">Falcon Vultura v6.0</h3>
+            <p>The Hunter Spirit. Strategi Dynamic Trail & Flash Lock untuk memaksimalkan profit run.</p>
+            <div class="cta-group">
+                <a href="vultura.html" class="btn btn-primary" style="background: var(--vultura-gold); color: #000;">Lihat Detail</a>
+                <a href="https://t.me/falcon_trader666" class="btn btn-secondary">Konsultasi</a>
+            </div>
+        </div>
+
+        <div class="product-card" style="border-color: var(--arnaid-cyan);">
+            <div class="ea-badge" style="background: var(--arnaid-cyan); color: #000;">SECURE</div>
+            <div class="ea-logo-box"><img src="arnaid-logo.png" alt="Falcon Arnaid"></div>
+            <h3 style="color: var(--arnaid-cyan);">Falcon Arnaid v17</h3>
+            <p>The Guardian Spirit. Pertahanan berlapis dengan drawdown yang sangat terukur dan aman.</p>
+            <div class="cta-group">
+                <a href="arnaid.html" class="btn btn-primary" style="background: var(--arnaid-cyan); color: #000;">Lihat Detail</a>
+                <a href="https://t.me/falcon_trader666" class="btn btn-secondary">Konsultasi</a>
             </div>
         </div>
     </div>
 
-    <div class="section">
-        <div class="section-header">
-            <h2>TradingView Indicators</h2><span>Manual Precision Tools</span>
-        </div>
-        <div class="grid">
-            <div class="product-card" style="border-color: var(--recon-green);">
-                <div class="ea-badge" style="background: var(--recon-green); color: #000;">RADAR MODE</div>
-                <div class="ea-logo-box">
-                    <img src="Reconquista-logo.jpg" alt="Reconquista Indicator" style="box-shadow: 0 0 15px rgba(46, 204, 113, 0.4);">
-                </div>
-                <h3 style="color: var(--recon-green);">Reconquista v1.5</h3>
-                <p>Intelligence radar khusus Gold & Bitcoin dengan akurasi momentum ultra presisi.</p>
-                <div class="cta-group">
-                    <a href="reconquista.html" class="btn btn-primary" style="background: var(--recon-green); color: #000;">Lihat Detail</a>
-                </div>
+    <h2 class="section-title">TradingView Indicators <span style="font-size: 0.7rem; background: var(--recon-green); padding: 2px 8px; border-radius: 10px; margin-left: 10px; vertical-align: middle;">MANUAL PRECISION</span></h2>
+    <div class="product-grid">
+        <div class="product-card" style="border-color: var(--recon-green);">
+            <div class="ea-badge" style="background: var(--recon-green); color: #000;">RADAR MODE</div>
+            <div class="ea-logo-box"><img src="Reconquista-logo.jpg" alt="Reconquista Indicator"></div>
+            <h3 style="color: var(--recon-green);">Reconquista v1.5</h3>
+            <p>Intelligence radar khusus Gold & Bitcoin dengan akurasi momentum ultra presisi.</p>
+            <div class="cta-group">
+                <a href="reconquista.html" class="btn btn-primary" style="background: var(--recon-green); color: #000;">Lihat Detail</a>
             </div>
+        </div>
 
-            <div class="product-card" style="border-color: var(--zig-amber);">
-                <div class="ea-badge" style="background: var(--zig-amber); color: #000;">STRUCTURE MODE</div>
-                <div class="ea-logo-box">
-                    <img src="zigtrend-logo.jpg" alt="ZigTrend Indicator" style="box-shadow: 0 0 15px rgba(243, 156, 18, 0.4);">
-                </div>
-                <h3 style="color: var(--zig-amber);">ZigTrend v5.4</h3>
-                <p>Market Structure Decoder. Membaca pergerakan swing harga secara objektif, akurat, dan tanpa bias.</p>
-                <div class="cta-group">
-                    <a href="zigtrend.html" class="btn btn-primary" style="background: var(--zig-amber); color: #000;">Lihat Detail</a>
-                </div>
+        <div class="product-card" style="border-color: var(--zig-amber);">
+            <div class="ea-badge" style="background: var(--zig-amber); color: #000;">STRUCTURE MODE</div>
+            <div class="ea-logo-box"><img src="zigtrend-logo.jpg" alt="ZigTrend Indicator"></div>
+            <h3 style="color: var(--zig-amber);">ZigTrend v5.4</h3>
+            <p>Market Structure Decoder. Membaca pergerakan swing harga secara objektif, akurat, dan tanpa bias.</p>
+            <div class="cta-group">
+                <a href="zigtrend.html" class="btn btn-primary" style="background: var(--zig-amber); color: #000;">Lihat Detail</a>
             </div>
         </div>
     </div>
 
-    <div style="text-align: center; margin: 40px 0; padding: 40px 20px; background: rgba(255, 255, 255, 0.02); border-radius: 15px; border: 1px dashed rgba(255, 255, 255, 0.1);">
-        <h2 style="color: #f0f6fc; font-family: sans-serif; letter-spacing: 2px; margin-bottom: 20px;">
+    <div style="text-align: center; margin: 80px 0 40px; padding: 40px 20px; background: rgba(255, 255, 255, 0.02); border-radius: 15px; border: 1px dashed rgba(255, 255, 255, 0.1);">
+        <h2 style="color: #f0f6fc; letter-spacing: 2px; margin-bottom: 20px;">
             <span style="color: #f39c12; animation: blink 1.5s infinite;">●</span> LIVE PERFORMANCE MONITORING
         </h2>
-        
         <div style="padding: 30px; border: 1px solid rgba(255,255,255,0.05); display: inline-block; border-radius: 10px; background: rgba(0,0,0,0.2);">
             <i class="fa-solid fa-arrows-rotate fa-spin" style="font-size: 2rem; color: #8b949e; margin-bottom: 15px;"></i>
-            <p style="color: #8b949e; font-size: 1rem; letter-spacing: 1px; margin: 0;">
-                <strong>SYSTEM RECALIBRATING</strong>
-            </p>
-            <p style="color: #555; font-size: 0.8rem; margin-top: 5px;">
-                Updating forensic data connection to Arnaid Labs...
-            </p>
+            <p style="color: #8b949e; font-size: 1rem; letter-spacing: 1px; margin: 0;"><strong>SYSTEM RECALIBRATING</strong></p>
+            <p style="color: #555; font-size: 0.8rem; margin-top: 5px;">Updating forensic data connection to Arnaid Labs...</p>
         </div>
-    
         <p style="color: #8b949e; font-size: 0.9em; max-width: 700px; margin: 25px auto 0; line-height: 1.6; font-style: italic; opacity: 0.6;">
             "Koneksi widget saat ini sedang diputus untuk integrasi akun audit terbaru. Data transparansi akan segera dipulihkan setelah proses validasi selesai."
         </p>
