@@ -203,6 +203,28 @@
             header h1 { font-size: 2.2rem; letter-spacing: 6px; }
             .dev-ribbon { display: none; }
         }
+
+        /* 🛠 BUTTON LABS STYLE */
+        .btn-enter-lab {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: var(--lab-white);
+            color: #000;
+            text-decoration: none;
+            text-align: center;
+            font-weight: 900;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            margin-top: 20px;
+            transition: 0.3s;
+            border: 1px solid var(--lab-white);
+        }
+        .btn-enter-lab:hover {
+            background: transparent;
+            color: var(--lab-white);
+            box-shadow: 0 0 15px var(--glow-white);
+        }
     </style>
 </head>
 <body>
@@ -224,12 +246,12 @@
 
         <div class="lab-grid">
             <div style="position: relative;">
-                <div class="lock-overlay">🔒 CLASSIFIED / UNDER DEV</div>
-                <div class="lab-card locked-card">
-                    <span class="card-tag">AUDIT: ENCRYPTED</span>
-                    <h3>Ravager v5.4 Forensic</h3>
+                <div class="lab-card">
+                    <span class="card-tag" style="background: #e74c3c; color: white;">AUDIT: LIVE</span>
+                    <h3>Ravager Labs V2</h3>
                     <p>Stress-test algoritma pada volatilitas ekstrem XAUUSD selama News High Impact 10 tahun terakhir.</p>
-                    <div class="data-visual">ACCESS_DENIED_BY_PROTOCOL</div>
+                    <div class="data-visual" style="color: #444;">DATA_STREAM_ACTIVE</div>
+                    <a href="RavagerLabs_v2.html" class="btn-enter-lab">ENTER FORENSIC LAB</a>
                 </div>
             </div>
 
