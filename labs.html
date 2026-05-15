@@ -199,6 +199,19 @@
             50% { opacity: 1; }
         }
 
+        @keyframes blinkStream {
+            0% { opacity: 1; text-shadow: 0 0 8px #00ff41; }
+            50% { opacity: 0.3; text-shadow: none; }
+            100% { opacity: 1; text-shadow: 0 0 8px #00ff41; }
+        }
+
+        .stream-active {
+            color: #00ff41 !important;
+            animation: blinkStream 2s infinite;
+            letter-spacing: 5px;
+            font-family: monospace;
+        }
+
         @media (max-width: 768px) {
             header h1 { font-size: 2.2rem; letter-spacing: 6px; }
             .dev-ribbon { display: none; }
@@ -249,8 +262,8 @@
                 <div class="lab-card">
                     <span class="card-tag" style="background: #e74c3c; color: white;">AUDIT: LIVE</span>
                     <h3>Ravager Labs V2</h3>
-                    <p>Evaluasi performa algoritma berdasarkan High-Fidelity Log Data selama siklus volatilitas krusial. Analisis mencakup konsistensi logika eksekusi dan ketahanan modal pada periode operasional intensif di instrumen XAUUSD.</p>
-                    <div class="data-visual" style="color: #444;">DATA_STREAM_ACTIVE</div>
+                    <p>Evaluasi performa algoritma berdasarkan High-Fidelity Log Data selama siklus volatilitas krusial. Analisis mencakup konsistensi logika eksekusi pada periode operasional intensif.</p>
+                    <div class="data-visual"><span class="stream-active">● DATA_STREAM_ACTIVE</span></div>
                     <a href="RavagerLabs_v2.html" class="btn-enter-lab">ENTER FORENSIC LAB</a>
                 </div>
             </div>
@@ -269,8 +282,8 @@
                 <div class="lock-overlay">🔒 CLASSIFIED / UNDER DEV</div>
                 <div class="lab-card locked-card">
                     <span class="card-tag">AUDIT: ENCRYPTED</span>
-                    <h3>ZigTrend v5.4 Logic</h3>
-                    <p>Verifikasi matematis pemetaan Swing Structure dan validasi Single-Entry tunggal tanpa bias.</p>
+                    <h3>Arnaid v17 Forensic</h3>
+                    <p>Verifikasi matematis pertahanan berlapis dan audit drawdown terukur pada fase market agresif.</p>
                     <div class="data-visual">ACCESS_DENIED_BY_PROTOCOL</div>
                 </div>
             </div>
