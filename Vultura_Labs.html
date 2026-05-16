@@ -4,7 +4,145 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Arnaid Labs — Vultura Forensic</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js">
+// ===== NARRATIVE ENGINE (Vultura) =====
+function narrateVultura(){
+  const entries = ALL.filter(r=>g(r,C.Event)==='ENTRY');
+  return entries.map((entry, idx) => {
+    const ticket  = g(entry,C.Ticket);
+    const dir     = g(entry,C.Dir);
+    const ep      = gf(entry,C.Entry);
+    const slOrig  = gf(entry,C.SL_A);
+    const tpOrig  = gf(entry,C.TP);
+    const openTime= g(entry,C.Time);
+    const entryNote = g(entry,C.Note);
+
+    // Collect events for this ticket
+    const ticketEvts = ALL.filter(r=>g(r,C.Ticket)===ticket&&g(r,C.Event)!=='ENTRY');
+    // Also basket/close_all with ticket=0
+    const basketEvts = ALL.filter(r=>['BASKET_TRAIL','CLOSE_ALL'].includes(g(r,C.Event))&&(g(r,C.Ticket)===ticket||g(r,C.Ticket)==='0'));
+
+    const flashEvts = ALL.filter(r=>g(r,C.Event)==='FLASH_LOCK'&&g(r,C.Ticket)===ticket);
+    const trailEvts = ALL.filter(r=>g(r,C.Event)==='TRAIL_SL'&&g(r,C.Ticket)===ticket);
+    const tpEvt     = ALL.find(r=>g(r,C.Event)==='CLOSE_TP'&&g(r,C.Ticket)===ticket);
+    const slEvt     = ALL.find(r=>g(r,C.Event)==='CLOSE_SL'&&g(r,C.Ticket)===ticket);
+    const closeEvt  = tpEvt||slEvt||basketEvts[0];
+
+    // RR actual
+    const slDist = dir==='BUY'?ep-slOrig:slOrig-ep;
+    const tpDist = dir==='BUY'?tpOrig-ep:ep-tpOrig;
+    const rrActual = slDist>0?tpDist/slDist:0;
+
+    // Max R seen
+    const maxR = Math.max(0,...[...flashEvts,...trailEvts].map(r=>gf(r,C.ProfitR)));
+
+    // Final PnL
+    const finalPnl = closeEvt?gf(closeEvt,C.FloatUSD):0;
+    const finalTrailSL = trailEvts.length?gf(trailEvts[trailEvts.length-1],C.SL_A):0;
+
+    // Outcome
+    let outcome='partial', outcomeLabel='MASIH OPEN';
+    if(tpEvt){ outcome='win'; outcomeLabel=`WIN +$${finalPnl.toFixed(2)}`; }
+    else if(slEvt){ outcome='loss'; outcomeLabel=`LOSS -$${Math.abs(finalPnl).toFixed(2)}`; }
+    else if(closeEvt){ outcome=finalPnl>=0?'win':'loss'; outcomeLabel=finalPnl>=0?`WIN +$${finalPnl.toFixed(2)}`:`LOSS $${finalPnl.toFixed(2)}`; }
+
+    const steps = [];
+
+    // Entry context
+    const lotsMatch = entryNote.match(/Lots=([\d.]+)/);
+    const slPts = entryNote.match(/SL=(\d+)/);
+    const tpPts = entryNote.match(/TP=(\d+)/);
+    steps.push({color:'#3b82f6', text:`<strong>Entry ${dir}</strong> dibuka jam <span class="hl-price">${openTime.substring(11,19)}</span> di <span class="hl-price">${ep.toFixed(5)}</span>. ${lotsMatch?`Lot: <strong>${lotsMatch[1]}</strong>.`:''} SL dipasang di <span class="hl-loss">${slOrig.toFixed(5)}</span> (${slPts?slPts[1]+' pts':'—'}), TP di <span class="hl-profit">${tpOrig.toFixed(5)}</span> (${tpPts?tpPts[1]+' pts':'—'}). RR efektif: <strong>${rrActual.toFixed(1)}:1</strong>.`});
+
+    // Flash Lock
+    if(flashEvts.length>0){
+      const fl = flashEvts[0];
+      const flR = gf(fl,C.ProfitR);
+      const slNew = gf(fl,C.SL_A);
+      steps.push({color:'#eab308', text:`<span class="hl-flash">⚡ Flash Lock aktif</span> jam <span class="hl-price">${g(fl,C.Time).substring(11,19)}</span> saat profit sudah <strong>${flR.toFixed(1)}R</strong> (harga: ${gf(fl,C.Current).toFixed(5)}). SL otomatis dikunci di <span class="hl-flash">${slNew.toFixed(5)}</span> — <strong>posisi ini tidak bisa balik merugi lagi</strong> sejak saat ini.`});
+    } else {
+      steps.push({color:'#333d52', text:`Flash Lock tidak aktif di trade ini — kemungkinan profit tidak mencapai trigger threshold, atau EA di-stop lebih awal.`});
+    }
+
+    // Trail SL
+    if(trailEvts.length>0){
+      const firstTrail = trailEvts[0];
+      const lastTrail  = trailEvts[trailEvts.length-1];
+      const slFirst = gf(firstTrail,C.SL_A);
+      const slLast  = gf(lastTrail,C.SL_A);
+      const totalMove = Math.abs(slLast-slFirst);
+      steps.push({color:'#8b5cf6', text:`<span class="hl-trail">🎯 Trail SL aktif ${trailEvts.length}x</span> — SL bergerak mengikuti harga dari <span class="hl-price">${slFirst.toFixed(5)}</span> sampai <span class="hl-price">${slLast.toFixed(5)}</span> (total gerak: <strong>${totalMove.toFixed(5)}</strong>). TP sudah di-clear setelah trail aktif — posisi akan ditutup oleh SL trail, bukan TP paksa. Profit tertinggi tercatat: <span class="hl-profit">${maxR.toFixed(1)}R</span>.`});
+    }
+
+    // Close
+    if(tpEvt){
+      steps.push({color:'#10b981', text:`<span class="hl-profit">✅ CLOSE TP</span> jam ${g(tpEvt,C.Time).substring(11,19)} — posisi ditutup dengan profit <span class="hl-profit">+$${finalPnl.toFixed(2)}</span>.`});
+    } else if(slEvt){
+      const slNote = g(slEvt,C.Note);
+      if(trailEvts.length>0){
+        steps.push({color:'#10b981', text:`<span class="hl-profit">✅ CLOSE via Trail SL</span> jam ${g(slEvt,C.Time).substring(11,19)} — SL trail kena, posisi ditutup dengan hasil <span class="hl-profit">$${finalPnl.toFixed(2)}</span>. Ini adalah close yang direncanakan oleh sistem trail.`});
+      } else {
+        steps.push({color:'#ef4444', text:`<span class="hl-loss">❌ CLOSE SL</span> jam ${g(slEvt,C.Time).substring(11,19)} — harga menyentuh stop loss. Kerugian: <span class="hl-loss">$${finalPnl.toFixed(2)}</span>. ${flashEvts.length===0?'Flash Lock tidak sempat aktif — harga langsung reversal sebelum profit mencapai trigger.':''}`});
+      }
+    } else if(basketEvts[0]){
+      const bEvt = basketEvts[0];
+      const bNote = g(bEvt,C.Note);
+      const bPnl = gf(bEvt,C.FloatUSD);
+      steps.push({color:'#14b8a6', text:`<span class="hl-profit">🧺 BASKET TRAIL</span> jam ${g(bEvt,C.Time).substring(11,19)} — safety net trigger. ${bNote}. Semua posisi ditutup dengan total float: <span class="${bPnl>=0?'hl-profit':'hl-loss'}">$${bPnl.toFixed(2)}</span>.`});
+    } else {
+      steps.push({color:'#333d52', text:`Trade masih <strong>OPEN</strong> atau log berakhir sebelum close terekam.`});
+    }
+
+    // Duration
+    const duration = (() => {
+      if(!closeEvt) return '—';
+      try {
+        const t1 = new Date(openTime.replace(' ','T'));
+        const t2 = new Date(g(closeEvt,C.Time).replace(' ','T'));
+        const diff = Math.round((t2-t1)/60000);
+        return diff<60?diff+'m':(Math.floor(diff/60)+'h'+(diff%60)+'m');
+      } catch(e){ return '—'; }
+    })();
+
+    return {num:idx+1, outcome, outcomeLabel, dir, ep, openTime, steps,
+      flashCount:flashEvts.length, trailCount:trailEvts.length,
+      maxR, finalPnl, duration, rrActual};
+  });
+}
+
+function renderNarrative(){
+  const narrs = narrateVultura();
+  if(narrs.length===0){
+    document.getElementById('narrativeList').innerHTML='<div style="text-align:center;padding:40px;color:var(--text3);font-family:var(--font)">Tidak ada trade ditemukan di log ini.</div>';
+    return;
+  }
+  document.getElementById('narrativeList').innerHTML = narrs.map(n => {
+    const stepsHtml = n.steps.map(s=>`
+      <div class="narr-step">
+        <div class="narr-step-dot" style="background:${s.color}"></div>
+        <div class="narr-step-text">${s.text}</div>
+      </div>`).join('');
+    return `<div class="narr-card ${n.outcome}">
+      <span class="narr-num">Trade #${n.num}</span>
+      <div class="narr-header">
+        <div class="narr-title">🦅 Trade #${n.num} — ${n.dir} @ ${n.ep.toFixed(5)}</div>
+        <span class="narr-outcome ${n.outcome}">${n.outcomeLabel}</span>
+      </div>
+      <div class="narr-body"><div class="narr-timeline">${stepsHtml}</div></div>
+      <div class="narr-meta">
+        <div class="narr-stat"><div class="narr-stat-label">Open</div><div class="narr-stat-val">${n.openTime.substring(11,19)}</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">Durasi</div><div class="narr-stat-val">${n.duration}</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">RR Actual</div><div class="narr-stat-val" style="color:${n.rrActual>=3?'var(--green)':n.rrActual>=1?'var(--amber)':'var(--red)'}">${n.rrActual.toFixed(1)}:1</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">Max R</div><div class="narr-stat-val" style="color:var(--amber)">${n.maxR.toFixed(1)}R</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">Flash</div><div class="narr-stat-val" style="color:${n.flashCount?'var(--gold)':'var(--text3)'}">${n.flashCount?n.flashCount+'x aktif':'—'}</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">Trail</div><div class="narr-stat-val" style="color:${n.trailCount?'var(--purple)':'var(--text3)'}">${n.trailCount?n.trailCount+'x':'—'}</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">P&L</div><div class="narr-stat-val" style="color:${n.finalPnl>=0?'var(--green)':'var(--red)'}">${n.finalPnl>=0?'+':''}$${n.finalPnl.toFixed(2)}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+</script>
 <style>
 :root{
   --bg:#07090f;--bg2:#0d1118;--bg3:#121820;--bg4:#181f2c;
@@ -138,6 +276,33 @@ tbody tr:hover td{background:rgba(255,255,255,0.015)}
 .spike-bar-bg{height:4px;border-radius:2px;background:rgba(255,255,255,0.05);overflow:hidden;margin:5px 0}
 .spike-bar-fill{height:100%;border-radius:2px}
 .spike-meta{display:flex;gap:12px;font-size:10px;color:var(--text3);font-family:var(--font);flex-wrap:wrap}
+
+/* NARRATIVE */
+.narr-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:14px;position:relative}
+.narr-card.win{border-left:3px solid var(--green)}
+.narr-card.loss{border-left:3px solid var(--red)}
+.narr-card.partial{border-left:3px solid var(--amber)}
+.narr-card.deinit{border-left:3px solid var(--purple)}
+.narr-num{position:absolute;top:14px;right:16px;font-size:11px;color:var(--text3);font-family:var(--font)}
+.narr-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.narr-title{font-size:13px;font-weight:600}
+.narr-outcome{font-size:11px;font-family:var(--font);padding:2px 9px;border-radius:20px}
+.narr-outcome.win{background:rgba(16,185,129,0.15);color:var(--green);border:1px solid rgba(16,185,129,0.25)}
+.narr-outcome.loss{background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.25)}
+.narr-outcome.partial{background:rgba(245,158,11,0.15);color:var(--amber);border:1px solid rgba(245,158,11,0.25)}
+.narr-outcome.deinit{background:rgba(139,92,246,0.15);color:var(--purple);border:1px solid rgba(139,92,246,0.25)}
+.narr-body{font-size:12px;color:var(--text2);line-height:1.85;font-family:var(--font)}
+.narr-body strong{color:var(--text)}
+.hl-price{color:#93c5fd}.hl-profit{color:var(--green)}.hl-loss{color:var(--red)}.hl-flash{color:#fde047}.hl-trail{color:#c4b5fd}.hl-warn{color:var(--orange)}
+.narr-meta{display:flex;gap:16px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);flex-wrap:wrap}
+.narr-stat{font-size:10px;font-family:var(--font)}
+.narr-stat-label{color:var(--text3);text-transform:uppercase;letter-spacing:0.4px}
+.narr-stat-val{color:var(--text);margin-top:1px;font-weight:600}
+.narr-timeline{margin-top:10px}
+.narr-step{display:flex;gap:10px;margin-bottom:8px;align-items:flex-start}
+.narr-step-dot{width:7px;height:7px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.narr-step-text{font-size:11px;color:var(--text2);font-family:var(--font);line-height:1.6}
+
 </style>
 </head>
 <body>
@@ -179,6 +344,7 @@ tbody tr:hover td{background:rgba(255,255,255,0.015)}
     <div class="tab" onclick="sw('slippage',this)">Slippage <span class="tbadge" id="slipBadge" style="display:none">!</span></div>
     <div class="tab" onclick="sw('spike',this)">Spike <span class="tbadge" id="spikeBadge" style="display:none">!</span></div>
     <div class="tab" onclick="sw('trades',this)">Trade P&amp;L</div>
+    <div class="tab" onclick="sw('narrative',this)">📖 Narrative</div>
     <div class="tab" onclick="sw('timeline',this)">Timeline</div>
     <div class="tab" onclick="sw('logs',this)">Event Log</div>
   </div>
@@ -253,6 +419,14 @@ tbody tr:hover td{background:rgba(255,255,255,0.015)}
       <thead><tr><th>#</th><th>Open Time</th><th>Close Time</th><th>Dir</th><th>Ticket</th><th>Entry</th><th>Close USD</th><th>Max Profit_R</th><th>Flash</th><th>Trail</th><th>Close Type</th></tr></thead>
       <tbody id="tradeTbody"></tbody>
     </table></div>
+  </div>
+
+  <!-- NARRATIVE -->
+  <div id="tab-narrative" class="tc">
+    <div style="margin-bottom:14px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text2);font-family:var(--font);line-height:1.7">
+      🦅 <strong style="color:var(--text)">Trade Narrative</strong> — Cerita otomatis per trade Vultura, 100% dari data log. Setiap trade: kondisi entry → Flash Lock → Trail SL → outcome akhir.
+    </div>
+    <div id="narrativeList"></div>
   </div>
 
   <!-- TIMELINE -->
@@ -395,6 +569,7 @@ function renderAll(){
   renderSpike();
   renderTrades();
   renderTimeline();
+  renderNarrative();
   renderLogs();
 }
 
@@ -918,6 +1093,144 @@ function loadDemo(){
   document.getElementById('statPill').textContent=ALL.length+' ROWS';
   renderAll();
 }
+
+// ===== NARRATIVE ENGINE (Vultura) =====
+function narrateVultura(){
+  const entries = ALL.filter(r=>g(r,C.Event)==='ENTRY');
+  return entries.map((entry, idx) => {
+    const ticket  = g(entry,C.Ticket);
+    const dir     = g(entry,C.Dir);
+    const ep      = gf(entry,C.Entry);
+    const slOrig  = gf(entry,C.SL_A);
+    const tpOrig  = gf(entry,C.TP);
+    const openTime= g(entry,C.Time);
+    const entryNote = g(entry,C.Note);
+
+    // Collect events for this ticket
+    const ticketEvts = ALL.filter(r=>g(r,C.Ticket)===ticket&&g(r,C.Event)!=='ENTRY');
+    // Also basket/close_all with ticket=0
+    const basketEvts = ALL.filter(r=>['BASKET_TRAIL','CLOSE_ALL'].includes(g(r,C.Event))&&(g(r,C.Ticket)===ticket||g(r,C.Ticket)==='0'));
+
+    const flashEvts = ALL.filter(r=>g(r,C.Event)==='FLASH_LOCK'&&g(r,C.Ticket)===ticket);
+    const trailEvts = ALL.filter(r=>g(r,C.Event)==='TRAIL_SL'&&g(r,C.Ticket)===ticket);
+    const tpEvt     = ALL.find(r=>g(r,C.Event)==='CLOSE_TP'&&g(r,C.Ticket)===ticket);
+    const slEvt     = ALL.find(r=>g(r,C.Event)==='CLOSE_SL'&&g(r,C.Ticket)===ticket);
+    const closeEvt  = tpEvt||slEvt||basketEvts[0];
+
+    // RR actual
+    const slDist = dir==='BUY'?ep-slOrig:slOrig-ep;
+    const tpDist = dir==='BUY'?tpOrig-ep:ep-tpOrig;
+    const rrActual = slDist>0?tpDist/slDist:0;
+
+    // Max R seen
+    const maxR = Math.max(0,...[...flashEvts,...trailEvts].map(r=>gf(r,C.ProfitR)));
+
+    // Final PnL
+    const finalPnl = closeEvt?gf(closeEvt,C.FloatUSD):0;
+    const finalTrailSL = trailEvts.length?gf(trailEvts[trailEvts.length-1],C.SL_A):0;
+
+    // Outcome
+    let outcome='partial', outcomeLabel='MASIH OPEN';
+    if(tpEvt){ outcome='win'; outcomeLabel=`WIN +$${finalPnl.toFixed(2)}`; }
+    else if(slEvt){ outcome='loss'; outcomeLabel=`LOSS -$${Math.abs(finalPnl).toFixed(2)}`; }
+    else if(closeEvt){ outcome=finalPnl>=0?'win':'loss'; outcomeLabel=finalPnl>=0?`WIN +$${finalPnl.toFixed(2)}`:`LOSS $${finalPnl.toFixed(2)}`; }
+
+    const steps = [];
+
+    // Entry context
+    const lotsMatch = entryNote.match(/Lots=([\d.]+)/);
+    const slPts = entryNote.match(/SL=(\d+)/);
+    const tpPts = entryNote.match(/TP=(\d+)/);
+    steps.push({color:'#3b82f6', text:`<strong>Entry ${dir}</strong> dibuka jam <span class="hl-price">${openTime.substring(11,19)}</span> di <span class="hl-price">${ep.toFixed(5)}</span>. ${lotsMatch?`Lot: <strong>${lotsMatch[1]}</strong>.`:''} SL dipasang di <span class="hl-loss">${slOrig.toFixed(5)}</span> (${slPts?slPts[1]+' pts':'—'}), TP di <span class="hl-profit">${tpOrig.toFixed(5)}</span> (${tpPts?tpPts[1]+' pts':'—'}). RR efektif: <strong>${rrActual.toFixed(1)}:1</strong>.`});
+
+    // Flash Lock
+    if(flashEvts.length>0){
+      const fl = flashEvts[0];
+      const flR = gf(fl,C.ProfitR);
+      const slNew = gf(fl,C.SL_A);
+      steps.push({color:'#eab308', text:`<span class="hl-flash">⚡ Flash Lock aktif</span> jam <span class="hl-price">${g(fl,C.Time).substring(11,19)}</span> saat profit sudah <strong>${flR.toFixed(1)}R</strong> (harga: ${gf(fl,C.Current).toFixed(5)}). SL otomatis dikunci di <span class="hl-flash">${slNew.toFixed(5)}</span> — <strong>posisi ini tidak bisa balik merugi lagi</strong> sejak saat ini.`});
+    } else {
+      steps.push({color:'#333d52', text:`Flash Lock tidak aktif di trade ini — kemungkinan profit tidak mencapai trigger threshold, atau EA di-stop lebih awal.`});
+    }
+
+    // Trail SL
+    if(trailEvts.length>0){
+      const firstTrail = trailEvts[0];
+      const lastTrail  = trailEvts[trailEvts.length-1];
+      const slFirst = gf(firstTrail,C.SL_A);
+      const slLast  = gf(lastTrail,C.SL_A);
+      const totalMove = Math.abs(slLast-slFirst);
+      steps.push({color:'#8b5cf6', text:`<span class="hl-trail">🎯 Trail SL aktif ${trailEvts.length}x</span> — SL bergerak mengikuti harga dari <span class="hl-price">${slFirst.toFixed(5)}</span> sampai <span class="hl-price">${slLast.toFixed(5)}</span> (total gerak: <strong>${totalMove.toFixed(5)}</strong>). TP sudah di-clear setelah trail aktif — posisi akan ditutup oleh SL trail, bukan TP paksa. Profit tertinggi tercatat: <span class="hl-profit">${maxR.toFixed(1)}R</span>.`});
+    }
+
+    // Close
+    if(tpEvt){
+      steps.push({color:'#10b981', text:`<span class="hl-profit">✅ CLOSE TP</span> jam ${g(tpEvt,C.Time).substring(11,19)} — posisi ditutup dengan profit <span class="hl-profit">+$${finalPnl.toFixed(2)}</span>.`});
+    } else if(slEvt){
+      const slNote = g(slEvt,C.Note);
+      if(trailEvts.length>0){
+        steps.push({color:'#10b981', text:`<span class="hl-profit">✅ CLOSE via Trail SL</span> jam ${g(slEvt,C.Time).substring(11,19)} — SL trail kena, posisi ditutup dengan hasil <span class="hl-profit">$${finalPnl.toFixed(2)}</span>. Ini adalah close yang direncanakan oleh sistem trail.`});
+      } else {
+        steps.push({color:'#ef4444', text:`<span class="hl-loss">❌ CLOSE SL</span> jam ${g(slEvt,C.Time).substring(11,19)} — harga menyentuh stop loss. Kerugian: <span class="hl-loss">$${finalPnl.toFixed(2)}</span>. ${flashEvts.length===0?'Flash Lock tidak sempat aktif — harga langsung reversal sebelum profit mencapai trigger.':''}`});
+      }
+    } else if(basketEvts[0]){
+      const bEvt = basketEvts[0];
+      const bNote = g(bEvt,C.Note);
+      const bPnl = gf(bEvt,C.FloatUSD);
+      steps.push({color:'#14b8a6', text:`<span class="hl-profit">🧺 BASKET TRAIL</span> jam ${g(bEvt,C.Time).substring(11,19)} — safety net trigger. ${bNote}. Semua posisi ditutup dengan total float: <span class="${bPnl>=0?'hl-profit':'hl-loss'}">$${bPnl.toFixed(2)}</span>.`});
+    } else {
+      steps.push({color:'#333d52', text:`Trade masih <strong>OPEN</strong> atau log berakhir sebelum close terekam.`});
+    }
+
+    // Duration
+    const duration = (() => {
+      if(!closeEvt) return '—';
+      try {
+        const t1 = new Date(openTime.replace(' ','T'));
+        const t2 = new Date(g(closeEvt,C.Time).replace(' ','T'));
+        const diff = Math.round((t2-t1)/60000);
+        return diff<60?diff+'m':(Math.floor(diff/60)+'h'+(diff%60)+'m');
+      } catch(e){ return '—'; }
+    })();
+
+    return {num:idx+1, outcome, outcomeLabel, dir, ep, openTime, steps,
+      flashCount:flashEvts.length, trailCount:trailEvts.length,
+      maxR, finalPnl, duration, rrActual};
+  });
+}
+
+function renderNarrative(){
+  const narrs = narrateVultura();
+  if(narrs.length===0){
+    document.getElementById('narrativeList').innerHTML='<div style="text-align:center;padding:40px;color:var(--text3);font-family:var(--font)">Tidak ada trade ditemukan di log ini.</div>';
+    return;
+  }
+  document.getElementById('narrativeList').innerHTML = narrs.map(n => {
+    const stepsHtml = n.steps.map(s=>`
+      <div class="narr-step">
+        <div class="narr-step-dot" style="background:${s.color}"></div>
+        <div class="narr-step-text">${s.text}</div>
+      </div>`).join('');
+    return `<div class="narr-card ${n.outcome}">
+      <span class="narr-num">Trade #${n.num}</span>
+      <div class="narr-header">
+        <div class="narr-title">🦅 Trade #${n.num} — ${n.dir} @ ${n.ep.toFixed(5)}</div>
+        <span class="narr-outcome ${n.outcome}">${n.outcomeLabel}</span>
+      </div>
+      <div class="narr-body"><div class="narr-timeline">${stepsHtml}</div></div>
+      <div class="narr-meta">
+        <div class="narr-stat"><div class="narr-stat-label">Open</div><div class="narr-stat-val">${n.openTime.substring(11,19)}</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">Durasi</div><div class="narr-stat-val">${n.duration}</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">RR Actual</div><div class="narr-stat-val" style="color:${n.rrActual>=3?'var(--green)':n.rrActual>=1?'var(--amber)':'var(--red)'}">${n.rrActual.toFixed(1)}:1</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">Max R</div><div class="narr-stat-val" style="color:var(--amber)">${n.maxR.toFixed(1)}R</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">Flash</div><div class="narr-stat-val" style="color:${n.flashCount?'var(--gold)':'var(--text3)'}">${n.flashCount?n.flashCount+'x aktif':'—'}</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">Trail</div><div class="narr-stat-val" style="color:${n.trailCount?'var(--purple)':'var(--text3)'}">${n.trailCount?n.trailCount+'x':'—'}</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">P&L</div><div class="narr-stat-val" style="color:${n.finalPnl>=0?'var(--green)':'var(--red)'}">${n.finalPnl>=0?'+':''}$${n.finalPnl.toFixed(2)}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 </script>
 </body>
 </html>
