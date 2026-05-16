@@ -3,8 +3,171 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ravager Labs v2 — Blackbox Forensic Analyzer</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<title>Arnaid Labs v2 — Blackbox Forensic Analyzer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js">
+// ===== NARRATIVE ENGINE (Ravager) =====
+function buildCycles(){
+  // A cycle = from one ENTRY to the next ENTRY (or end of log)
+  // Include: preceding DIR events, all HEDGE events, BASKET/CLOSE_ALL
+  const cycles = [];
+  const entryIdxs = ALL.map((r,i)=>g(r,C.Type)==='ENTRY'?i:-1).filter(i=>i>=0);
+  entryIdxs.forEach((startIdx, ci) => {
+    const endIdx = entryIdxs[ci+1] || ALL.length;
+    const cycleRows = ALL.slice(startIdx, endIdx);
+    // Get DIR events just before this entry (lookback 30 rows)
+    const preRows = ALL.slice(Math.max(0, startIdx-30), startIdx);
+    const preDirs = preRows.filter(r=>g(r,C.Type)==='DIR');
+    cycles.push({cycleRows, preRows, preDirs, startIdx, endIdx, num: ci+1});
+  });
+  return cycles;
+}
+
+function narrateRavager(){
+  const cycles = buildCycles();
+  return cycles.map(cyc => {
+    const {cycleRows, preDirs, num} = cyc;
+    const entry     = cycleRows.find(r=>g(r,C.Type)==='ENTRY');
+    const dirEvents = cycleRows.filter(r=>g(r,C.Type)==='DIR');
+    const hInits    = cycleRows.filter(r=>g(r,C.Type)==='HEDGE_INIT');
+    const hHits     = cycleRows.filter(r=>g(r,C.Type)==='HEDGE_HIT');
+    const hPlaces   = cycleRows.filter(r=>g(r,C.Type)==='HEDGE_PLACE');
+    const basket    = cycleRows.find(r=>g(r,C.Type)==='BASKET');
+    const closes    = cycleRows.filter(r=>g(r,C.Type)==='CLOSE_ALL');
+    const system    = cycleRows.find(r=>g(r,C.Type)==='SYSTEM'&&g(r,C.Note).includes('DEINIT'));
+    const allDirs   = [...preDirs, ...dirEvents];
+
+    if(!entry) return null;
+
+    const entryTime  = g(entry,C.Time);
+    const entryPrice = gf(entry,C.Price);
+    const dir        = gi(entry,C.Dir);
+    const dirLabel   = dir===1?'BUY':'SELL';
+    const lastClose  = closes[closes.length-1];
+    const finalPnl   = lastClose?gf(lastClose,C.TotalFL):gf(cycleRows[cycleRows.length-1],C.TotalFL);
+    const finalDaily = lastClose?gf(lastClose,C.Daily):gf(cycleRows[cycleRows.length-1],C.Daily);
+    const maxLayer   = Math.max(...cycleRows.map(r=>Math.abs(gi(r,C.HedgeLayer))));
+
+    // Determine outcome
+    let outcome = 'partial', outcomeLabel='MASIH OPEN';
+    if(system){ outcome='deinit'; outcomeLabel='EA DEINIT';}
+    else if(lastClose){
+      const closeNote = g(lastClose,C.Note);
+      if(closeNote.includes('SPIKE')&&finalPnl<0){ outcome='loss'; outcomeLabel='LOSS — SPIKE'; }
+      else if(closeNote.includes('SPIKE')){ outcome='partial'; outcomeLabel='SPIKE (NEUTRAL)'; }
+      else if(finalPnl>0){ outcome='win'; outcomeLabel=`WIN +${finalPnl.toFixed(2)}`; }
+      else if(finalPnl<0){ outcome='loss'; outcomeLabel=`LOSS ${finalPnl.toFixed(2)}`; }
+      else { outcome='partial'; outcomeLabel='BREAKEVEN'; }
+    }
+
+    // Build narrative steps
+    const steps = [];
+
+    // Pre-entry: DIR stabilization
+    const lockDirs = allDirs.filter(r=>g(r,C.Note).includes('LOCK')&&!g(r,C.Note).includes('NO LOCK'));
+    const noLockDirs = allDirs.filter(r=>g(r,C.Note).includes('NO LOCK'));
+    if(lockDirs.length>0){
+      const firstLock = lockDirs[0];
+      const lockNote = g(firstLock,C.Note);
+      const stab = lockNote.includes('Stab=')?lockNote.split('Stab=')[1]:'?';
+      steps.push({color:'#22c97a', text:`<strong>Sinyal terkunci</strong> — EA mendeteksi dominance <span class="hl-price">${dirLabel}</span> di <span class="hl-price">${gf(firstLock,C.Price).toFixed(2)}</span> dengan stabilitas <strong>${stab}</strong>. ${noLockDirs.length>0?`Sebelumnya sempat ${noLockDirs.length}x sinyal tidak stabil (NO LOCK) — EA menunggu konfirmasi penuh.`:''}`});
+    }
+
+    // Entry
+    steps.push({color:'#3b8bff', text:`<strong>Entry ${dirLabel}</strong> dieksekusi jam <span class="hl-price">${g(entry,C.Time).substring(11,19)}</span> di harga <span class="hl-price">${entryPrice.toFixed(2)}</span>. EA sekaligus pasang pending hedge order (${hInits.length>0?g(hInits[0],C.Note):'—'}).`});
+
+    // Hedge hits
+    hHits.forEach((hit,i) => {
+      const hitNote = g(hit,C.Note);
+      const layer = hitNote.includes('L=')?hitNote.split('L=')[1].split(' ')[0]:'?';
+      const hitPrice = hitNote.includes('P=')?hitNote.split('P=')[1].split(' ')[0]:'?';
+      const hitDir = hitNote.includes('Dir=1')?'BUY':'SELL';
+      const fl = gf(hit,C.TotalFL);
+      const place = hPlaces[i];
+      const placeNote = place?g(place,C.Note):'';
+      steps.push({color:'#f59e0b', text:`<span class="hl-hedge">⚡ Hedge L${layer} kena</span> — harga menyentuh <span class="hl-price">${parseFloat(hitPrice||0).toFixed(2)}</span> (arah ${hitDir}). Floating saat itu: <span class="${fl<0?'hl-loss':'hl-profit'}">${fl>=0?'+':''}${fl.toFixed(2)}</span>.${place?` EA langsung pasang hedge berikutnya: <em>${placeNote}</em>`:''}`});
+    });
+
+    // Basket
+    if(basket){
+      const pk = g(basket,C.Note).includes('Pk=')?g(basket,C.Note).split('Pk=')[1].split(' ')[0]:'?';
+      const tf = gf(basket,C.TotalFL);
+      steps.push({color:'#9b6dff', text:`<span class="hl-profit">🧺 Basket condition tercapai</span> — peak floating mencapai <strong>${pk}</strong>. Floating saat itu: <span class="hl-profit">+${tf.toFixed(2)}</span>. EA siap trigger close.`});
+    }
+
+    // Closes
+    closes.forEach((cl,i) => {
+      const closeNote = g(cl,C.Note);
+      const fl = gf(cl,C.TotalFL);
+      const daily = gf(cl,C.Daily);
+      if(closeNote.includes('LOCK_PROFIT')){
+        steps.push({color:'#22c97a', text:`<span class="hl-profit">✅ LOCK PROFIT</span> — semua posisi ditutup jam ${g(cl,C.Time).substring(11,19)} di <span class="hl-price">${gf(cl,C.Price).toFixed(2)}</span>. Profit siklus ini: <span class="hl-profit">+${fl.toFixed(2)}</span>. Daily P&L: <span class="hl-profit">+${daily.toFixed(2)}</span>.`});
+      } else if(closeNote.includes('SPIKE')){
+        const spikeFl = fl!==0?fl:0;
+        steps.push({color:'#ff4d6d', text:`<span class="hl-warn">⚡ SPIKE terdeteksi</span> jam ${g(cl,C.Time).substring(11,19)} — harga loncat tiba-tiba ke <span class="hl-price">${gf(cl,C.Price).toFixed(2)}</span>. EA trigger CLOSE_ALL sebagai proteksi. Floating saat close: <span class="${spikeFl<0?'hl-loss':'hl-profit'}">${spikeFl>=0?'+':''}${spikeFl.toFixed(2)}</span>.`});
+      } else {
+        steps.push({color:'#fb923c', text:`<strong>CLOSE_ALL</strong> jam ${g(cl,C.Time).substring(11,19)} — reason: <em>${closeNote}</em>. P&L: <span class="${fl<0?'hl-loss':'hl-profit'}">${fl>=0?'+':''}${fl.toFixed(2)}</span>.`});
+      }
+    });
+
+    // DEINIT
+    if(system){
+      const lastRow = cycleRows[cycleRows.length-1];
+      const fl = gf(lastRow,C.TotalFL);
+      steps.push({color:'#8b5cf6', text:`<span class="hl-warn">⛔ EA DEINIT</span> — EA dihentikan paksa (restart/manual stop) jam ${g(system,C.Time).substring(11,19)}. Posisi masih floating: <span class="hl-loss">${fl.toFixed(2)}</span>. Hedge mencapai <span class="hl-hedge">Layer ${maxLayer}</span> sebelum deinit. <strong>Posisi kemungkinan ditutup manual atau oleh broker.</strong>`});
+    }
+
+    // Summary
+    const duration = (() => {
+      if(!lastClose&&!system) return '—';
+      const endRow = system||lastClose;
+      const t1 = new Date(g(entry,C.Time).replace('.','T').replace(/\./g,'-').replace('T','T').replace(' ','T'));
+      const t2 = new Date(g(endRow,C.Time).replace(' ','T'));
+      const diff = Math.round((t2-t1)/60000);
+      return diff<60?diff+'m':(Math.floor(diff/60)+'h'+diff%60+'m');
+    })();
+
+    return {num, outcome, outcomeLabel, dirLabel, entryTime, entryPrice, steps,
+      maxLayer, hHitCount:hHits.length, finalDaily,
+      duration, closes, system};
+  }).filter(Boolean);
+}
+
+function renderNarrative(){
+  const narrs = narrateRavager();
+  if(narrs.length===0){
+    document.getElementById('narrativeList').innerHTML='<div style="text-align:center;padding:40px;color:var(--text3);font-family:var(--font)">Tidak ada siklus trade ditemukan di log ini.</div>';
+    return;
+  }
+
+  document.getElementById('narrativeList').innerHTML = narrs.map(n => {
+    const stepsHtml = n.steps.map(s=>`
+      <div class="narr-step">
+        <div class="narr-step-dot" style="background:${s.color}"></div>
+        <div class="narr-step-text">${s.text}</div>
+      </div>`).join('');
+
+    return `<div class="narr-card ${n.outcome}">
+      <span class="narr-num">Siklus #${n.num}</span>
+      <div class="narr-header">
+        <div class="narr-title">🦅 Siklus #${n.num} — ${n.dirLabel} @ ${n.entryPrice.toFixed(2)}</div>
+        <span class="narr-outcome ${n.outcome}">${n.outcomeLabel}</span>
+      </div>
+      <div class="narr-body">
+        <div class="narr-timeline">${stepsHtml}</div>
+      </div>
+      <div class="narr-meta">
+        <div class="narr-stat"><div class="narr-stat-label">Entry Time</div><div class="narr-stat-val">${n.entryTime.substring(11,19)}</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">Durasi</div><div class="narr-stat-val">${n.duration}</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">Max Hedge Layer</div><div class="narr-stat-val" style="color:${n.maxLayer>=4?'var(--red)':n.maxLayer>=2?'var(--amber)':'var(--green)'}">L${n.maxLayer}</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">Hedge Hit</div><div class="narr-stat-val">${n.hHitCount}x</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">Daily P&L</div><div class="narr-stat-val" style="color:${n.finalDaily>=0?'var(--green)':'var(--red)'}">${n.finalDaily>=0?'+':''}${n.finalDaily.toFixed(2)}</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">Outcome</div><div class="narr-stat-val">${n.outcomeLabel}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+</script>
 <style>
 :root{
   --bg:#090c12;--bg2:#0f1420;--bg3:#151c2a;--bg4:#1a2235;
@@ -157,6 +320,37 @@ tbody tr:hover td{background:rgba(255,255,255,0.015)}
 .scrl{max-height:480px;overflow-y:auto}
 .scrl::-webkit-scrollbar{width:3px}
 .scrl::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* NARRATIVE */
+.narr-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:14px;position:relative}
+.narr-card.win{border-left:3px solid var(--green)}
+.narr-card.loss{border-left:3px solid var(--red)}
+.narr-card.partial{border-left:3px solid var(--amber)}
+.narr-card.deinit{border-left:3px solid var(--purple)}
+.narr-num{position:absolute;top:14px;right:16px;font-size:11px;color:var(--text3);font-family:var(--font)}
+.narr-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.narr-title{font-size:13px;font-weight:600}
+.narr-outcome{font-size:11px;font-family:var(--font);padding:2px 9px;border-radius:20px}
+.narr-outcome.win{background:rgba(34,201,122,0.15);color:var(--green);border:1px solid rgba(34,201,122,0.25)}
+.narr-outcome.loss{background:rgba(255,77,109,0.15);color:var(--red);border:1px solid rgba(255,77,109,0.25)}
+.narr-outcome.partial{background:rgba(245,158,11,0.15);color:var(--amber);border:1px solid rgba(245,158,11,0.25)}
+.narr-outcome.deinit{background:rgba(155,109,255,0.15);color:var(--purple);border:1px solid rgba(155,109,255,0.25)}
+.narr-body{font-size:12px;color:var(--text2);line-height:1.85;font-family:var(--font)}
+.narr-body strong{color:var(--text)}
+.narr-body .hl-price{color:#7cb8ff}
+.narr-body .hl-profit{color:var(--green)}
+.narr-body .hl-loss{color:var(--red)}
+.narr-body .hl-hedge{color:var(--amber)}
+.narr-body .hl-warn{color:var(--orange)}
+.narr-meta{display:flex;gap:16px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);flex-wrap:wrap}
+.narr-stat{font-size:10px;font-family:var(--font)}
+.narr-stat-label{color:var(--text3);text-transform:uppercase;letter-spacing:0.4px}
+.narr-stat-val{color:var(--text);margin-top:1px;font-weight:600}
+.narr-timeline{margin-top:12px;padding-top:10px;border-top:1px solid var(--border)}
+.narr-step{display:flex;gap:10px;margin-bottom:8px;align-items:flex-start}
+.narr-step-dot{width:7px;height:7px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.narr-step-text{font-size:11px;color:var(--text2);font-family:var(--font);line-height:1.6}
+
 </style>
 </head>
 <body>
@@ -165,7 +359,7 @@ tbody tr:hover td{background:rgba(255,255,255,0.015)}
   <div class="logo">
     <div class="logo-mk">AL</div>
     <div>
-      <div class="logo-name">Ravager Labs <span style="font-size:10px;color:var(--text3);font-weight:400">v2.0</span></div>
+      <div class="logo-name">Arnaid Labs <span style="font-size:10px;color:var(--text3);font-weight:400">v2.0</span></div>
       <div class="logo-ver">Blackbox · Slippage · Spike Forensic</div>
     </div>
   </div>
@@ -195,6 +389,8 @@ tbody tr:hover td{background:rgba(255,255,255,0.015)}
     <div class="tab" onclick="sw('spike',this)">Spike <span class="tab-badge" id="spikeBadge" style="display:none">!</span></div>
     <div class="tab" onclick="sw('hedge',this)">Hedge</div>
     <div class="tab" onclick="sw('dominance',this)">Dominance</div>
+    <div class="tab" onclick="sw('narrative',this)">📖 Narrative</div>
+    <div class="tab" onclick="sw('narrative',this)">📖 Narrative</div>
     <div class="tab" onclick="sw('timeline',this)">Timeline</div>
     <div class="tab" onclick="sw('logs',this)">Event Log</div>
   </div>
@@ -267,6 +463,14 @@ tbody tr:hover td{background:rgba(255,255,255,0.015)}
       <div class="cc"><div class="ct">Signal Power</div><div class="cw" style="height:160px"><canvas id="pwrC"></canvas></div></div>
       <div class="cc"><div class="ct">Net Flow</div><div class="cw" style="height:160px"><canvas id="flowC"></canvas></div></div>
     </div>
+  </div>
+
+  <!-- NARRATIVE -->
+  <div id="tab-narrative" class="tc">
+    <div style="margin-bottom:14px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text2);font-family:var(--font);line-height:1.7">
+      🔬 <strong style="color:var(--text)">Trade Narrative</strong> — Cerita otomatis per siklus trading, 100% dari data log. Setiap siklus: kondisi sebelum entry → keputusan masuk → perkembangan hedge → outcome akhir.
+    </div>
+    <div id="narrativeList"></div>
   </div>
 
   <!-- TIMELINE -->
@@ -459,6 +663,7 @@ function renderAll(){
   renderHedge();
   renderDominance();
   renderTimeline();
+  renderNarrative();
   renderLogs();
 }
 
@@ -985,6 +1190,169 @@ function loadDemo(){
   document.getElementById('statPill').textContent=ALL.length+' ROWS';
   renderAll();
 }
+
+// ===== NARRATIVE ENGINE (Ravager) =====
+function buildCycles(){
+  // A cycle = from one ENTRY to the next ENTRY (or end of log)
+  // Include: preceding DIR events, all HEDGE events, BASKET/CLOSE_ALL
+  const cycles = [];
+  const entryIdxs = ALL.map((r,i)=>g(r,C.Type)==='ENTRY'?i:-1).filter(i=>i>=0);
+  entryIdxs.forEach((startIdx, ci) => {
+    const endIdx = entryIdxs[ci+1] || ALL.length;
+    const cycleRows = ALL.slice(startIdx, endIdx);
+    // Get DIR events just before this entry (lookback 30 rows)
+    const preRows = ALL.slice(Math.max(0, startIdx-30), startIdx);
+    const preDirs = preRows.filter(r=>g(r,C.Type)==='DIR');
+    cycles.push({cycleRows, preRows, preDirs, startIdx, endIdx, num: ci+1});
+  });
+  return cycles;
+}
+
+function narrateRavager(){
+  const cycles = buildCycles();
+  return cycles.map(cyc => {
+    const {cycleRows, preDirs, num} = cyc;
+    const entry     = cycleRows.find(r=>g(r,C.Type)==='ENTRY');
+    const dirEvents = cycleRows.filter(r=>g(r,C.Type)==='DIR');
+    const hInits    = cycleRows.filter(r=>g(r,C.Type)==='HEDGE_INIT');
+    const hHits     = cycleRows.filter(r=>g(r,C.Type)==='HEDGE_HIT');
+    const hPlaces   = cycleRows.filter(r=>g(r,C.Type)==='HEDGE_PLACE');
+    const basket    = cycleRows.find(r=>g(r,C.Type)==='BASKET');
+    const closes    = cycleRows.filter(r=>g(r,C.Type)==='CLOSE_ALL');
+    const system    = cycleRows.find(r=>g(r,C.Type)==='SYSTEM'&&g(r,C.Note).includes('DEINIT'));
+    const allDirs   = [...preDirs, ...dirEvents];
+
+    if(!entry) return null;
+
+    const entryTime  = g(entry,C.Time);
+    const entryPrice = gf(entry,C.Price);
+    const dir        = gi(entry,C.Dir);
+    const dirLabel   = dir===1?'BUY':'SELL';
+    const lastClose  = closes[closes.length-1];
+    const finalPnl   = lastClose?gf(lastClose,C.TotalFL):gf(cycleRows[cycleRows.length-1],C.TotalFL);
+    const finalDaily = lastClose?gf(lastClose,C.Daily):gf(cycleRows[cycleRows.length-1],C.Daily);
+    const maxLayer   = Math.max(...cycleRows.map(r=>Math.abs(gi(r,C.HedgeLayer))));
+
+    // Determine outcome
+    let outcome = 'partial', outcomeLabel='MASIH OPEN';
+    if(system){ outcome='deinit'; outcomeLabel='EA DEINIT';}
+    else if(lastClose){
+      const closeNote = g(lastClose,C.Note);
+      if(closeNote.includes('SPIKE')&&finalPnl<0){ outcome='loss'; outcomeLabel='LOSS — SPIKE'; }
+      else if(closeNote.includes('SPIKE')){ outcome='partial'; outcomeLabel='SPIKE (NEUTRAL)'; }
+      else if(finalPnl>0){ outcome='win'; outcomeLabel=`WIN +${finalPnl.toFixed(2)}`; }
+      else if(finalPnl<0){ outcome='loss'; outcomeLabel=`LOSS ${finalPnl.toFixed(2)}`; }
+      else { outcome='partial'; outcomeLabel='BREAKEVEN'; }
+    }
+
+    // Build narrative steps
+    const steps = [];
+
+    // Pre-entry: DIR stabilization
+    const lockDirs = allDirs.filter(r=>g(r,C.Note).includes('LOCK')&&!g(r,C.Note).includes('NO LOCK'));
+    const noLockDirs = allDirs.filter(r=>g(r,C.Note).includes('NO LOCK'));
+    if(lockDirs.length>0){
+      const firstLock = lockDirs[0];
+      const lockNote = g(firstLock,C.Note);
+      const stab = lockNote.includes('Stab=')?lockNote.split('Stab=')[1]:'?';
+      steps.push({color:'#22c97a', text:`<strong>Sinyal terkunci</strong> — EA mendeteksi dominance <span class="hl-price">${dirLabel}</span> di <span class="hl-price">${gf(firstLock,C.Price).toFixed(2)}</span> dengan stabilitas <strong>${stab}</strong>. ${noLockDirs.length>0?`Sebelumnya sempat ${noLockDirs.length}x sinyal tidak stabil (NO LOCK) — EA menunggu konfirmasi penuh.`:''}`});
+    }
+
+    // Entry
+    steps.push({color:'#3b8bff', text:`<strong>Entry ${dirLabel}</strong> dieksekusi jam <span class="hl-price">${g(entry,C.Time).substring(11,19)}</span> di harga <span class="hl-price">${entryPrice.toFixed(2)}</span>. EA sekaligus pasang pending hedge order (${hInits.length>0?g(hInits[0],C.Note):'—'}).`});
+
+    // Hedge hits
+    hHits.forEach((hit,i) => {
+      const hitNote = g(hit,C.Note);
+      const layer = hitNote.includes('L=')?hitNote.split('L=')[1].split(' ')[0]:'?';
+      const hitPrice = hitNote.includes('P=')?hitNote.split('P=')[1].split(' ')[0]:'?';
+      const hitDir = hitNote.includes('Dir=1')?'BUY':'SELL';
+      const fl = gf(hit,C.TotalFL);
+      const place = hPlaces[i];
+      const placeNote = place?g(place,C.Note):'';
+      steps.push({color:'#f59e0b', text:`<span class="hl-hedge">⚡ Hedge L${layer} kena</span> — harga menyentuh <span class="hl-price">${parseFloat(hitPrice||0).toFixed(2)}</span> (arah ${hitDir}). Floating saat itu: <span class="${fl<0?'hl-loss':'hl-profit'}">${fl>=0?'+':''}${fl.toFixed(2)}</span>.${place?` EA langsung pasang hedge berikutnya: <em>${placeNote}</em>`:''}`});
+    });
+
+    // Basket
+    if(basket){
+      const pk = g(basket,C.Note).includes('Pk=')?g(basket,C.Note).split('Pk=')[1].split(' ')[0]:'?';
+      const tf = gf(basket,C.TotalFL);
+      steps.push({color:'#9b6dff', text:`<span class="hl-profit">🧺 Basket condition tercapai</span> — peak floating mencapai <strong>${pk}</strong>. Floating saat itu: <span class="hl-profit">+${tf.toFixed(2)}</span>. EA siap trigger close.`});
+    }
+
+    // Closes
+    closes.forEach((cl,i) => {
+      const closeNote = g(cl,C.Note);
+      const fl = gf(cl,C.TotalFL);
+      const daily = gf(cl,C.Daily);
+      if(closeNote.includes('LOCK_PROFIT')){
+        steps.push({color:'#22c97a', text:`<span class="hl-profit">✅ LOCK PROFIT</span> — semua posisi ditutup jam ${g(cl,C.Time).substring(11,19)} di <span class="hl-price">${gf(cl,C.Price).toFixed(2)}</span>. Profit siklus ini: <span class="hl-profit">+${fl.toFixed(2)}</span>. Daily P&L: <span class="hl-profit">+${daily.toFixed(2)}</span>.`});
+      } else if(closeNote.includes('SPIKE')){
+        const spikeFl = fl!==0?fl:0;
+        steps.push({color:'#ff4d6d', text:`<span class="hl-warn">⚡ SPIKE terdeteksi</span> jam ${g(cl,C.Time).substring(11,19)} — harga loncat tiba-tiba ke <span class="hl-price">${gf(cl,C.Price).toFixed(2)}</span>. EA trigger CLOSE_ALL sebagai proteksi. Floating saat close: <span class="${spikeFl<0?'hl-loss':'hl-profit'}">${spikeFl>=0?'+':''}${spikeFl.toFixed(2)}</span>.`});
+      } else {
+        steps.push({color:'#fb923c', text:`<strong>CLOSE_ALL</strong> jam ${g(cl,C.Time).substring(11,19)} — reason: <em>${closeNote}</em>. P&L: <span class="${fl<0?'hl-loss':'hl-profit'}">${fl>=0?'+':''}${fl.toFixed(2)}</span>.`});
+      }
+    });
+
+    // DEINIT
+    if(system){
+      const lastRow = cycleRows[cycleRows.length-1];
+      const fl = gf(lastRow,C.TotalFL);
+      steps.push({color:'#8b5cf6', text:`<span class="hl-warn">⛔ EA DEINIT</span> — EA dihentikan paksa (restart/manual stop) jam ${g(system,C.Time).substring(11,19)}. Posisi masih floating: <span class="hl-loss">${fl.toFixed(2)}</span>. Hedge mencapai <span class="hl-hedge">Layer ${maxLayer}</span> sebelum deinit. <strong>Posisi kemungkinan ditutup manual atau oleh broker.</strong>`});
+    }
+
+    // Summary
+    const duration = (() => {
+      if(!lastClose&&!system) return '—';
+      const endRow = system||lastClose;
+      const t1 = new Date(g(entry,C.Time).replace('.','T').replace(/\./g,'-').replace('T','T').replace(' ','T'));
+      const t2 = new Date(g(endRow,C.Time).replace(' ','T'));
+      const diff = Math.round((t2-t1)/60000);
+      return diff<60?diff+'m':(Math.floor(diff/60)+'h'+diff%60+'m');
+    })();
+
+    return {num, outcome, outcomeLabel, dirLabel, entryTime, entryPrice, steps,
+      maxLayer, hHitCount:hHits.length, finalDaily,
+      duration, closes, system};
+  }).filter(Boolean);
+}
+
+function renderNarrative(){
+  const narrs = narrateRavager();
+  if(narrs.length===0){
+    document.getElementById('narrativeList').innerHTML='<div style="text-align:center;padding:40px;color:var(--text3);font-family:var(--font)">Tidak ada siklus trade ditemukan di log ini.</div>';
+    return;
+  }
+
+  document.getElementById('narrativeList').innerHTML = narrs.map(n => {
+    const stepsHtml = n.steps.map(s=>`
+      <div class="narr-step">
+        <div class="narr-step-dot" style="background:${s.color}"></div>
+        <div class="narr-step-text">${s.text}</div>
+      </div>`).join('');
+
+    return `<div class="narr-card ${n.outcome}">
+      <span class="narr-num">Siklus #${n.num}</span>
+      <div class="narr-header">
+        <div class="narr-title">🦅 Siklus #${n.num} — ${n.dirLabel} @ ${n.entryPrice.toFixed(2)}</div>
+        <span class="narr-outcome ${n.outcome}">${n.outcomeLabel}</span>
+      </div>
+      <div class="narr-body">
+        <div class="narr-timeline">${stepsHtml}</div>
+      </div>
+      <div class="narr-meta">
+        <div class="narr-stat"><div class="narr-stat-label">Entry Time</div><div class="narr-stat-val">${n.entryTime.substring(11,19)}</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">Durasi</div><div class="narr-stat-val">${n.duration}</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">Max Hedge Layer</div><div class="narr-stat-val" style="color:${n.maxLayer>=4?'var(--red)':n.maxLayer>=2?'var(--amber)':'var(--green)'}">L${n.maxLayer}</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">Hedge Hit</div><div class="narr-stat-val">${n.hHitCount}x</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">Daily P&L</div><div class="narr-stat-val" style="color:${n.finalDaily>=0?'var(--green)':'var(--red)'}">${n.finalDaily>=0?'+':''}${n.finalDaily.toFixed(2)}</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">Outcome</div><div class="narr-stat-val">${n.outcomeLabel}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 </script>
 </body>
 </html>
