@@ -3,323 +3,155 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Arnaid Labs v2 — Blackbox Forensic Analyzer</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js">
-// ===== NARRATIVE ENGINE (Ravager) =====
-function buildCycles(){
-  // A cycle = from one ENTRY to the next ENTRY (or end of log)
-  // Include: preceding DIR events, all HEDGE events, BASKET/CLOSE_ALL
-  const cycles = [];
-  const entryIdxs = ALL.map((r,i)=>g(r,C.Type)==='ENTRY'?i:-1).filter(i=>i>=0);
-  entryIdxs.forEach((startIdx, ci) => {
-    const endIdx = entryIdxs[ci+1] || ALL.length;
-    const cycleRows = ALL.slice(startIdx, endIdx);
-    // Get DIR events just before this entry (lookback 30 rows)
-    const preRows = ALL.slice(Math.max(0, startIdx-30), startIdx);
-    const preDirs = preRows.filter(r=>g(r,C.Type)==='DIR');
-    cycles.push({cycleRows, preRows, preDirs, startIdx, endIdx, num: ci+1});
-  });
-  return cycles;
-}
-
-function narrateRavager(){
-  const cycles = buildCycles();
-  return cycles.map(cyc => {
-    const {cycleRows, preDirs, num} = cyc;
-    const entry     = cycleRows.find(r=>g(r,C.Type)==='ENTRY');
-    const dirEvents = cycleRows.filter(r=>g(r,C.Type)==='DIR');
-    const hInits    = cycleRows.filter(r=>g(r,C.Type)==='HEDGE_INIT');
-    const hHits     = cycleRows.filter(r=>g(r,C.Type)==='HEDGE_HIT');
-    const hPlaces   = cycleRows.filter(r=>g(r,C.Type)==='HEDGE_PLACE');
-    const basket    = cycleRows.find(r=>g(r,C.Type)==='BASKET');
-    const closes    = cycleRows.filter(r=>g(r,C.Type)==='CLOSE_ALL');
-    const system    = cycleRows.find(r=>g(r,C.Type)==='SYSTEM'&&g(r,C.Note).includes('DEINIT'));
-    const allDirs   = [...preDirs, ...dirEvents];
-
-    if(!entry) return null;
-
-    const entryTime  = g(entry,C.Time);
-    const entryPrice = gf(entry,C.Price);
-    const dir        = gi(entry,C.Dir);
-    const dirLabel   = dir===1?'BUY':'SELL';
-    const lastClose  = closes[closes.length-1];
-    const finalPnl   = lastClose?gf(lastClose,C.TotalFL):gf(cycleRows[cycleRows.length-1],C.TotalFL);
-    const finalDaily = lastClose?gf(lastClose,C.Daily):gf(cycleRows[cycleRows.length-1],C.Daily);
-    const maxLayer   = Math.max(...cycleRows.map(r=>Math.abs(gi(r,C.HedgeLayer))));
-
-    // Determine outcome
-    let outcome = 'partial', outcomeLabel='MASIH OPEN';
-    if(system){ outcome='deinit'; outcomeLabel='EA DEINIT';}
-    else if(lastClose){
-      const closeNote = g(lastClose,C.Note);
-      if(closeNote.includes('SPIKE')&&finalPnl<0){ outcome='loss'; outcomeLabel='LOSS — SPIKE'; }
-      else if(closeNote.includes('SPIKE')){ outcome='partial'; outcomeLabel='SPIKE (NEUTRAL)'; }
-      else if(finalPnl>0){ outcome='win'; outcomeLabel=`WIN +${finalPnl.toFixed(2)}`; }
-      else if(finalPnl<0){ outcome='loss'; outcomeLabel=`LOSS ${finalPnl.toFixed(2)}`; }
-      else { outcome='partial'; outcomeLabel='BREAKEVEN'; }
-    }
-
-    // Build narrative steps
-    const steps = [];
-
-    // Pre-entry: DIR stabilization
-    const lockDirs = allDirs.filter(r=>g(r,C.Note).includes('LOCK')&&!g(r,C.Note).includes('NO LOCK'));
-    const noLockDirs = allDirs.filter(r=>g(r,C.Note).includes('NO LOCK'));
-    if(lockDirs.length>0){
-      const firstLock = lockDirs[0];
-      const lockNote = g(firstLock,C.Note);
-      const stab = lockNote.includes('Stab=')?lockNote.split('Stab=')[1]:'?';
-      steps.push({color:'#22c97a', text:`<strong>Sinyal terkunci</strong> — EA mendeteksi dominance <span class="hl-price">${dirLabel}</span> di <span class="hl-price">${gf(firstLock,C.Price).toFixed(2)}</span> dengan stabilitas <strong>${stab}</strong>. ${noLockDirs.length>0?`Sebelumnya sempat ${noLockDirs.length}x sinyal tidak stabil (NO LOCK) — EA menunggu konfirmasi penuh.`:''}`});
-    }
-
-    // Entry
-    steps.push({color:'#3b8bff', text:`<strong>Entry ${dirLabel}</strong> dieksekusi jam <span class="hl-price">${g(entry,C.Time).substring(11,19)}</span> di harga <span class="hl-price">${entryPrice.toFixed(2)}</span>. EA sekaligus pasang pending hedge order (${hInits.length>0?g(hInits[0],C.Note):'—'}).`});
-
-    // Hedge hits
-    hHits.forEach((hit,i) => {
-      const hitNote = g(hit,C.Note);
-      const layer = hitNote.includes('L=')?hitNote.split('L=')[1].split(' ')[0]:'?';
-      const hitPrice = hitNote.includes('P=')?hitNote.split('P=')[1].split(' ')[0]:'?';
-      const hitDir = hitNote.includes('Dir=1')?'BUY':'SELL';
-      const fl = gf(hit,C.TotalFL);
-      const place = hPlaces[i];
-      const placeNote = place?g(place,C.Note):'';
-      steps.push({color:'#f59e0b', text:`<span class="hl-hedge">⚡ Hedge L${layer} kena</span> — harga menyentuh <span class="hl-price">${parseFloat(hitPrice||0).toFixed(2)}</span> (arah ${hitDir}). Floating saat itu: <span class="${fl<0?'hl-loss':'hl-profit'}">${fl>=0?'+':''}${fl.toFixed(2)}</span>.${place?` EA langsung pasang hedge berikutnya: <em>${placeNote}</em>`:''}`});
-    });
-
-    // Basket
-    if(basket){
-      const pk = g(basket,C.Note).includes('Pk=')?g(basket,C.Note).split('Pk=')[1].split(' ')[0]:'?';
-      const tf = gf(basket,C.TotalFL);
-      steps.push({color:'#9b6dff', text:`<span class="hl-profit">🧺 Basket condition tercapai</span> — peak floating mencapai <strong>${pk}</strong>. Floating saat itu: <span class="hl-profit">+${tf.toFixed(2)}</span>. EA siap trigger close.`});
-    }
-
-    // Closes
-    closes.forEach((cl,i) => {
-      const closeNote = g(cl,C.Note);
-      const fl = gf(cl,C.TotalFL);
-      const daily = gf(cl,C.Daily);
-      if(closeNote.includes('LOCK_PROFIT')){
-        steps.push({color:'#22c97a', text:`<span class="hl-profit">✅ LOCK PROFIT</span> — semua posisi ditutup jam ${g(cl,C.Time).substring(11,19)} di <span class="hl-price">${gf(cl,C.Price).toFixed(2)}</span>. Profit siklus ini: <span class="hl-profit">+${fl.toFixed(2)}</span>. Daily P&L: <span class="hl-profit">+${daily.toFixed(2)}</span>.`});
-      } else if(closeNote.includes('SPIKE')){
-        const spikeFl = fl!==0?fl:0;
-        steps.push({color:'#ff4d6d', text:`<span class="hl-warn">⚡ SPIKE terdeteksi</span> jam ${g(cl,C.Time).substring(11,19)} — harga loncat tiba-tiba ke <span class="hl-price">${gf(cl,C.Price).toFixed(2)}</span>. EA trigger CLOSE_ALL sebagai proteksi. Floating saat close: <span class="${spikeFl<0?'hl-loss':'hl-profit'}">${spikeFl>=0?'+':''}${spikeFl.toFixed(2)}</span>.`});
-      } else {
-        steps.push({color:'#fb923c', text:`<strong>CLOSE_ALL</strong> jam ${g(cl,C.Time).substring(11,19)} — reason: <em>${closeNote}</em>. P&L: <span class="${fl<0?'hl-loss':'hl-profit'}">${fl>=0?'+':''}${fl.toFixed(2)}</span>.`});
-      }
-    });
-
-    // DEINIT
-    if(system){
-      const lastRow = cycleRows[cycleRows.length-1];
-      const fl = gf(lastRow,C.TotalFL);
-      steps.push({color:'#8b5cf6', text:`<span class="hl-warn">⛔ EA DEINIT</span> — EA dihentikan paksa (restart/manual stop) jam ${g(system,C.Time).substring(11,19)}. Posisi masih floating: <span class="hl-loss">${fl.toFixed(2)}</span>. Hedge mencapai <span class="hl-hedge">Layer ${maxLayer}</span> sebelum deinit. <strong>Posisi kemungkinan ditutup manual atau oleh broker.</strong>`});
-    }
-
-    // Summary
-    const duration = (() => {
-      if(!lastClose&&!system) return '—';
-      const endRow = system||lastClose;
-      const t1 = new Date(g(entry,C.Time).replace('.','T').replace(/\./g,'-').replace('T','T').replace(' ','T'));
-      const t2 = new Date(g(endRow,C.Time).replace(' ','T'));
-      const diff = Math.round((t2-t1)/60000);
-      return diff<60?diff+'m':(Math.floor(diff/60)+'h'+diff%60+'m');
-    })();
-
-    return {num, outcome, outcomeLabel, dirLabel, entryTime, entryPrice, steps,
-      maxLayer, hHitCount:hHits.length, finalDaily,
-      duration, closes, system};
-  }).filter(Boolean);
-}
-
-function renderNarrative(){
-  const narrs = narrateRavager();
-  if(narrs.length===0){
-    document.getElementById('narrativeList').innerHTML='<div style="text-align:center;padding:40px;color:var(--text3);font-family:var(--font)">Tidak ada siklus trade ditemukan di log ini.</div>';
-    return;
-  }
-
-  document.getElementById('narrativeList').innerHTML = narrs.map(n => {
-    const stepsHtml = n.steps.map(s=>`
-      <div class="narr-step">
-        <div class="narr-step-dot" style="background:${s.color}"></div>
-        <div class="narr-step-text">${s.text}</div>
-      </div>`).join('');
-
-    return `<div class="narr-card ${n.outcome}">
-      <span class="narr-num">Siklus #${n.num}</span>
-      <div class="narr-header">
-        <div class="narr-title">🦅 Siklus #${n.num} — ${n.dirLabel} @ ${n.entryPrice.toFixed(2)}</div>
-        <span class="narr-outcome ${n.outcome}">${n.outcomeLabel}</span>
-      </div>
-      <div class="narr-body">
-        <div class="narr-timeline">${stepsHtml}</div>
-      </div>
-      <div class="narr-meta">
-        <div class="narr-stat"><div class="narr-stat-label">Entry Time</div><div class="narr-stat-val">${n.entryTime.substring(11,19)}</div></div>
-        <div class="narr-stat"><div class="narr-stat-label">Durasi</div><div class="narr-stat-val">${n.duration}</div></div>
-        <div class="narr-stat"><div class="narr-stat-label">Max Hedge Layer</div><div class="narr-stat-val" style="color:${n.maxLayer>=4?'var(--red)':n.maxLayer>=2?'var(--amber)':'var(--green)'}">L${n.maxLayer}</div></div>
-        <div class="narr-stat"><div class="narr-stat-label">Hedge Hit</div><div class="narr-stat-val">${n.hHitCount}x</div></div>
-        <div class="narr-stat"><div class="narr-stat-label">Daily P&L</div><div class="narr-stat-val" style="color:${n.finalDaily>=0?'var(--green)':'var(--red)'}">${n.finalDaily>=0?'+':''}${n.finalDaily.toFixed(2)}</div></div>
-        <div class="narr-stat"><div class="narr-stat-label">Outcome</div><div class="narr-stat-val">${n.outcomeLabel}</div></div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-</script>
+<title>Arnaid Labs v3 — Ravager B2R + Spread Adaptive</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 :root{
-  --bg:#090c12;--bg2:#0f1420;--bg3:#151c2a;--bg4:#1a2235;
-  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.12);
-  --text:#dde2ee;--text2:#7a85a0;--text3:#3d4a60;
-  --blue:#3b8bff;--green:#22c97a;--red:#ff4d6d;--amber:#f59e0b;
-  --purple:#9b6dff;--teal:#14b8a6;--pink:#ec4899;--orange:#fb923c;
+  --bg:#07090f;--bg2:#0d1118;--bg3:#121820;--bg4:#181f2c;
+  --border:rgba(255,255,255,0.055);--border2:rgba(255,255,255,0.11);
+  --text:#dde0eb;--text2:#6e7a94;--text3:#333d52;
+  --blue:#3b82f6;--green:#10b981;--red:#ef4444;--amber:#f59e0b;
+  --purple:#8b5cf6;--teal:#14b8a6;--orange:#f97316;--pink:#ec4899;
+  --gold:#eab308;--tier1:#10b981;--tier2:#f59e0b;--tier3:#ef4444;
   --font:'Courier New',monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
 
 /* HEADER */
-.hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--border);background:var(--bg2);position:sticky;top:0;z-index:200}
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 20px;
+  border-bottom:1px solid var(--border);background:var(--bg2);position:sticky;top:0;z-index:200}
 .logo{display:flex;align-items:center;gap:10px}
-.logo-mk{width:30px;height:30px;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--font);font-size:11px;font-weight:bold;color:#fff;letter-spacing:-0.5px}
-.logo-name{font-size:14px;font-weight:600;letter-spacing:0.3px}
-.logo-ver{font-size:10px;color:var(--text3);font-family:var(--font)}
+.lmark{width:32px;height:32px;background:linear-gradient(135deg,#1e40af,#7c3aed);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-family:var(--font);font-size:10px;font-weight:700;color:#fff}
+.lname{font-size:14px;font-weight:600}
+.lsub{font-size:9px;color:var(--text3);font-family:var(--font);letter-spacing:0.3px}
 .hdr-r{display:flex;align-items:center;gap:8px}
-.pill{font-size:10px;padding:3px 9px;border-radius:20px;border:1px solid var(--border2);color:var(--text2);font-family:var(--font);letter-spacing:0.3px}
-.pill.live{background:rgba(34,201,122,0.1);color:var(--green);border-color:rgba(34,201,122,0.3)}
+.pill{font-size:10px;padding:3px 9px;border-radius:20px;border:1px solid var(--border2);color:var(--text2);font-family:var(--font)}
+.pill.live{background:rgba(16,185,129,0.1);color:var(--green);border-color:rgba(16,185,129,0.3)}
 .pill.warn{background:rgba(245,158,11,0.1);color:var(--amber);border-color:rgba(245,158,11,0.3)}
-.finfo{font-size:10px;color:var(--text3);font-family:var(--font);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.finfo{font-size:10px;color:var(--text3);font-family:var(--font);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* UPLOAD */
-.up-wrap{max-width:560px;margin:70px auto;padding:0 20px;text-align:center}
-.up-zone{border:1.5px dashed rgba(59,139,255,0.3);border-radius:14px;padding:44px 28px;cursor:pointer;transition:all .2s;background:var(--bg2)}
-.up-zone:hover,.up-zone.drag{border-color:var(--blue);background:rgba(59,139,255,0.05)}
+.up-wrap{max-width:580px;margin:70px auto;padding:0 20px;text-align:center}
+.up-zone{border:1.5px dashed rgba(59,130,246,0.3);border-radius:14px;padding:44px 28px;
+  cursor:pointer;transition:all .2s;background:var(--bg2)}
+.up-zone:hover,.up-zone.drag{border-color:var(--blue);background:rgba(59,130,246,0.05)}
 .up-icon{font-size:38px;margin-bottom:12px}
 .up-title{font-size:15px;font-weight:500;margin-bottom:7px}
-.up-sub{font-size:12px;color:var(--text2);line-height:1.6}
+.up-sub{font-size:12px;color:var(--text2);line-height:1.7}
 .up-hint{margin-top:8px;font-size:10px;color:var(--text3);font-family:var(--font)}
-.demo-btn{margin-top:16px;padding:7px 18px;background:transparent;border:1px solid var(--border2);border-radius:7px;color:var(--text2);font-size:12px;cursor:pointer;transition:all .15s;font-family:var(--font)}
+.demo-btn{margin-top:16px;padding:7px 20px;background:transparent;border:1px solid var(--border2);
+  border-radius:8px;color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--font);transition:all .15s}
 .demo-btn:hover{border-color:var(--blue);color:var(--blue)}
 
-/* MAIN */
-.main{display:none}
+/* COMPAT WARNING */
+.compat-warn{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;
+  padding:10px 14px;margin:0 20px 14px;font-size:11px;color:#fcd34d;font-family:var(--font);display:none}
 
-/* TABS */
-.tabs{display:flex;padding:0 20px;border-bottom:1px solid var(--border);background:var(--bg2);overflow-x:auto;gap:0}
-.tab{padding:10px 16px;font-size:12px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;white-space:nowrap;font-family:var(--font);letter-spacing:0.3px;transition:all .15s}
+.main{display:none}
+.tabs{display:flex;padding:0 20px;border-bottom:1px solid var(--border);background:var(--bg2);overflow-x:auto}
+.tab{padding:10px 15px;font-size:11px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;
+  white-space:nowrap;font-family:var(--font);letter-spacing:0.3px;transition:color .15s}
 .tab:hover{color:var(--text)}
 .tab.active{color:var(--blue);border-bottom-color:var(--blue)}
-.tab-badge{display:inline-block;background:rgba(255,77,109,0.2);color:var(--red);font-size:9px;padding:1px 5px;border-radius:10px;margin-left:4px;font-weight:bold}
-
-/* CONTENT */
+.tab.new-tab{color:var(--teal)}
+.tab.new-tab.active{color:var(--teal);border-bottom-color:var(--teal)}
+.tbadge{display:inline-block;background:rgba(239,68,68,0.2);color:var(--red);font-size:9px;
+  padding:1px 5px;border-radius:10px;margin-left:4px;font-weight:700}
 .tc{display:none;padding:20px}
 .tc.active{display:block}
 
-/* METRICS */
-.mg{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px;margin-bottom:18px}
+/* METRIC CARDS */
+.mg{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px;margin-bottom:16px}
 .mc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px}
-.mc-lbl{font-size:10px;color:var(--text3);font-family:var(--font);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px}
-.mc-val{font-size:22px;font-weight:600;font-family:var(--font)}
-.mc-sub{font-size:10px;color:var(--text3);margin-top:2px}
-.v-green{color:var(--green)}.v-red{color:var(--red)}.v-amber{color:var(--amber)}.v-blue{color:var(--blue)}.v-neu{color:var(--text)}
+.mc-l{font-size:10px;color:var(--text3);font-family:var(--font);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px}
+.mc-v{font-size:21px;font-weight:700;font-family:var(--font)}
+.mc-s{font-size:10px;color:var(--text3);margin-top:2px}
+.v-g{color:var(--green)}.v-r{color:var(--red)}.v-a{color:var(--amber)}
+.v-b{color:var(--blue)}.v-p{color:var(--purple)}.v-t{color:var(--teal)}.v-n{color:var(--text)}
+.v-t1{color:var(--tier1)}.v-t2{color:var(--tier2)}.v-t3{color:var(--tier3)}
 
 /* ALERTS */
-.al{padding:9px 13px;border-radius:7px;font-size:11px;margin-bottom:10px;display:flex;align-items:flex-start;gap:8px;font-family:var(--font);line-height:1.5}
-.al.danger{background:rgba(255,77,109,0.08);border:1px solid rgba(255,77,109,0.2);color:#ff8099}
-.al.warn{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);color:#fbbf24}
-.al.info{background:rgba(59,139,255,0.08);border:1px solid rgba(59,139,255,0.2);color:#7cb8ff}
-.al.ok{background:rgba(34,201,122,0.08);border:1px solid rgba(34,201,122,0.2);color:#4ade80}
+.al{padding:9px 13px;border-radius:7px;font-size:11px;margin-bottom:9px;
+  font-family:var(--font);line-height:1.6;border:1px solid}
+.al.danger{background:rgba(239,68,68,0.07);border-color:rgba(239,68,68,0.2);color:#fca5a5}
+.al.warn{background:rgba(245,158,11,0.07);border-color:rgba(245,158,11,0.2);color:#fcd34d}
+.al.info{background:rgba(59,130,246,0.07);border-color:rgba(59,130,246,0.2);color:#93c5fd}
+.al.ok{background:rgba(16,185,129,0.07);border-color:rgba(16,185,129,0.2);color:#6ee7b7}
+.al.teal{background:rgba(20,184,166,0.07);border-color:rgba(20,184,166,0.2);color:#5eead4}
 
 /* CHART CARD */
 .cc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:14px}
 .ct{font-size:10px;color:var(--text2);font-family:var(--font);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
 .cw{position:relative}
 
-/* GRID */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
 @media(max-width:680px){.g2,.g3{grid-template-columns:1fr}}
 
+/* TIER LEGEND */
+.tier-legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px}
+.tier-dot{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:4px}
+.tier-item{display:flex;align-items:center;font-size:11px;font-family:var(--font)}
+
 /* SECTION TITLE */
-.st{font-size:10px;color:var(--text3);font-family:var(--font);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.st{font-size:10px;color:var(--text3);font-family:var(--font);text-transform:uppercase;
+  letter-spacing:0.7px;margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border)}
 
 /* TABLE */
 .tw{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:11px}
-thead th{text-align:left;padding:7px 9px;font-size:9px;color:var(--text3);font-family:var(--font);text-transform:uppercase;letter-spacing:0.4px;border-bottom:1px solid var(--border);font-weight:500;white-space:nowrap;background:var(--bg3)}
-tbody td{padding:6px 9px;border-bottom:1px solid rgba(255,255,255,0.025);color:var(--text2);font-size:11px;white-space:nowrap}
+thead th{text-align:left;padding:7px 9px;font-size:9px;color:var(--text3);font-family:var(--font);
+  text-transform:uppercase;letter-spacing:0.4px;border-bottom:1px solid var(--border);
+  background:var(--bg3);white-space:nowrap}
+tbody td{padding:6px 9px;border-bottom:1px solid rgba(255,255,255,0.02);
+  color:var(--text2);font-size:11px;white-space:nowrap}
 tbody tr:hover td{background:rgba(255,255,255,0.015)}
 .mono{font-family:var(--font)}
+.scrl{max-height:440px;overflow-y:auto}
+.scrl::-webkit-scrollbar{width:3px}
+.scrl::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 
 /* BADGES */
-.badge{display:inline-block;font-size:9px;padding:2px 7px;border-radius:20px;font-family:var(--font);font-weight:600;letter-spacing:0.3px}
-.b-entry{background:rgba(59,139,255,0.15);color:#7cb8ff;border:1px solid rgba(59,139,255,0.25)}
+.badge{display:inline-block;font-size:9px;padding:2px 7px;border-radius:20px;font-family:var(--font);font-weight:600}
+.b-entry{background:rgba(59,130,246,0.15);color:#93c5fd;border:1px solid rgba(59,130,246,0.25)}
 .b-hedge{background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.25)}
-.b-dir{background:rgba(34,201,122,0.12);color:#4ade80;border:1px solid rgba(34,201,122,0.2)}
-.b-basket{background:rgba(155,109,255,0.15);color:#c084fc;border:1px solid rgba(155,109,255,0.25)}
-.b-close{background:rgba(255,77,109,0.15);color:#fb7185;border:1px solid rgba(255,77,109,0.25)}
+.b-dir{background:rgba(16,185,129,0.12);color:#4ade80;border:1px solid rgba(16,185,129,0.2)}
+.b-basket{background:rgba(139,92,246,0.15);color:#c4b5fd;border:1px solid rgba(139,92,246,0.25)}
+.b-close{background:rgba(249,115,22,0.15);color:#fdba74;border:1px solid rgba(249,115,22,0.25)}
 .b-system{background:rgba(100,116,139,0.15);color:#94a3b8;border:1px solid rgba(100,116,139,0.2)}
-.b-tick{background:rgba(20,184,166,0.12);color:#2dd4bf;border:1px solid rgba(20,184,166,0.2)}
-.b-spike{background:rgba(255,77,109,0.2);color:#ff4d6d;border:1px solid rgba(255,77,109,0.4);animation:blink 1.5s infinite}
-.b-ok{background:rgba(34,201,122,0.15);color:#22c97a;border:1px solid rgba(34,201,122,0.25)}
-.b-warn{background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.25)}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0.5}}
+.b-spike{background:rgba(239,68,68,0.2);color:#ef4444;border:1px solid rgba(239,68,68,0.4)}
+.b-ok{background:rgba(16,185,129,0.15);color:var(--green);border:1px solid rgba(16,185,129,0.25)}
+.b-warn{background:rgba(245,158,11,0.15);color:var(--amber);border:1px solid rgba(245,158,11,0.25)}
+.b-crit{background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.25)}
+.b-t1{background:rgba(16,185,129,0.15);color:var(--tier1);border:1px solid rgba(16,185,129,0.25)}
+.b-t2{background:rgba(245,158,11,0.15);color:var(--tier2);border:1px solid rgba(245,158,11,0.25)}
+.b-t3{background:rgba(239,68,68,0.15);color:var(--tier3);border:1px solid rgba(239,68,68,0.25)}
 
-/* SLIP SEVERITY */
-.slip-none{color:var(--green)}
-.slip-low{color:#86efac}
-.slip-med{color:var(--amber)}
-.slip-high{color:var(--orange)}
-.slip-xhigh{color:var(--red);font-weight:600}
+/* FILTER */
+.fr{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.chip{padding:3px 10px;border-radius:20px;font-size:10px;border:1px solid var(--border2);
+  background:transparent;color:var(--text2);cursor:pointer;font-family:var(--font);transition:all .15s}
+.chip:hover{border-color:var(--blue);color:var(--blue)}
+.chip.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* VERDICT */
+.verdict{border-radius:9px;padding:14px 16px;margin-bottom:14px;border:1px solid}
+.verdict.clean{background:rgba(16,185,129,0.06);border-color:rgba(16,185,129,0.2)}
+.verdict.suspect{background:rgba(245,158,11,0.06);border-color:rgba(245,158,11,0.2)}
+.verdict.fraud{background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.2)}
+.verdict-title{font-size:13px;font-weight:600;margin-bottom:6px}
+.verdict-body{font-size:11px;color:var(--text2);line-height:1.7;font-family:var(--font)}
 
 /* TIMELINE */
 .tl{position:relative;padding-left:20px}
 .tl-spine{position:absolute;left:6px;top:0;bottom:0;width:1px;background:var(--border)}
-.tl-item{position:relative;margin-bottom:16px}
+.tl-item{position:relative;margin-bottom:14px}
 .tl-dot{position:absolute;left:-17px;top:3px;width:8px;height:8px;border-radius:50%}
 .tl-time{font-size:10px;color:var(--text3);font-family:var(--font)}
 .tl-row{display:flex;align-items:center;gap:7px;margin:2px 0;flex-wrap:wrap}
 .tl-note{font-size:11px;color:var(--text2);font-family:var(--font);margin-top:2px}
-
-/* FILTER */
-.fr{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
-.chip{padding:3px 10px;border-radius:20px;font-size:10px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-family:var(--font);transition:all .15s}
-.chip:hover{border-color:var(--blue);color:var(--blue)}
-.chip.on{background:var(--blue);color:#fff;border-color:var(--blue)}
-
-/* SPIKE VISUAL */
-.spike-item{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px}
-.spike-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.spike-time{font-size:11px;color:var(--text2);font-family:var(--font)}
-.spike-mag{font-size:18px;font-weight:700;font-family:var(--font)}
-.spike-bar-wrap{margin:6px 0}
-.spike-bar-bg{height:5px;border-radius:3px;background:rgba(255,255,255,0.05);overflow:hidden}
-.spike-bar-fill{height:100%;border-radius:3px}
-.spike-meta{display:flex;gap:14px;font-size:10px;color:var(--text3);font-family:var(--font);flex-wrap:wrap}
-
-/* SLIPPAGE SUMMARY CARD */
-.slip-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:10px}
-.slip-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.slip-title{font-size:12px;font-weight:500}
-.slip-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.slip-stat{text-align:center}
-.slip-stat-val{font-size:16px;font-weight:600;font-family:var(--font)}
-.slip-stat-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px;margin-top:2px}
-
-/* VERDICT BOX */
-.verdict{border-radius:9px;padding:14px 16px;margin-bottom:14px;border:1px solid}
-.verdict.clean{background:rgba(34,201,122,0.06);border-color:rgba(34,201,122,0.2)}
-.verdict.suspect{background:rgba(245,158,11,0.06);border-color:rgba(245,158,11,0.2)}
-.verdict.fraud{background:rgba(255,77,109,0.06);border-color:rgba(255,77,109,0.2)}
-.verdict-title{font-size:13px;font-weight:600;margin-bottom:6px}
-.verdict-body{font-size:12px;color:var(--text2);line-height:1.6;font-family:var(--font)}
-
-/* SCROLLABLE */
-.scrl{max-height:480px;overflow-y:auto}
-.scrl::-webkit-scrollbar{width:3px}
-.scrl::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 
 /* NARRATIVE */
 .narr-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:14px;position:relative}
@@ -330,37 +162,55 @@ tbody tr:hover td{background:rgba(255,255,255,0.015)}
 .narr-num{position:absolute;top:14px;right:16px;font-size:11px;color:var(--text3);font-family:var(--font)}
 .narr-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
 .narr-title{font-size:13px;font-weight:600}
-.narr-outcome{font-size:11px;font-family:var(--font);padding:2px 9px;border-radius:20px}
-.narr-outcome.win{background:rgba(34,201,122,0.15);color:var(--green);border:1px solid rgba(34,201,122,0.25)}
-.narr-outcome.loss{background:rgba(255,77,109,0.15);color:var(--red);border:1px solid rgba(255,77,109,0.25)}
-.narr-outcome.partial{background:rgba(245,158,11,0.15);color:var(--amber);border:1px solid rgba(245,158,11,0.25)}
-.narr-outcome.deinit{background:rgba(155,109,255,0.15);color:var(--purple);border:1px solid rgba(155,109,255,0.25)}
+.narr-outcome{font-size:11px;font-family:var(--font);padding:2px 9px;border-radius:20px;border:1px solid}
+.narr-outcome.win{background:rgba(16,185,129,0.15);color:var(--green);border-color:rgba(16,185,129,0.25)}
+.narr-outcome.loss{background:rgba(239,68,68,0.15);color:var(--red);border-color:rgba(239,68,68,0.25)}
+.narr-outcome.partial{background:rgba(245,158,11,0.15);color:var(--amber);border-color:rgba(245,158,11,0.25)}
+.narr-outcome.deinit{background:rgba(139,92,246,0.15);color:var(--purple);border-color:rgba(139,92,246,0.25)}
 .narr-body{font-size:12px;color:var(--text2);line-height:1.85;font-family:var(--font)}
 .narr-body strong{color:var(--text)}
-.narr-body .hl-price{color:#7cb8ff}
-.narr-body .hl-profit{color:var(--green)}
-.narr-body .hl-loss{color:var(--red)}
-.narr-body .hl-hedge{color:var(--amber)}
-.narr-body .hl-warn{color:var(--orange)}
-.narr-meta{display:flex;gap:16px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);flex-wrap:wrap}
+.hl-p{color:#93c5fd}.hl-win{color:var(--green)}.hl-loss{color:var(--red)}
+.hl-hedge{color:var(--amber)}.hl-warn{color:var(--orange)}.hl-spread{color:var(--teal)}
+.hl-t1{color:var(--tier1)}.hl-t2{color:var(--tier2)}.hl-t3{color:var(--tier3)}
+.narr-meta{display:flex;gap:14px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);flex-wrap:wrap}
 .narr-stat{font-size:10px;font-family:var(--font)}
 .narr-stat-label{color:var(--text3);text-transform:uppercase;letter-spacing:0.4px}
 .narr-stat-val{color:var(--text);margin-top:1px;font-weight:600}
-.narr-timeline{margin-top:12px;padding-top:10px;border-top:1px solid var(--border)}
-.narr-step{display:flex;gap:10px;margin-bottom:8px;align-items:flex-start}
+.narr-timeline{margin-top:10px}
+.narr-step{display:flex;gap:10px;margin-bottom:9px;align-items:flex-start}
 .narr-step-dot{width:7px;height:7px;border-radius:50%;margin-top:4px;flex-shrink:0}
-.narr-step-text{font-size:11px;color:var(--text2);font-family:var(--font);line-height:1.6}
+.narr-step-text{font-size:11px;color:var(--text2);font-family:var(--font);line-height:1.65}
 
+/* SPIKE ITEM */
+.spike-item{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 13px;margin-bottom:7px}
+.spike-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.spike-mag{font-size:17px;font-weight:700;font-family:var(--font)}
+.spike-bar-bg{height:4px;border-radius:2px;background:rgba(255,255,255,0.05);overflow:hidden;margin:5px 0}
+.spike-bar-fill{height:100%;border-radius:2px}
+.spike-meta{display:flex;gap:12px;font-size:10px;color:var(--text3);font-family:var(--font);flex-wrap:wrap}
+
+/* SLIP SEVERITY */
+.s0{color:var(--green)}.s1{color:#86efac}.s2{color:var(--amber)}.s3{color:var(--orange)}.s4{color:var(--red);font-weight:600}
+
+/* SPREAD FORENSIC BOX */
+.sf-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:10px}
+.sf-title{font-size:12px;font-weight:600;margin-bottom:8px;color:var(--teal)}
+.sf-body{font-size:11px;color:var(--text2);line-height:1.75;font-family:var(--font)}
+.sf-body strong{color:var(--text)}
+
+/* TIER BREAKDOWN BAR */
+.tier-bar-wrap{display:flex;height:12px;border-radius:6px;overflow:hidden;margin:8px 0}
+.tier-seg{height:100%;transition:width .3s}
 </style>
 </head>
 <body>
 
 <div class="hdr">
   <div class="logo">
-    <div class="logo-mk">AL</div>
+    <div class="lmark">AL</div>
     <div>
-      <div class="logo-name">Arnaid Labs <span style="font-size:10px;color:var(--text3);font-weight:400">v2.0</span></div>
-      <div class="logo-ver">Blackbox · Slippage · Spike Forensic</div>
+      <div class="lname">Arnaid Labs <span style="font-size:10px;color:var(--text3);font-weight:400">v3.0</span></div>
+      <div class="lsub">Ravager B2R + Spread Adaptive · Slippage · Spike · Narrative</div>
     </div>
   </div>
   <div class="hdr-r">
@@ -373,23 +223,31 @@ tbody tr:hover td{background:rgba(255,255,255,0.015)}
 <div id="upWrap" class="up-wrap">
   <div class="up-zone" id="dropZone">
     <div class="up-icon">🔬</div>
-    <div class="up-title">Drop CSV Log Falcon Ravager</div>
-    <div class="up-sub">Support <strong>UTF-16</strong> & UTF-8 · Separator titik koma ( ; )<br>Drag & drop atau klik untuk browse</div>
-    <div class="up-hint">FR_v54B2R_YYYYMMDD_HHMM.csv</div>
+    <div class="up-title">Drop CSV Log — Ravager v5.4 B2R + Spread Adaptive</div>
+    <div class="up-sub">
+      Support <strong>UTF-16</strong> &amp; UTF-8 · Separator titik koma ( ; )<br>
+      Format: <code>FR_v54B2R_YYYYMMDD_HHMM.csv</code>
+    </div>
+    <div class="up-hint">33 kolom: Time;Type;Price;Spread;AvgSpread;SpreadTier;DynHedgeStep;Tick;Buy%;Sell%;...</div>
     <input type="file" id="fi" accept=".csv,.txt" style="display:none">
   </div>
   <button class="demo-btn" onclick="loadDemo()">▶ Load Demo Data</button>
 </div>
 
+<!-- COMPAT WARNING -->
+<div class="compat-warn" id="compatWarn">
+  ⚠ Terdeteksi kemungkinan CSV dari versi lama (kolom = <span id="colCount">?</span>). Labs ini dirancang untuk Ravager v5.4 B2R + Spread Adaptive (33 kolom). Data SpreadTier, AvgSpread, DynHedgeStep mungkin tidak tersedia — tab Spread Adaptive akan kosong.
+</div>
+
 <!-- DASHBOARD -->
 <div class="main" id="dash">
-  <div class="tabs" id="tabBar">
+  <div class="tabs">
     <div class="tab active" onclick="sw('overview',this)">Overview</div>
-    <div class="tab" onclick="sw('slippage',this)">Slippage <span class="tab-badge" id="slipBadge" style="display:none">!</span></div>
-    <div class="tab" onclick="sw('spike',this)">Spike <span class="tab-badge" id="spikeBadge" style="display:none">!</span></div>
+    <div class="tab new-tab" onclick="sw('spread',this)">📡 Spread Adaptive <span class="tbadge" id="spreadBadge" style="display:none">!</span></div>
+    <div class="tab" onclick="sw('slippage',this)">Slippage <span class="tbadge" id="slipBadge" style="display:none">!</span></div>
+    <div class="tab" onclick="sw('spike',this)">Spike <span class="tbadge" id="spikeBadge" style="display:none">!</span></div>
     <div class="tab" onclick="sw('hedge',this)">Hedge</div>
     <div class="tab" onclick="sw('dominance',this)">Dominance</div>
-    <div class="tab" onclick="sw('narrative',this)">📖 Narrative</div>
     <div class="tab" onclick="sw('narrative',this)">📖 Narrative</div>
     <div class="tab" onclick="sw('timeline',this)">Timeline</div>
     <div class="tab" onclick="sw('logs',this)">Event Log</div>
@@ -403,44 +261,66 @@ tbody tr:hover td{background:rgba(255,255,255,0.015)}
       <div class="cc"><div class="ct">P&amp;L — Daily &amp; Total</div><div class="cw" style="height:190px"><canvas id="pnlC"></canvas></div></div>
       <div class="cc"><div class="ct">Event Distribution</div><div class="cw" style="height:190px"><canvas id="evtC"></canvas></div></div>
     </div>
-    <div class="cc"><div class="ct">Price Chart + Entry/Close Markers</div><div class="cw" style="height:170px"><canvas id="priceC"></canvas></div></div>
+    <div class="cc"><div class="ct">Price Chart + Spread Tier Background</div><div class="cw" style="height:170px"><canvas id="priceC"></canvas></div></div>
+  </div>
+
+  <!-- SPREAD ADAPTIVE -->
+  <div id="tab-spread" class="tc">
+    <div id="spreadVerdict"></div>
+    <div class="g3" id="spreadMetrics"></div>
+    <!-- Tier distribution bar -->
+    <div class="cc">
+      <div class="ct">Spread Tier Distribution — Berapa % waktu di tiap tier</div>
+      <div class="tier-legend">
+        <div class="tier-item"><span class="tier-dot" style="background:var(--tier1)"></span>Tier 1 Normal (≤2.0 pip)</div>
+        <div class="tier-item"><span class="tier-dot" style="background:var(--tier2)"></span>Tier 2 Medium (≤3.5 pip)</div>
+        <div class="tier-item"><span class="tier-dot" style="background:var(--tier3)"></span>Tier 3 Wide (>3.5 pip)</div>
+      </div>
+      <div class="tier-bar-wrap" id="tierBar"></div>
+      <div id="tierPct" style="display:flex;gap:20px;margin-top:6px;font-size:11px;font-family:var(--font)"></div>
+    </div>
+    <div class="g2">
+      <div class="cc"><div class="ct">AvgSpread Timeline</div><div class="cw" style="height:180px"><canvas id="avgSpreadC"></canvas></div></div>
+      <div class="cc"><div class="ct">DynHedgeStep Timeline</div><div class="cw" style="height:180px"><canvas id="dynStepC"></canvas></div></div>
+    </div>
+    <div class="cc"><div class="ct">Spread Tier saat Hedge Events — Forensik Kunci</div><div class="cw" style="height:190px"><canvas id="hedgeTierC"></canvas></div></div>
+    <div class="st" style="margin-top:4px">Forensik: Spread saat Hedge Cycle Aktif</div>
+    <div id="spreadForensic"></div>
+    <div class="st" style="margin-top:14px">Korelasi Spread Tier vs Slippage</div>
+    <div id="spreadSlipCorr"></div>
   </div>
 
   <!-- SLIPPAGE -->
   <div id="tab-slippage" class="tc">
     <div id="slipVerdict"></div>
     <div class="g3" id="slipMetrics"></div>
-    <div class="cc"><div class="ct">Slippage per Event — Planned vs Actual Fill</div><div class="cw" style="height:200px"><canvas id="slipC"></canvas></div></div>
-    <div class="st">Detail Slippage — Semua Pending Orders Hedge</div>
+    <div class="cc"><div class="ct">Slippage per Hedge Event + Spread Tier saat kejadian</div><div class="cw" style="height:200px"><canvas id="slipC"></canvas></div></div>
+    <div class="st">Detail Slippage — Semua Hedge Pending Orders</div>
     <div class="tw scrl"><table>
-      <thead><tr><th>Time</th><th>Order Type</th><th>Planned Price</th><th>Actual Fill</th><th>Slippage (pts)</th><th>Slippage (usd est)</th><th>Lot</th><th>Severity</th><th>Note</th></tr></thead>
+      <thead><tr><th>Time</th><th>Order</th><th>Planned</th><th>Actual Fill</th><th>Slip (pts)</th><th>USD est</th><th>Lot</th><th>SpreadTier</th><th>AvgSprd</th><th>DynStep</th><th>Severity</th></tr></thead>
       <tbody id="slipTbody"></tbody>
     </table></div>
-    <div style="margin-top:14px" class="st">Entry Market Orders (Direct Fill)</div>
+    <div style="margin-top:14px" class="st">Entry Market Orders</div>
     <div class="tw"><table>
-      <thead><tr><th>Time</th><th>Dir</th><th>Signal Price</th><th>Fill Price</th><th>Diff (pts)</th><th>Verdict</th></tr></thead>
+      <thead><tr><th>Time</th><th>Dir</th><th>Signal Price</th><th>Fill Price</th><th>Diff (pts)</th><th>SpreadTier</th><th>Verdict</th></tr></thead>
       <tbody id="entrySlipTbody"></tbody>
     </table></div>
-    <div style="margin-top:14px" class="cc">
-      <div class="ct">Spread Analysis</div>
-      <div id="spreadInfo" style="font-size:12px;color:var(--text2);font-family:var(--font);line-height:1.8"></div>
-    </div>
   </div>
 
   <!-- SPIKE -->
   <div id="tab-spike" class="tc">
     <div id="spikeVerdict"></div>
     <div class="g3" id="spikeMetrics"></div>
-    <div class="cc"><div class="ct">Tick Velocity — Spike Detection (Auto Threshold)</div><div class="cw" style="height:200px"><canvas id="spikeC"></canvas></div></div>
+    <div class="cc"><div class="ct">Tick Velocity — Spike Detection (Threshold Auto)</div><div class="cw" style="height:200px"><canvas id="spikeC"></canvas></div></div>
     <div class="g2">
-      <div class="cc"><div class="ct">Spike Magnitude Distribution</div><div class="cw" style="height:170px"><canvas id="spikeHistC"></canvas></div></div>
-      <div class="cc"><div class="ct">Price Gap Between Ticks</div><div class="cw" style="height:170px"><canvas id="gapC"></canvas></div></div>
+      <div class="cc"><div class="ct">Spike Magnitude Distribution</div><div class="cw" style="height:160px"><canvas id="spikeHistC"></canvas></div></div>
+      <div class="cc"><div class="ct">Spike Tier Context — Terjadi di Tier Berapa?</div><div class="cw" style="height:160px"><canvas id="spikeTierC"></canvas></div></div>
     </div>
-    <div class="st">Top Spike Events (Terbesar)</div>
+    <div class="st">Top Spike Events</div>
     <div id="spikeList"></div>
     <div style="margin-top:14px" class="st">Spike yang Trigger CLOSE_ALL</div>
     <div class="tw"><table>
-      <thead><tr><th>Time</th><th>Tick Velocity</th><th>Price Before</th><th>Price After</th><th>Gap</th><th>TotalFL</th><th>Trigger Note</th></tr></thead>
+      <thead><tr><th>Time</th><th>Tick Vel</th><th>Price</th><th>TotalFL</th><th>SpreadTier</th><th>AvgSprd</th><th>Note</th></tr></thead>
       <tbody id="spikeTrigTbody"></tbody>
     </table></div>
   </div>
@@ -448,17 +328,17 @@ tbody tr:hover td{background:rgba(255,255,255,0.015)}
   <!-- HEDGE -->
   <div id="tab-hedge" class="tc">
     <div class="g3" id="hedgeMetrics"></div>
-    <div class="cc"><div class="ct">Hedge Layer Depth + Floating Loss</div><div class="cw" style="height:190px"><canvas id="hedgeC"></canvas></div></div>
+    <div class="cc"><div class="ct">Hedge Layer Depth + Floating Loss + DynStep saat hit</div><div class="cw" style="height:190px"><canvas id="hedgeC"></canvas></div></div>
     <div class="st">Semua Hedge Events</div>
     <div class="tw scrl"><table>
-      <thead><tr><th>Time</th><th>Type</th><th>Price</th><th>Layer</th><th>Lot</th><th>TotalFL</th><th>Daily</th><th>Note</th></tr></thead>
+      <thead><tr><th>Time</th><th>Type</th><th>Price</th><th>Layer</th><th>Lot</th><th>TotalFL</th><th>SpreadTier</th><th>AvgSprd</th><th>DynStep</th><th>Note</th></tr></thead>
       <tbody id="hedgeTbody"></tbody>
     </table></div>
   </div>
 
   <!-- DOMINANCE -->
   <div id="tab-dominance" class="tc">
-    <div class="cc"><div class="ct">Buy% vs Sell% — Tick Battle</div><div class="cw" style="height:200px"><canvas id="domC"></canvas></div></div>
+    <div class="cc"><div class="ct">Buy% vs Sell% — Tick Dominance</div><div class="cw" style="height:200px"><canvas id="domC"></canvas></div></div>
     <div class="g2">
       <div class="cc"><div class="ct">Signal Power</div><div class="cw" style="height:160px"><canvas id="pwrC"></canvas></div></div>
       <div class="cc"><div class="ct">Net Flow</div><div class="cw" style="height:160px"><canvas id="flowC"></canvas></div></div>
@@ -468,14 +348,15 @@ tbody tr:hover td{background:rgba(255,255,255,0.015)}
   <!-- NARRATIVE -->
   <div id="tab-narrative" class="tc">
     <div style="margin-bottom:14px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text2);font-family:var(--font);line-height:1.7">
-      🔬 <strong style="color:var(--text)">Trade Narrative</strong> — Cerita otomatis per siklus trading, 100% dari data log. Setiap siklus: kondisi sebelum entry → keputusan masuk → perkembangan hedge → outcome akhir.
+      🔬 <strong style="color:var(--text)">Trade Narrative v3</strong> — Cerita per siklus trading dengan konteks Spread Adaptive.
+      Setiap siklus: kondisi sebelum entry → tier spread saat entry → perkembangan hedge → tier saat hedge kena → outcome akhir.
     </div>
     <div id="narrativeList"></div>
   </div>
 
   <!-- TIMELINE -->
   <div id="tab-timeline" class="tc">
-    <div class="st">Event Timeline — Urutan Kejadian Penting</div>
+    <div class="st">Event Timeline</div>
     <div class="tl"><div class="tl-spine"></div><div id="tlList"></div></div>
   </div>
 
@@ -483,7 +364,7 @@ tbody tr:hover td{background:rgba(255,255,255,0.015)}
   <div id="tab-logs" class="tc">
     <div class="fr" id="frRow"></div>
     <div class="tw scrl"><table>
-      <thead><tr><th>Time</th><th>Type</th><th>Price</th><th>Spread</th><th>Dir</th><th>HedgeL</th><th>TotalFL</th><th>Daily</th><th>Total</th><th>Note</th></tr></thead>
+      <thead><tr><th>Time</th><th>Type</th><th>Price</th><th>Spread</th><th>AvgSprd</th><th>Tier</th><th>DynStep</th><th>Tick</th><th>Dir</th><th>HedgeL</th><th>TotalFL</th><th>Daily</th><th>Total</th><th>Note</th></tr></thead>
       <tbody id="logTbody"></tbody>
     </table></div>
     <div style="font-size:10px;color:var(--text3);margin-top:8px;font-family:var(--font)" id="logCnt"></div>
@@ -491,55 +372,84 @@ tbody tr:hover td{background:rgba(255,255,255,0.015)}
 </div>
 
 <script>
-// ===== COLUMN MAP =====
-const C={Time:0,Type:1,Price:2,Spread:3,Tick:4,BuyP:5,SellP:6,Flow:7,Power:8,
-  Dir:9,Stab:10,MainPos:11,HedgePos:12,HedgePend:13,HedgeLayer:14,HedgeLot:15,
+// ===== COLUMN MAP — Ravager v5.4 B2R + Spread Adaptive =====
+// 0=Time, 1=Type, 2=Price, 3=Spread, 4=AvgSpread, 5=SpreadTier, 6=DynHedgeStep,
+// 7=Tick, 8=Buy%, 9=Sell%, 10=Flow, 11=Power, 12=Dir, 13=Stab,
+// 14=MainPos, 15=HedgePos, 16=HedgePend, 17=HedgeLayer, 18=HedgeDir, 19=HedgeLot,
+// 20=HedgeSt, 21=TotalFL, 22=Peak, 23=CycleTime, 24=Guardian, 25=GTrigger,
+// 26=Daily, 27=Total, 28=Orphan, 29=Note
+const C={
+  Time:0,Type:1,Price:2,Spread:3,AvgSpread:4,SpreadTier:5,DynStep:6,
+  Tick:7,BuyP:8,SellP:9,Flow:10,Power:11,Dir:12,Stab:13,
+  MainPos:14,HedgePos:15,HedgePend:16,HedgeLayer:17,HedgeDir:18,HedgeLot:19,
+  HedgeSt:20,TotalFL:21,Peak:22,CycleTime:23,Guardian:24,GTrigger:25,
+  Daily:26,Total:27,Orphan:28,Note:29
+};
+// Fallback for old CSV (30 cols without spread adaptive)
+const C_OLD={
+  Time:0,Type:1,Price:2,Spread:3,Tick:4,BuyP:5,SellP:6,Flow:7,Power:8,Dir:9,Stab:10,
+  MainPos:11,HedgePos:12,HedgePend:13,HedgeLayer:14,HedgeLot:15,
   HedgeSt:16,TotalFL:17,Peak:18,CycleTime:19,Guardian:20,GTrigger:21,
-  Daily:22,Total:23,Note:24};
+  Daily:22,Total:23,Orphan:24,Note:25
+};
 
-let ALL=[], SLIP_DATA=[], SPIKE_DATA=[], activeFilter='ALL';
+let ALL=[], CMAP=C, IS_NEW_FORMAT=true, SLIP_DATA=[], SPIKE_DATA=[];
+let activeFilter='ALL';
 let charts={};
 
-// ===== PARSE CSV UTF-16 =====
+// ===== CSV PARSER =====
 function parseCSV(buf){
-  let text;
   const b=new Uint8Array(buf);
-  if((b[0]===0xFF&&b[1]===0xFE)||(b[0]===0xFE&&b[1]===0xFF)){
+  let text;
+  if((b[0]===0xFF&&b[1]===0xFE)||(b[0]===0xFE&&b[1]===0xFF))
     text=new TextDecoder(b[0]===0xFF?'utf-16le':'utf-16be').decode(buf);
-  } else {
-    text=new TextDecoder('utf-8').decode(buf);
-  }
+  else text=new TextDecoder('utf-8').decode(buf);
   text=text.replace(/^\uFEFF/,'');
   const lines=text.split(/\r?\n/).filter(l=>l.trim());
   const sep=lines[0].includes(';')?';':',';
   let start=0;
-  if(lines[0].toLowerCase().includes('time')&&lines[0].toLowerCase().includes('type')) start=1;
-  return lines.slice(start).map(l=>l.split(sep)).filter(r=>r.length>2&&r[1]);
+  const fl=lines[0].toLowerCase();
+  if(fl.includes('time')&&(fl.includes('type')||fl.includes('avgspread'))) start=1;
+  const rows=lines.slice(start).map(l=>l.split(sep).map(x=>x.trim().replace(/^"|"$/g,''))).filter(r=>r.length>2&&r[1]);
+  // detect format by column count
+  if(rows.length>0){
+    const cols=rows[0].length;
+    document.getElementById('colCount').textContent=cols;
+    if(cols<28){
+      IS_NEW_FORMAT=false; CMAP=C_OLD;
+      document.getElementById('compatWarn').style.display='block';
+    } else {
+      IS_NEW_FORMAT=true; CMAP=C;
+      document.getElementById('compatWarn').style.display='none';
+    }
+  }
+  return rows;
 }
 
 // ===== HELPERS =====
-const g=(r,c)=>(r[c]||'').trim();
+const g=(r,c)=>(r[c]!==undefined?r[c]:'').trim();
 const gf=(r,c)=>parseFloat(g(r,c))||0;
 const gi=(r,c)=>parseInt(g(r,c))||0;
 const ts=t=>(t||'').substring(11,19);
-const pnlColor=v=>v>0?'#22c97a':v<0?'#ff4d6d':'#3d4a60';
-const absMax=(arr)=>Math.max(...arr.map(v=>Math.abs(v)));
+const pnlColor=v=>v>0?'#10b981':v<0?'#ef4444':'#333d52';
 
-function slipClass(pts){
-  const a=Math.abs(pts);
-  if(a<1) return 'slip-none';
-  if(a<5) return 'slip-low';
-  if(a<15) return 'slip-med';
-  if(a<30) return 'slip-high';
-  return 'slip-xhigh';
+function tierColor(tier){
+  if(!tier||tier==='') return '#333d52';
+  if(tier.includes('TIER 1')||tier.includes('1')) return '#10b981';
+  if(tier.includes('TIER 2')||tier.includes('2')) return '#f59e0b';
+  return '#ef4444';
 }
-function slipSeverity(pts){
-  const a=Math.abs(pts);
-  if(a<1) return '<span class="badge b-ok">NORMAL</span>';
-  if(a<5) return '<span class="badge b-ok">MINOR</span>';
-  if(a<15) return '<span class="badge b-warn">MEDIUM</span>';
-  if(a<30) return '<span class="badge b-hedge">HIGH</span>';
-  return '<span class="badge b-close">EXTREME</span>';
+function tierBadge(tier){
+  if(!tier||tier==='') return '<span class="badge b-system">—</span>';
+  if(tier.includes('1')) return '<span class="badge b-t1">T1</span>';
+  if(tier.includes('2')) return '<span class="badge b-t2">T2</span>';
+  return '<span class="badge b-t3">T3</span>';
+}
+function tierClass(tier){
+  if(!tier) return '';
+  if(tier.includes('1')) return 'v-t1';
+  if(tier.includes('2')) return 'v-t2';
+  return 'v-t3';
 }
 function badgeClass(t){
   if(t==='ENTRY') return 'b-entry';
@@ -547,98 +457,74 @@ function badgeClass(t){
   if(t==='DIR') return 'b-dir';
   if(t==='BASKET') return 'b-basket';
   if(t==='CLOSE_ALL') return 'b-close';
-  if(t==='TICK') return 'b-tick';
   return 'b-system';
 }
 function dotColor(t){
-  if(t==='ENTRY') return '#3b8bff';
+  if(t==='ENTRY') return '#3b82f6';
   if(t.startsWith('HEDGE')) return '#f59e0b';
-  if(t==='CLOSE_ALL') return '#ff4d6d';
-  if(t==='BASKET') return '#9b6dff';
-  if(t==='DIR') return '#22c97a';
-  return '#3d4a60';
+  if(t==='CLOSE_ALL') return '#ef4444';
+  if(t==='BASKET') return '#8b5cf6';
+  if(t==='DIR') return '#10b981';
+  return '#333d52';
 }
+function slipClass(v){const a=Math.abs(v);if(a<1)return 's0';if(a<5)return 's1';if(a<15)return 's2';if(a<30)return 's3';return 's4';}
+function slipSeverityBadge(v){const a=Math.abs(v);if(a<1)return '<span class="badge b-ok">NORMAL</span>';if(a<5)return '<span class="badge b-ok">MINOR</span>';if(a<15)return '<span class="badge b-warn">MEDIUM</span>';if(a<30)return '<span class="badge b-warn">HIGH</span>';return '<span class="badge b-crit">EXTREME</span>';}
 
 // ===== COMPUTE SLIPPAGE =====
 function computeSlippage(){
   SLIP_DATA=[];
-  const hedgeInits=ALL.filter(r=>g(r,C.Type)==='HEDGE_INIT');
-  const hedgeHits=ALL.filter(r=>g(r,C.Type)==='HEDGE_HIT');
-  const hedgePlaces=ALL.filter(r=>g(r,C.Type)==='HEDGE_PLACE');
-
-  // Match each HEDGE_INIT with its corresponding HEDGE_HIT
-  // HEDGE_INIT note: "BUY_STOP 80628.13000 Lot=0.10"
-  // HEDGE_HIT note: "L=1 Dir=1 P=80630.25000 Lot=0.10"
-  hedgeInits.forEach((initR,ii)=>{
-    const note=g(initR,C.Note);
+  const hedgeInits=ALL.filter(r=>g(r,CMAP.Type)==='HEDGE_INIT');
+  const hedgeHits=ALL.filter(r=>g(r,CMAP.Type)==='HEDGE_HIT');
+  hedgeInits.forEach(initR=>{
+    const note=g(initR,CMAP.Note);
     const parts=note.split(' ');
     if(parts.length<2) return;
-    const dir=parts[0]; // BUY_STOP or SELL_STOP
+    const dir=parts[0];
     const planned=parseFloat(parts[1]);
     if(!planned) return;
-
-    // Find the NEXT hedge hit that matches by lot
-    const initIdx=ALL.indexOf(initR);
     const lotMatch=parts[2]?parts[2].replace('Lot=',''):'';
-
-    // Find corresponding hit - look for hit with matching lot after this init
+    const initIdx=ALL.indexOf(initR);
     const matchHit=hedgeHits.find(h=>{
       const hidx=ALL.indexOf(h);
       if(hidx<=initIdx) return false;
-      const hn=g(h,C.Note);
+      const hn=g(h,CMAP.Note);
       const hparts=hn.split(' ');
       const hLot=hparts.find(p=>p.startsWith('Lot='));
-      return hLot && hLot.replace('Lot=','')===lotMatch;
+      return hLot&&hLot.replace('Lot=','')===lotMatch;
     });
-
     if(matchHit){
-      const hn=g(matchHit,C.Note);
+      const hn=g(matchHit,CMAP.Note);
       const pPart=hn.split(' ').find(p=>p.startsWith('P='));
       const actual=pPart?parseFloat(pPart.replace('P=','')):0;
       const slip=actual-planned;
       const lot=parseFloat(lotMatch)||0.1;
-      // Estimate USD slippage: assume XAUUSD, 1pt = 0.01$, lot*100oz
       const usdEst=Math.abs(slip)*lot*0.1;
-
-      SLIP_DATA.push({
-        time:g(matchHit,C.Time),
-        orderType:dir,
-        planned,actual,slip,lot,usdEst,
-        tfl:gf(matchHit,C.TotalFL),
-        daily:gf(matchHit,C.Daily),
-        note:hn
-      });
+      const tier=IS_NEW_FORMAT?g(matchHit,C.SpreadTier):'N/A';
+      const avgSprd=IS_NEW_FORMAT?gf(matchHit,C.AvgSpread):0;
+      const dynStep=IS_NEW_FORMAT?gi(matchHit,C.DynStep):0;
+      SLIP_DATA.push({time:g(matchHit,CMAP.Time),orderType:dir,planned,actual,slip,lot,usdEst,tier,avgSprd,dynStep,note:hn});
     }
   });
-
   return SLIP_DATA;
 }
 
 // ===== COMPUTE SPIKES =====
 function computeSpikes(){
-  const ticks=ALL.filter(r=>g(r,C.Type)==='TICK');
-  const vals=ticks.map(r=>gf(r,C.Tick)).filter(v=>v!==0);
-  const absVals=vals.map(v=>Math.abs(v));
-  const avg=absVals.reduce((a,b)=>a+b,0)/absVals.length;
-  const variance=absVals.reduce((a,b)=>a+(b-avg)**2,0)/absVals.length;
+  const ticks=ALL.filter(r=>g(r,CMAP.Type)==='TICK');
+  const vals=ticks.map(r=>gf(r,CMAP.Tick)).filter(v=>v!==0);
+  if(vals.length===0) return {spikes:[],avg:0,stdev:0,threshold:50};
+  const avg=vals.reduce((a,b)=>a+Math.abs(b),0)/vals.length;
+  const variance=vals.reduce((a,v)=>a+(Math.abs(v)-avg)**2,0)/vals.length;
   const stdev=Math.sqrt(variance);
   const threshold=avg+2*stdev;
-
-  SPIKE_DATA=ticks.map((r,i)=>{
-    const tick=gf(r,C.Tick);
-    const price=gf(r,C.Price);
-    const prevTick=i>0?ticks[i-1]:null;
-    const prevPrice=prevTick?gf(prevTick,C.Price):price;
-    const gap=price-prevPrice;
-    return {
-      time:g(r,C.Time),tick,price,gap,
-      isSpike:Math.abs(tick)>threshold,
-      magnitude:Math.abs(tick),
-      idx:ALL.indexOf(r)
-    };
+  SPIKE_DATA=ticks.map(r=>{
+    const tick=gf(r,CMAP.Tick);
+    const price=gf(r,CMAP.Price);
+    const tier=IS_NEW_FORMAT?g(r,C.SpreadTier):'';
+    return {time:g(r,CMAP.Time),tick,price,tier,
+      isSpike:Math.abs(tick)>threshold,magnitude:Math.abs(tick)};
   }).filter(s=>s.isSpike);
-
-  return {spikes:SPIKE_DATA, avg, stdev, threshold};
+  return {spikes:SPIKE_DATA,avg,stdev,threshold};
 }
 
 // ===== RENDER ALL =====
@@ -648,119 +534,265 @@ function renderAll(){
   computeSlippage();
   const {spikes,avg,stdev,threshold}=computeSpikes();
 
-  // Update badges
   const highSlip=SLIP_DATA.filter(s=>Math.abs(s.slip)>=15).length;
-  const slipBadge=document.getElementById('slipBadge');
-  if(highSlip>0){slipBadge.style.display='inline';slipBadge.textContent=highSlip;}
-  const spikeBadge=document.getElementById('spikeBadge');
-  if(spikes.length>0){spikeBadge.style.display='inline';spikeBadge.textContent=spikes.length;}
+  if(highSlip>0){document.getElementById('slipBadge').style.display='inline';document.getElementById('slipBadge').textContent=highSlip;}
+  if(spikes.length>0){document.getElementById('spikeBadge').style.display='inline';document.getElementById('spikeBadge').textContent=spikes.length;}
 
-  renderAlerts();
-  renderMetrics();
-  renderPnL(); renderEvtDist(); renderPrice();
+  const tier3Rows=IS_NEW_FORMAT?ALL.filter(r=>g(r,C.SpreadTier).includes('3')):[];
+  if(tier3Rows.length>ALL.length*0.2&&IS_NEW_FORMAT){
+    document.getElementById('spreadBadge').style.display='inline';
+    document.getElementById('spreadBadge').textContent='T3';
+  }
+
+  renderAlerts(); renderMetrics();
+  renderPnL(); renderEvtDist(); renderPriceChart();
+  renderSpreadTab();
   renderSlippage();
   renderSpike(avg,stdev,threshold);
   renderHedge();
   renderDominance();
-  renderTimeline();
   renderNarrative();
+  renderTimeline();
   renderLogs();
 }
 
 // ===== ALERTS =====
 function renderAlerts(){
   const last=ALL[ALL.length-1];
-  const total=gf(last,C.Total);
-  const maxLayer=Math.max(...ALL.map(r=>Math.abs(gi(r,C.HedgeLayer))));
-  const deinit=ALL.find(r=>g(r,C.Note).includes('EA DEINIT')||g(r,C.Note).includes('DEINIT'));
+  const total=gf(last,CMAP.Total);
+  const maxLayer=Math.max(0,...ALL.map(r=>Math.abs(gi(r,CMAP.HedgeLayer))));
+  const deinit=ALL.find(r=>g(r,CMAP.Note).includes('EA DEINIT'));
   const highSlip=SLIP_DATA.filter(s=>Math.abs(s.slip)>=15);
-  const spikes_ca=ALL.filter(r=>g(r,C.Type)==='CLOSE_ALL'&&g(r,C.Note).includes('SPIKE'));
+  const spikes_ca=ALL.filter(r=>g(r,CMAP.Type)==='CLOSE_ALL'&&g(r,CMAP.Note).includes('SPIKE'));
+  const tier3Count=IS_NEW_FORMAT?ALL.filter(r=>g(r,C.SpreadTier).includes('TIER 3')).length:0;
+  const tier3HedgeHit=IS_NEW_FORMAT?ALL.filter(r=>g(r,CMAP.Type)==='HEDGE_HIT'&&g(r,C.SpreadTier).includes('3')).length:0;
 
   const als=[];
-  if(deinit) als.push({cls:'warn',msg:`⚠ EA DEINIT pada ${ts(g(deinit,C.Time))} — sesi berakhir tidak normal atau di-close manual`});
-  if(total<-10) als.push({cls:'danger',msg:`📉 Total P&L sesi: ${total.toFixed(2)} — rugi besar, perlu investigasi`});
-  if(maxLayer>=4) als.push({cls:'danger',msg:`🚨 Hedge mencapai Layer ${maxLayer} — martingale exposure sangat tinggi`});
-  if(highSlip.length>0) als.push({cls:'warn',msg:`⚡ ${highSlip.length}x slippage tinggi (≥15pts) terdeteksi pada hedge orders — cek tab Slippage`});
-  if(spikes_ca.length>0) als.push({cls:'warn',msg:`📊 ${spikes_ca.length}x CLOSE_ALL dipicu SPIKE — cek tab Spike`});
-  if(als.length===0) als.push({cls:'ok',msg:`✓ Tidak ada anomali kritis terdeteksi pada sesi ini`});
+  if(!IS_NEW_FORMAT) als.push({cls:'warn',msg:`⚠ CSV format lama terdeteksi — tab Spread Adaptive tidak tersedia. Update ke Ravager B2R + SA untuk forensik lengkap.`});
+  if(deinit) als.push({cls:'warn',msg:`⚠ EA DEINIT pada ${ts(g(deinit,CMAP.Time))} — sesi berakhir tidak normal atau di-stop manual`});
+  if(total<-10) als.push({cls:'danger',msg:`📉 Total P&L sesi: ${total.toFixed(2)} — sesi merugi besar`});
+  if(maxLayer>=4) als.push({cls:'danger',msg:`🚨 Hedge mencapai Layer ${maxLayer} — martingale exposure tinggi`});
+  if(highSlip.length>0) als.push({cls:'warn',msg:`⚡ ${highSlip.length}x slippage tinggi (≥15pts) pada hedge orders`});
+  if(spikes_ca.length>0) als.push({cls:'warn',msg:`📊 ${spikes_ca.length}x CLOSE_ALL dipicu SPIKE`});
+  if(tier3HedgeHit>0&&IS_NEW_FORMAT) als.push({cls:'warn',msg:`📡 ${tier3HedgeHit}x hedge HIT terjadi saat Spread Tier 3 (wide) — broker mungkin widening spread saat posisi tertekan`});
+  if(tier3Count>ALL.length*0.3&&IS_NEW_FORMAT) als.push({cls:'info',msg:`📡 ${Math.round(tier3Count/ALL.length*100)}% waktu sesi di Spread Tier 3 — sesi berlangsung saat spread sangat lebar`});
+  if(als.length===0) als.push({cls:'ok',msg:`✓ Tidak ada anomali kritis. Sesi berjalan normal.`});
   document.getElementById('alBox').innerHTML=als.map(a=>`<div class="al ${a.cls}">${a.msg}</div>`).join('');
 }
 
 // ===== METRICS =====
 function renderMetrics(){
-  const entries=ALL.filter(r=>g(r,C.Type)==='ENTRY').length;
-  const hinits=ALL.filter(r=>g(r,C.Type)==='HEDGE_INIT').length;
-  const closes=ALL.filter(r=>g(r,C.Type)==='CLOSE_ALL').length;
-  const spikes_ca=ALL.filter(r=>g(r,C.Type)==='CLOSE_ALL'&&g(r,C.Note).includes('SPIKE')).length;
-  const maxL=Math.max(...ALL.map(r=>Math.abs(gi(r,C.HedgeLayer))));
+  const entries=ALL.filter(r=>g(r,CMAP.Type)==='ENTRY').length;
+  const hinits=ALL.filter(r=>g(r,CMAP.Type)==='HEDGE_INIT').length;
+  const closes=ALL.filter(r=>g(r,CMAP.Type)==='CLOSE_ALL').length;
+  const maxLayer=Math.max(0,...ALL.map(r=>Math.abs(gi(r,CMAP.HedgeLayer))));
   const last=ALL[ALL.length-1];
-  const daily=gf(last,C.Daily), total=gf(last,C.Total);
-  const highSlip=SLIP_DATA.filter(s=>Math.abs(s.slip)>=15).length;
-  const avgSlip=SLIP_DATA.length>0?SLIP_DATA.reduce((a,s)=>a+Math.abs(s.slip),0)/SLIP_DATA.length:0;
+  const daily=gf(last,CMAP.Daily),total=gf(last,CMAP.Total);
+  const avgSpread=IS_NEW_FORMAT&&ALL.length>0?ALL.filter(r=>gf(r,C.AvgSpread)>0).reduce((a,r)=>a+gf(r,C.AvgSpread),0)/Math.max(1,ALL.filter(r=>gf(r,C.AvgSpread)>0).length):0;
+  const tier3Pct=IS_NEW_FORMAT?Math.round(ALL.filter(r=>g(r,C.SpreadTier).includes('3')).length/Math.max(1,ALL.length)*100):0;
 
   document.getElementById('mGrid').innerHTML=[
-    {l:'Entries',v:entries,c:'v-neu',s:'market orders'},
-    {l:'Hedge Cycles',v:hinits,c:hinits>2?'v-amber':'v-neu',s:'pending orders'},
-    {l:'Max Layer',v:'L'+maxL,c:maxL>=4?'v-red':maxL>=2?'v-amber':'v-green',s:'depth terdalam'},
-    {l:'Spike Closes',v:spikes_ca,c:spikes_ca>2?'v-amber':'v-neu',s:'dari '+closes+' close_all'},
-    {l:'High Slippage',v:highSlip,c:highSlip>0?'v-amber':'v-green',s:'≥15pts'},
-    {l:'Avg Slip',v:avgSlip.toFixed(1)+'p',c:avgSlip>10?'v-amber':avgSlip>20?'v-red':'v-green',s:'hedge orders'},
-    {l:'Daily P&L',v:(daily>=0?'+':'')+daily.toFixed(2),c:daily>=0?'v-green':'v-red',s:'sesi ini'},
-    {l:'Total P&L',v:(total>=0?'+':'')+total.toFixed(2),c:total>=0?'v-green':'v-red',s:'kumulatif'},
-  ].map(x=>`<div class="mc"><div class="mc-lbl">${x.l}</div><div class="mc-val ${x.c}">${x.v}</div><div class="mc-sub">${x.s}</div></div>`).join('');
+    {l:'Entries',v:entries,c:'v-n',s:'market orders'},
+    {l:'Hedge Cycles',v:hinits,c:hinits>2?'v-a':'v-n',s:'inisiasi'},
+    {l:'Max Layer',v:'L'+maxLayer,c:maxLayer>=4?'v-r':maxLayer>=2?'v-a':'v-g',s:'depth hedge'},
+    {l:'Close All',v:closes,c:'v-n',s:'total trigger'},
+    {l:'Avg Spread',v:IS_NEW_FORMAT?avgSpread.toFixed(2)+'p':'N/A',c:IS_NEW_FORMAT&&avgSpread>3.5?'v-r':IS_NEW_FORMAT&&avgSpread>2?'v-a':'v-g',s:'rolling avg'},
+    {l:'Tier 3 Time',v:IS_NEW_FORMAT?tier3Pct+'%':'N/A',c:tier3Pct>30?'v-r':tier3Pct>15?'v-a':'v-g',s:'wide spread'},
+    {l:'Daily P&L',v:(daily>=0?'+':'')+daily.toFixed(2),c:daily>=0?'v-g':'v-r',s:'sesi ini'},
+    {l:'Total P&L',v:(total>=0?'+':'')+total.toFixed(2),c:total>=0?'v-g':'v-r',s:'kumulatif'},
+  ].map(x=>`<div class="mc"><div class="mc-l">${x.l}</div><div class="mc-v ${x.c}">${x.v}</div><div class="mc-s">${x.s}</div></div>`).join('');
 }
 
-// ===== P&L =====
+// ===== P&L CHART =====
 function renderPnL(){
-  const pts=ALL.filter(r=>g(r,C.Type)!=='TICK'&&g(r,C.Daily)!=='');
-  const labels=pts.map(r=>ts(g(r,C.Time)));
-  const daily=pts.map(r=>gf(r,C.Daily));
-  const total=pts.map(r=>gf(r,C.Total));
+  const pts=ALL.filter(r=>g(r,CMAP.Type)!=='TICK'&&g(r,CMAP.Daily)!=='');
+  const labels=pts.map(r=>ts(g(r,CMAP.Time)));
+  const daily=pts.map(r=>gf(r,CMAP.Daily));
+  const total=pts.map(r=>gf(r,CMAP.Total));
   if(charts.pnl)charts.pnl.destroy();
   charts.pnl=new Chart(document.getElementById('pnlC'),{
     type:'line',data:{labels,datasets:[
-      {label:'Daily',data:daily,borderColor:'#3b8bff',borderWidth:1.5,pointRadius:0,tension:0.3,borderDash:[4,3]},
-      {label:'Total',data:total,borderColor:'#22c97a',borderWidth:2,pointRadius:0,tension:0.3}
+      {label:'Daily',data:daily,borderColor:'#3b82f6',borderWidth:1.5,pointRadius:0,tension:0.3,borderDash:[4,3]},
+      {label:'Total',data:total,borderColor:'#10b981',borderWidth:2,pointRadius:0,tension:0.3}
     ]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#3d4a60',maxTicksLimit:8,font:{size:9}},grid:{color:'rgba(255,255,255,0.03)'}},
-              y:{ticks:{color:'#3d4a60',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}}}}
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#333d52',maxTicksLimit:8,font:{size:9}},grid:{color:'rgba(255,255,255,0.02)'}},
+              y:{ticks:{color:'#333d52',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}}}}
   });
 }
 
-// ===== EVENT DIST =====
+// ===== EVT DIST =====
 function renderEvtDist(){
   const counts={};
-  ALL.filter(r=>g(r,C.Type)!=='TICK').forEach(r=>{const t=g(r,C.Type);counts[t]=(counts[t]||0)+1;});
+  ALL.filter(r=>g(r,CMAP.Type)!=='TICK').forEach(r=>{const t=g(r,CMAP.Type);counts[t]=(counts[t]||0)+1;});
   const labels=Object.keys(counts),vals=Object.values(counts);
-  const colors={ENTRY:'#3b8bff',HEDGE_INIT:'#f59e0b',HEDGE_HIT:'#fb923c',HEDGE_PLACE:'#fbbf24',
-    DIR:'#22c97a',BASKET:'#9b6dff',CLOSE_ALL:'#f43f5e',SYSTEM:'#475569'};
+  const colors={ENTRY:'#3b82f6',HEDGE_INIT:'#f59e0b',HEDGE_HIT:'#fb923c',HEDGE_PLACE:'#fbbf24',
+    DIR:'#10b981',BASKET:'#8b5cf6',CLOSE_ALL:'#ef4444',SYSTEM:'#475569',ORPHAN_CLEAN:'#f97316'};
   if(charts.evt)charts.evt.destroy();
   charts.evt=new Chart(document.getElementById('evtC'),{
     type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:labels.map(l=>colors[l]||'#475569')}]},
-    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
-      plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#3d4a60',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}},
-              y:{ticks:{color:'#7a85a0',font:{size:9,family:"'Courier New'"}},grid:{display:false}}}}
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#333d52',font:{size:9}},grid:{color:'rgba(255,255,255,0.03)'}},
+              y:{ticks:{color:'#6e7a94',font:{size:9,family:"'Courier New'"}},grid:{display:false}}}}
   });
 }
 
 // ===== PRICE CHART =====
-function renderPrice(){
-  const ticks=ALL.filter(r=>g(r,C.Type)==='TICK').filter((_,i)=>i%5===0);
-  const labels=ticks.map(r=>ts(g(r,C.Time)));
-  const prices=ticks.map(r=>gf(r,C.Price));
+function renderPriceChart(){
+  const ticks=ALL.filter(r=>g(r,CMAP.Type)==='TICK').filter((_,i)=>i%5===0);
+  const labels=ticks.map(r=>ts(g(r,CMAP.Time)));
+  const prices=ticks.map(r=>gf(r,CMAP.Price));
   if(charts.price)charts.price.destroy();
   charts.price=new Chart(document.getElementById('priceC'),{
-    type:'line',data:{labels,datasets:[
-      {label:'Price',data:prices,borderColor:'rgba(100,130,200,0.5)',borderWidth:1,pointRadius:0,tension:0.1}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#3d4a60',maxTicksLimit:10,font:{size:9}},grid:{color:'rgba(255,255,255,0.02)'}},
-              y:{ticks:{color:'#3d4a60',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}}}}
+    type:'line',data:{labels,datasets:[{data:prices,borderColor:'rgba(100,130,200,0.5)',borderWidth:1,pointRadius:0,tension:0.1}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#333d52',maxTicksLimit:10,font:{size:9}},grid:{color:'rgba(255,255,255,0.02)'}},
+              y:{ticks:{color:'#333d52',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}}}}
   });
+}
+
+// ===== SPREAD ADAPTIVE TAB =====
+function renderSpreadTab(){
+  if(!IS_NEW_FORMAT){
+    document.getElementById('spreadVerdict').innerHTML='<div class="al warn">Format CSV lama — tidak ada data SpreadTier/AvgSpread/DynHedgeStep. Update EA ke versi B2R + Spread Adaptive.</div>';
+    document.getElementById('spreadMetrics').innerHTML='';
+    return;
+  }
+  const nonTick=ALL.filter(r=>g(r,CMAP.Type)!=='TICK');
+  const allRows=ALL.filter(r=>g(r,C.SpreadTier)!=='');
+  const t1=allRows.filter(r=>g(r,C.SpreadTier).includes('1')).length;
+  const t2=allRows.filter(r=>g(r,C.SpreadTier).includes('2')).length;
+  const t3=allRows.filter(r=>g(r,C.SpreadTier).includes('3')).length;
+  const total=Math.max(t1+t2+t3,1);
+  const p1=Math.round(t1/total*100),p2=Math.round(t2/total*100),p3=Math.round(t3/total*100);
+
+  // Tier bar
+  document.getElementById('tierBar').innerHTML=`
+    <div class="tier-seg" style="width:${p1}%;background:var(--tier1)"></div>
+    <div class="tier-seg" style="width:${p2}%;background:var(--tier2)"></div>
+    <div class="tier-seg" style="width:${p3}%;background:var(--tier3)"></div>`;
+  document.getElementById('tierPct').innerHTML=`
+    <span style="color:var(--tier1);font-family:var(--font)">T1: ${p1}% (${t1} rows)</span>
+    <span style="color:var(--tier2);font-family:var(--font)">T2: ${p2}% (${t2} rows)</span>
+    <span style="color:var(--tier3);font-family:var(--font)">T3: ${p3}% (${t3} rows)</span>`;
+
+  const avgSpreadAll=allRows.reduce((a,r)=>a+gf(r,C.AvgSpread),0)/Math.max(1,allRows.length);
+  const hedgeHitsT3=ALL.filter(r=>g(r,CMAP.Type)==='HEDGE_HIT'&&g(r,C.SpreadTier).includes('3')).length;
+  const hedgeHitsTotal=ALL.filter(r=>g(r,CMAP.Type)==='HEDGE_HIT').length;
+  const dynStepModes=ALL.filter(r=>gi(r,C.DynStep)>0).map(r=>gi(r,C.DynStep));
+  const maxDynStep=dynStepModes.length?Math.max(...dynStepModes):0;
+  const avgDynStep=dynStepModes.length?dynStepModes.reduce((a,b)=>a+b,0)/dynStepModes.length:0;
+
+  document.getElementById('spreadMetrics').innerHTML=[
+    {l:'Tier 1 Normal',v:p1+'%',c:'v-t1',s:t1+' rows'},
+    {l:'Tier 2 Medium',v:p2+'%',c:'v-t2',s:t2+' rows'},
+    {l:'Tier 3 Wide',v:p3+'%',c:p3>30?'v-t3':'v-n',s:t3+' rows'},
+    {l:'Avg Spread',v:avgSpreadAll.toFixed(2)+'p',c:avgSpreadAll>3.5?'v-t3':avgSpreadAll>2?'v-t2':'v-t1',s:'rolling avg'},
+    {l:'Max DynStep',v:maxDynStep+'p',c:maxDynStep>=60?'v-t3':maxDynStep>=40?'v-t2':'v-t1',s:'hedge step max'},
+    {l:'Hedge Hit T3',v:hedgeHitsT3+'/'+hedgeHitsTotal,c:hedgeHitsT3>0?'v-r':'v-g',s:'wide spread saat hit'},
+  ].map(x=>`<div class="mc"><div class="mc-l">${x.l}</div><div class="mc-v ${x.c}">${x.v}</div><div class="mc-s">${x.s}</div></div>`).join('');
+
+  // Verdict
+  let vC='clean',vT='✓ Spread Adaptive Normal',vB='Sebagian besar waktu sesi berada di Tier 1. DynHedgeStep berjalan sesuai kondisi pasar.';
+  if(hedgeHitsT3>hedgeHitsTotal*0.5&&hedgeHitsTotal>0){
+    vC='fraud';vT='🚨 Anomali: Mayoritas Hedge Hit saat Tier 3';
+    vB=`${hedgeHitsT3} dari ${hedgeHitsTotal} hedge hit terjadi saat spread Tier 3 (wide >3.5 pip). Ini pola mencurigakan: broker mungkin sengaja melebarkan spread saat posisi kita floating negatif, sehingga pending order hedge lebih mudah kena dan posisi semakin tertekan.`;}
+  else if(p3>30){
+    vC='suspect';vT='⚠ Spread Sering di Tier 3';
+    vB=`${p3}% waktu sesi spread berada di Tier 3. DynStep otomatis naik ke ${maxDynStep} pip untuk kompensasi. Ini normal jika sesi bertepatan dengan waktu low liquidity, tapi perlu dipantau konsistensinya.`;}
+  document.getElementById('spreadVerdict').innerHTML=`<div class="verdict ${vC}"><div class="verdict-title">${vT}</div><div class="verdict-body">${vB}</div></div>`;
+
+  // AvgSpread timeline
+  const sample=allRows.filter((_,i)=>i%3===0);
+  const sLabels=sample.map(r=>ts(g(r,C.Time)));
+  const sVals=sample.map(r=>gf(r,C.AvgSpread));
+  const sColors=sample.map(r=>tierColor(g(r,C.SpreadTier)));
+  if(charts.avgSpread)charts.avgSpread.destroy();
+  charts.avgSpread=new Chart(document.getElementById('avgSpreadC'),{
+    type:'line',data:{labels:sLabels,datasets:[
+      {data:sVals,borderColor:'rgba(20,184,166,0.7)',backgroundColor:'rgba(20,184,166,0.06)',borderWidth:1.5,pointRadius:1,pointBackgroundColor:sColors,tension:0.2,fill:true}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#333d52',maxTicksLimit:8,font:{size:9}},grid:{color:'rgba(255,255,255,0.02)'}},
+              y:{ticks:{color:'#333d52',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'},
+                title:{display:true,text:'pip',color:'#333d52',font:{size:9}}}}}
+  });
+
+  // DynStep timeline
+  const dsVals=sample.map(r=>gi(r,C.DynStep));
+  if(charts.dynStep)charts.dynStep.destroy();
+  charts.dynStep=new Chart(document.getElementById('dynStepC'),{
+    type:'line',data:{labels:sLabels,datasets:[
+      {data:dsVals,borderColor:'rgba(245,158,11,0.7)',backgroundColor:'rgba(245,158,11,0.06)',borderWidth:1.5,pointRadius:1,tension:0,fill:true,stepped:true}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#333d52',maxTicksLimit:8,font:{size:9}},grid:{color:'rgba(255,255,255,0.02)'}},
+              y:{ticks:{color:'#333d52',font:{size:9},stepSize:20},grid:{color:'rgba(255,255,255,0.04)'},
+                title:{display:true,text:'pip',color:'#333d52',font:{size:9}}}}}
+  });
+
+  // Hedge tier chart
+  const hedgeEvents=ALL.filter(r=>g(r,CMAP.Type).startsWith('HEDGE'));
+  const hLabels=hedgeEvents.map(r=>ts(g(r,CMAP.Time)));
+  const hLayer=hedgeEvents.map(r=>Math.abs(gi(r,CMAP.HedgeLayer)));
+  const hTierColors=hedgeEvents.map(r=>IS_NEW_FORMAT?tierColor(g(r,C.SpreadTier)):'#475569');
+  if(charts.hedgeTier)charts.hedgeTier.destroy();
+  charts.hedgeTier=new Chart(document.getElementById('hedgeTierC'),{
+    type:'bar',data:{labels:hLabels,datasets:[
+      {label:'Layer',data:hLayer,backgroundColor:hTierColors,borderWidth:0}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:ctx=>{const r=hedgeEvents[ctx.dataIndex];const tier=IS_NEW_FORMAT?g(r,C.SpreadTier):'N/A';return `Layer: ${ctx.raw} | Tier: ${tier}`;} }}},
+      scales:{x:{ticks:{color:'#333d52',maxTicksLimit:10,font:{size:9}},grid:{display:false}},
+              y:{ticks:{color:'#333d52',font:{size:9},stepSize:1},grid:{color:'rgba(255,255,255,0.04)'},min:0,
+                title:{display:true,text:'Layer',color:'#333d52',font:{size:9}}}}}
+  });
+
+  // Forensic summary boxes
+  const hedgeHits=ALL.filter(r=>g(r,CMAP.Type)==='HEDGE_HIT');
+  document.getElementById('spreadForensic').innerHTML=hedgeHits.map(r=>{
+    const tier=IS_NEW_FORMAT?g(r,C.SpreadTier):'N/A';
+    const avgS=IS_NEW_FORMAT?gf(r,C.AvgSpread):0;
+    const dyn=IS_NEW_FORMAT?gi(r,C.DynStep):0;
+    const fl=gf(r,CMAP.TotalFL);
+    const layer=Math.abs(gi(r,CMAP.HedgeLayer));
+    const isSuspect=tier.includes('3');
+    return `<div class="sf-box" style="${isSuspect?'border-color:rgba(239,68,68,0.3)':''}">
+      <div class="sf-title">HEDGE HIT L${layer} — ${g(r,CMAP.Time).substring(11,19)}</div>
+      <div class="sf-body">
+        Harga: <strong>${gf(r,CMAP.Price).toFixed(2)}</strong> &nbsp;·&nbsp;
+        Floating: <strong style="color:${pnlColor(fl)}">${fl>=0?'+':''}${fl.toFixed(2)}</strong> &nbsp;·&nbsp;
+        SpreadTier: <strong style="color:${tierColor(tier)}">${tier||'N/A'}</strong> &nbsp;·&nbsp;
+        AvgSpread: <strong>${avgS.toFixed(2)} pip</strong> &nbsp;·&nbsp;
+        DynStep aktif: <strong>${dyn} pip</strong>
+        ${isSuspect?`<br><span style="color:var(--red)">⚠ Hedge ini kena saat spread TIER 3 — pending order lebih jauh dari normal (${dyn} pip) tapi tetap kena. Ini patut dicurigai.</span>`:''}
+        <br><small style="color:var(--text3)">${g(r,CMAP.Note)}</small>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Spread vs slippage correlation
+  if(SLIP_DATA.length>0){
+    const t1s=SLIP_DATA.filter(s=>s.tier.includes('1'));
+    const t2s=SLIP_DATA.filter(s=>s.tier.includes('2'));
+    const t3s=SLIP_DATA.filter(s=>s.tier.includes('3'));
+    const avg1=t1s.length?t1s.reduce((a,s)=>a+Math.abs(s.slip),0)/t1s.length:0;
+    const avg2=t2s.length?t2s.reduce((a,s)=>a+Math.abs(s.slip),0)/t2s.length:0;
+    const avg3=t3s.length?t3s.reduce((a,s)=>a+Math.abs(s.slip),0)/t3s.length:0;
+    let corrVerdict=avg3>avg1*1.5?'⚠ Slippage makin besar saat spread Tier 3 — korelasi positif spread lebar → slippage tinggi':'✓ Slippage tidak berkorelasi signifikan dengan tier spread';
+    document.getElementById('spreadSlipCorr').innerHTML=`
+      <div class="sf-box">
+        <div class="sf-title">Korelasi Spread Tier vs Avg Slippage</div>
+        <div class="sf-body">
+          <span style="color:var(--tier1)">Tier 1</span>: avg slip ${avg1.toFixed(1)} pts (${t1s.length} events) &nbsp;|&nbsp;
+          <span style="color:var(--tier2)">Tier 2</span>: avg slip ${avg2.toFixed(1)} pts (${t2s.length} events) &nbsp;|&nbsp;
+          <span style="color:var(--tier3)">Tier 3</span>: avg slip ${avg3.toFixed(1)} pts (${t3s.length} events)<br>
+          <strong>${corrVerdict}</strong>
+        </div>
+      </div>`;
+  } else {
+    document.getElementById('spreadSlipCorr').innerHTML='<div style="font-size:11px;color:var(--text3);font-family:var(--font)">Tidak cukup data slippage untuk korelasi.</div>';
+  }
 }
 
 // ===== SLIPPAGE =====
@@ -770,345 +802,442 @@ function renderSlippage(){
   const avgSlip=slips.length>0?slips.reduce((a,s)=>a+Math.abs(s.slip),0)/slips.length:0;
   const totalUsd=slips.reduce((a,s)=>a+s.usdEst,0);
   const highCount=slips.filter(s=>Math.abs(s.slip)>=15).length;
-  const negSlip=slips.filter(s=>s.slip<-1).length;
-  const posSlip=slips.filter(s=>s.slip>1).length;
-
-  // Verdict
-  let vClass='clean',vTitle='✓ Slippage Normal',vBody='Semua pending order hedge tereksekusi dalam toleransi wajar. Tidak ada indikasi manipulasi eksekusi dari broker.';
-  if(maxSlip>30||highCount>1){
-    vClass='fraud';vTitle='🚨 Anomali Slippage — Perlu Investigasi';
-    vBody=`Max slippage ${maxSlip.toFixed(1)}pts (${highCount}x event ≥15pts). Slippage ekstrem pada pending order bisa mengindikasikan requote, delay server, atau manipulasi fill harga oleh broker. Bandingkan dengan broker lain.`;
-  } else if(maxSlip>15||highCount>0){
-    vClass='suspect';vTitle='⚠ Slippage Medium — Waspadai';
-    vBody=`Terdapat slippage ${maxSlip.toFixed(1)}pts. Bisa normal pada kondisi volatile, tapi perlu dipantau. Cek apakah pola ini konsisten di sesi lain.`;
-  }
-  document.getElementById('slipVerdict').innerHTML=`<div class="verdict ${vClass}"><div class="verdict-title">${vTitle}</div><div class="verdict-body">${vBody}</div></div>`;
-
+  let vC='clean',vT='✓ Slippage Normal',vB='Semua pending order hedge tereksekusi dalam toleransi wajar.';
+  if(maxSlip>30||highCount>1){vC='fraud';vT='🚨 Anomali Slippage';vB=`Max slippage ${maxSlip.toFixed(1)}pts (${highCount}x event ≥15pts). Bisa indikasi requote atau fill manipulation.`;}
+  else if(maxSlip>15){vC='suspect';vT='⚠ Slippage Medium';vB=`Slippage max ${maxSlip.toFixed(1)}pts. Bisa normal saat volatile — pantau konsistensinya.`;}
+  document.getElementById('slipVerdict').innerHTML=`<div class="verdict ${vC}"><div class="verdict-title">${vT}</div><div class="verdict-body">${vB}</div></div>`;
   document.getElementById('slipMetrics').innerHTML=[
-    {l:'Total Events',v:slips.length,c:'v-neu'},
-    {l:'Max Slippage',v:maxSlip.toFixed(1)+'pts',c:maxSlip>30?'v-red':maxSlip>15?'v-amber':'v-green'},
-    {l:'Avg Slippage',v:avgSlip.toFixed(1)+'pts',c:avgSlip>10?'v-amber':'v-green'},
-    {l:'Est USD Impact',v:'~$'+totalUsd.toFixed(2),c:totalUsd>1?'v-amber':'v-neu'},
-    {l:'Unfavorable',v:negSlip+'x',c:negSlip>0?'v-amber':'v-green',s:'broker dapat lebih'},
-    {l:'Favorable',v:posSlip+'x',c:'v-green',s:'kita dapat lebih'},
-  ].map(x=>`<div class="mc"><div class="mc-lbl">${x.l}</div><div class="mc-val ${x.c}">${x.v}</div>${x.s?`<div class="mc-sub">${x.s}</div>`:''}</div>`).join('');
+    {l:'Total Events',v:slips.length,c:'v-n'},{l:'Max Slippage',v:maxSlip.toFixed(1)+'pts',c:maxSlip>30?'v-r':maxSlip>15?'v-a':'v-g'},
+    {l:'Avg Slippage',v:avgSlip.toFixed(1)+'pts',c:avgSlip>10?'v-a':'v-g'},{l:'Est USD Impact',v:'~$'+totalUsd.toFixed(3),c:totalUsd>1?'v-a':'v-n'},
+    {l:'High Slip ≥15',v:highCount+'x',c:highCount>0?'v-a':'v-g'},{l:'Format',v:IS_NEW_FORMAT?'B2R+SA':'Legacy',c:IS_NEW_FORMAT?'v-t':'v-a'},
+  ].map(x=>`<div class="mc"><div class="mc-l">${x.l}</div><div class="mc-v ${x.c}">${x.v}</div></div>`).join('');
 
-  // Slippage chart
   const labels=slips.map(s=>ts(s.time));
   const slipVals=slips.map(s=>s.slip);
+  const slipColors=slips.map(s=>s.slip<0?'rgba(239,68,68,0.65)':'rgba(16,185,129,0.65)');
   if(charts.slip)charts.slip.destroy();
   charts.slip=new Chart(document.getElementById('slipC'),{
-    type:'bar',
-    data:{labels,datasets:[{
-      label:'Slippage (pts)',data:slipVals,
-      backgroundColor:slipVals.map(v=>v<0?'rgba(255,77,109,0.6)':'rgba(34,201,122,0.6)'),
-      borderColor:slipVals.map(v=>v<0?'#ff4d6d':'#22c97a'),borderWidth:1
-    }]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Slip: ${ctx.raw>0?'+':''}${ctx.raw.toFixed(2)} pts`}}},
-      scales:{
-        x:{ticks:{color:'#3d4a60',font:{size:9,family:"'Courier New'"}},grid:{display:false}},
-        y:{ticks:{color:'#3d4a60',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'},
-          title:{display:true,text:'pts',color:'#3d4a60',font:{size:9}}}
-      }}
+    type:'bar',data:{labels,datasets:[{data:slipVals,backgroundColor:slipColors,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:ctx=>`Slip: ${ctx.raw>0?'+':''}${ctx.raw.toFixed(2)} pts | Tier: ${slips[ctx.dataIndex].tier||'N/A'}`}}},
+      scales:{x:{ticks:{color:'#333d52',font:{size:9}},grid:{display:false}},
+              y:{ticks:{color:'#333d52',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}}}}
   });
+  document.getElementById('slipTbody').innerHTML=slips.map(s=>`<tr>
+    <td class="mono">${ts(s.time)}</td><td><span class="badge b-hedge">${s.orderType}</span></td>
+    <td class="mono">${s.planned.toFixed(2)}</td><td class="mono">${s.actual.toFixed(2)}</td>
+    <td class="mono ${slipClass(s.slip)}">${s.slip>0?'+':''}${s.slip.toFixed(2)}</td>
+    <td class="mono" style="color:${Math.abs(s.usdEst)>0.5?'var(--amber)':'#333d52'}">~$${s.usdEst.toFixed(3)}</td>
+    <td class="mono">${s.lot.toFixed(2)}</td>
+    <td>${IS_NEW_FORMAT?tierBadge(s.tier):'—'}</td>
+    <td class="mono" style="color:${tierColor(s.tier)}">${s.avgSprd>0?s.avgSprd.toFixed(2):'—'}</td>
+    <td class="mono" style="color:${s.dynStep>=60?'var(--red)':s.dynStep>=40?'var(--amber)':'var(--text2)'}">${s.dynStep||'—'}</td>
+    <td>${slipSeverityBadge(s.slip)}</td>
+  </tr>`).join('');
 
-  // Slippage table
-  document.getElementById('slipTbody').innerHTML=slips.map(s=>{
-    const slip=s.slip;
-    return `<tr>
-      <td class="mono">${ts(s.time)}</td>
-      <td><span class="badge b-hedge">${s.orderType}</span></td>
-      <td class="mono">${s.planned.toFixed(2)}</td>
-      <td class="mono">${s.actual.toFixed(2)}</td>
-      <td class="mono ${slipClass(slip)}">${slip>0?'+':''}${slip.toFixed(2)}</td>
-      <td class="mono" style="color:${Math.abs(s.usdEst)>0.5?'#f59e0b':'#3d4a60'}">~$${s.usdEst.toFixed(3)}</td>
-      <td class="mono">${s.lot.toFixed(2)}</td>
-      <td>${slipSeverity(slip)}</td>
-      <td style="font-size:10px;color:#3d4a60;max-width:180px;overflow:hidden;text-overflow:ellipsis">${s.note}</td>
-    </tr>`;
-  }).join('');
-
-  // Entry slippage table
-  const entries=ALL.filter(r=>g(r,C.Type)==='ENTRY');
+  const entries=ALL.filter(r=>g(r,CMAP.Type)==='ENTRY');
   document.getElementById('entrySlipTbody').innerHTML=entries.map(entry=>{
-    const entryIdx=ALL.indexOf(entry);
-    const prevTicks=ALL.slice(0,entryIdx).filter(r=>g(r,C.Type)==='TICK');
-    const lastTick=prevTicks[prevTicks.length-1];
-    const signalPrice=lastTick?gf(lastTick,C.Price):gf(entry,C.Price);
-    const fillPrice=gf(entry,C.Price);
+    const idx=ALL.indexOf(entry);
+    const prevTick=ALL.slice(0,idx).filter(r=>g(r,CMAP.Type)==='TICK').pop();
+    const signalPrice=prevTick?gf(prevTick,CMAP.Price):gf(entry,CMAP.Price);
+    const fillPrice=gf(entry,CMAP.Price);
     const diff=fillPrice-signalPrice;
-    const dir=g(entry,C.Dir);
+    const tier=IS_NEW_FORMAT?g(entry,C.SpreadTier):'N/A';
     return `<tr>
-      <td class="mono">${g(entry,C.Time)}</td>
-      <td>${dir==='1'?'<span style="color:#3b8bff">↑ BUY</span>':'<span style="color:#ff4d6d">↓ SELL</span>'}</td>
-      <td class="mono">${signalPrice.toFixed(2)}</td>
-      <td class="mono">${fillPrice.toFixed(2)}</td>
+      <td class="mono">${g(entry,CMAP.Time)}</td>
+      <td>${gi(entry,CMAP.Dir)===1?'<span style="color:var(--blue)">↑ BUY</span>':'<span style="color:var(--red)">↓ SELL</span>'}</td>
+      <td class="mono">${signalPrice.toFixed(2)}</td><td class="mono">${fillPrice.toFixed(2)}</td>
       <td class="mono ${slipClass(diff)}">${diff===0?'±0.00':(diff>0?'+':'')+diff.toFixed(2)}</td>
-      <td>${Math.abs(diff)<1?'<span class="badge b-ok">INSTANT FILL</span>':'<span class="badge b-warn">DELAYED</span>'}</td>
+      <td>${IS_NEW_FORMAT?tierBadge(tier):'—'}</td>
+      <td>${Math.abs(diff)<1?'<span class="badge b-ok">INSTANT</span>':'<span class="badge b-warn">DELAYED</span>'}</td>
     </tr>`;
   }).join('');
-
-  // Spread info
-  const spreads=ALL.map(r=>gf(r,C.Spread)).filter(s=>s>0);
-  const minS=Math.min(...spreads), maxS=Math.max(...spreads);
-  const avgS=spreads.reduce((a,b)=>a+b,0)/spreads.length;
-  const constSpread=minS===maxS;
-  document.getElementById('spreadInfo').innerHTML=`
-    Min: ${minS} &nbsp;|&nbsp; Max: ${maxS} &nbsp;|&nbsp; Avg: ${avgS.toFixed(1)} &nbsp;|&nbsp; Spread Count: ${spreads.length}<br>
-    ${constSpread?
-      `<span style="color:var(--amber)">⚠ Spread konstan ${minS} pips sepanjang sesi — tidak normal untuk kondisi pasar normal (biasanya fixed spread broker). Pada pasar liquid XAUUSD, spread seharusnya bergerak dinamis.</span>`:
-      `<span style="color:var(--green)">✓ Spread bergerak dinamis — sesuai kondisi pasar normal.</span>`}
-  `;
 }
 
 // ===== SPIKE =====
-function renderSpike(avg, stdev, threshold){
+function renderSpike(avg,stdev,threshold){
   const spikes=SPIKE_DATA;
-  const maxMag=spikes.length>0?Math.max(...spikes.map(s=>s.magnitude)):0;
+  const maxMag=spikes.length?Math.max(...spikes.map(s=>s.magnitude)):0;
   const bullSpikes=spikes.filter(s=>s.tick>0).length;
   const bearSpikes=spikes.filter(s=>s.tick<0).length;
-  const spikeClose=ALL.filter(r=>g(r,C.Type)==='CLOSE_ALL'&&g(r,C.Note).includes('SPIKE'));
+  const spikeClose=ALL.filter(r=>g(r,CMAP.Type)==='CLOSE_ALL'&&g(r,CMAP.Note).includes('SPIKE'));
+  const spikeT3=IS_NEW_FORMAT?spikes.filter(s=>s.tier.includes('3')).length:0;
 
-  // Verdict
-  let svClass='clean',svTitle='✓ Pola Spike Normal',svBody='Distribusi spike sesuai volatilitas pasar. Tidak ada indikasi tick manipulation.';
-  if(spikes.length>200||(maxMag>300)){
-    svClass='fraud';svTitle='🚨 Aktivitas Spike Tidak Normal';
-    svBody=`${spikes.length} spike terdeteksi dengan magnitude max ${maxMag.toFixed(0)}pts. Volume & intensitas ini melebihi wajar untuk kondisi normal. Bisa jadi: tick injection, latency attack, atau data feed manipulation.`;
-  } else if(spikes.length>80||spikeClose.length>3){
-    svClass='suspect';svTitle='⚠ Spike Frekuensi Tinggi — Pantau';
-    svBody=`${spikes.length} spike auto-terdeteksi (threshold=${threshold.toFixed(0)}pts). ${spikeClose.length}x CLOSE_ALL dipicu spike. Bisa normal untuk sesi volatile, tapi pantau pola waktunya.`;
-  }
-  document.getElementById('spikeVerdict').innerHTML=`<div class="verdict ${svClass}"><div class="verdict-title">${svTitle}</div><div class="verdict-body">${svBody}</div></div>`;
+  let svC='clean',svT='✓ Pola Spike Normal',svB='Distribusi spike sesuai volatilitas pasar.';
+  if(spikes.length>200||maxMag>300){svC='fraud';svT='🚨 Aktivitas Spike Tidak Normal';svB=`${spikes.length} spike, magnitude max ${maxMag.toFixed(0)}pts — melebihi wajar.`;}
+  else if(spikeT3>spikes.length*0.6&&spikes.length>5){svC='suspect';svT='⚠ Spike Dominan saat Tier 3';svB=`${spikeT3}/${spikes.length} spike terjadi saat spread Tier 3 — bisa jadi broker widening spread saat spike, atau spike terjadi karena spread melebar tiba-tiba.`;}
+  else if(spikeClose.length>2){svC='suspect';svT='⚠ Banyak Close dipicu Spike';svB=`${spikeClose.length}x CLOSE_ALL dipicu spike. Pantau apakah harga balik normal setelah spike (indikasi spike injection).`;}
+  document.getElementById('spikeVerdict').innerHTML=`<div class="verdict ${svC}"><div class="verdict-title">${svT}</div><div class="verdict-body">${svB}</div></div>`;
 
   document.getElementById('spikeMetrics').innerHTML=[
-    {l:'Spike Terdeteksi',v:spikes.length,c:spikes.length>80?'v-amber':'v-neu'},
-    {l:'Max Magnitude',v:maxMag.toFixed(0)+'pts',c:maxMag>200?'v-red':maxMag>100?'v-amber':'v-neu'},
-    {l:'Threshold',v:threshold.toFixed(0)+'pts',c:'v-neu'},
-    {l:'Bull Spikes',v:bullSpikes,c:'v-green'},
-    {l:'Bear Spikes',v:bearSpikes,c:'v-red'},
-    {l:'Trigger Close',v:spikeClose.length+'x',c:spikeClose.length>2?'v-amber':'v-neu'},
-  ].map(x=>`<div class="mc"><div class="mc-lbl">${x.l}</div><div class="mc-val ${x.c}">${x.v}</div></div>`).join('');
+    {l:'Spike Terdeteksi',v:spikes.length,c:spikes.length>80?'v-a':'v-n'},
+    {l:'Max Magnitude',v:maxMag.toFixed(0)+'pts',c:maxMag>200?'v-r':maxMag>100?'v-a':'v-n'},
+    {l:'Auto Threshold',v:threshold.toFixed(0)+'pts',c:'v-n'},
+    {l:'Bull Spikes',v:bullSpikes,c:'v-g'},{l:'Bear Spikes',v:bearSpikes,c:'v-r'},
+    {l:'Trigger Close',v:spikeClose.length+'x',c:spikeClose.length>2?'v-a':'v-n'},
+  ].map(x=>`<div class="mc"><div class="mc-l">${x.l}</div><div class="mc-v ${x.c}">${x.v}</div></div>`).join('');
 
-  // Tick velocity chart (sampled)
-  const ticks=ALL.filter(r=>g(r,C.Type)==='TICK');
+  const ticks=ALL.filter(r=>g(r,CMAP.Type)==='TICK');
   const sample=ticks.filter((_,i)=>i%3===0);
-  const labels=sample.map(r=>ts(g(r,C.Time)));
-  const tickVals=sample.map(r=>gf(r,C.Tick));
+  const labels=sample.map(r=>ts(g(r,CMAP.Time)));
+  const tickVals=sample.map(r=>gf(r,CMAP.Tick));
   if(charts.spike)charts.spike.destroy();
   charts.spike=new Chart(document.getElementById('spikeC'),{
-    type:'bar',
-    data:{labels,datasets:[
-      {label:'Tick',data:tickVals,
-       backgroundColor:tickVals.map(v=>Math.abs(v)>threshold?'rgba(255,77,109,0.8)':v>0?'rgba(34,201,122,0.35)':'rgba(59,139,255,0.35)'),
-       borderWidth:0}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#3d4a60',maxTicksLimit:10,font:{size:9}},grid:{display:false}},
-              y:{ticks:{color:'#3d4a60',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}}}}
+    type:'bar',data:{labels,datasets:[{data:tickVals,backgroundColor:tickVals.map(v=>Math.abs(v)>threshold?'rgba(239,68,68,0.8)':v>0?'rgba(16,185,129,0.35)':'rgba(59,130,246,0.35)'),borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#333d52',maxTicksLimit:10,font:{size:9}},grid:{display:false}},
+              y:{ticks:{color:'#333d52',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}}}}
   });
 
-  // Histogram of spike magnitudes
   const bins=[0,25,50,75,100,150,200,300];
-  const binLabels=['0-25','25-50','50-75','75-100','100-150','150-200','200+'];
-  const binCounts=binLabels.map((_,i)=>spikes.filter(s=>s.magnitude>=bins[i]&&s.magnitude<(bins[i+1]||999)).length);
+  const bLabels=['0-25','25-50','50-75','75-100','100-150','150-200','200+'];
+  const bCounts=bLabels.map((_,i)=>spikes.filter(s=>s.magnitude>=bins[i]&&s.magnitude<(bins[i+1]||999)).length);
   if(charts.spikeHist)charts.spikeHist.destroy();
   charts.spikeHist=new Chart(document.getElementById('spikeHistC'),{
-    type:'bar',data:{labels:binLabels,datasets:[{data:binCounts,backgroundColor:'rgba(245,158,11,0.5)',borderColor:'#f59e0b',borderWidth:1}]},
+    type:'bar',data:{labels:bLabels,datasets:[{data:bCounts,backgroundColor:'rgba(245,158,11,0.5)',borderColor:'#f59e0b',borderWidth:1}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#3d4a60',font:{size:9}},grid:{display:false}},
-              y:{ticks:{color:'#3d4a60',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}}}}
+      scales:{x:{ticks:{color:'#333d52',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#333d52',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}}}}
   });
 
-  // Price gap chart
-  const gaps=ticks.map((r,i)=>{
-    if(i===0) return 0;
-    return Math.abs(gf(r,C.Price)-gf(ticks[i-1],C.Price));
-  });
-  const gSample=gaps.filter((_,i)=>i%5===0);
-  const gLabels=ticks.filter((_,i)=>i%5===0).map(r=>ts(g(r,C.Time)));
-  if(charts.gap)charts.gap.destroy();
-  charts.gap=new Chart(document.getElementById('gapC'),{
-    type:'line',data:{labels:gLabels,datasets:[{data:gSample,borderColor:'rgba(155,109,255,0.6)',borderWidth:1,pointRadius:0,tension:0,fill:true,backgroundColor:'rgba(155,109,255,0.05)'}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#3d4a60',maxTicksLimit:8,font:{size:9}},grid:{display:false}},
-              y:{ticks:{color:'#3d4a60',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}}}}
+  // Spike by tier pie
+  const t1s=spikes.filter(s=>s.tier.includes('1')).length;
+  const t2s=spikes.filter(s=>s.tier.includes('2')).length;
+  const t3s=spikes.filter(s=>s.tier.includes('3')).length;
+  const tOth=spikes.length-t1s-t2s-t3s;
+  if(charts.spikeTier)charts.spikeTier.destroy();
+  charts.spikeTier=new Chart(document.getElementById('spikeTierC'),{
+    type:'doughnut',
+    data:{labels:['Tier 1','Tier 2','Tier 3','N/A'],datasets:[{data:[t1s,t2s,t3s,tOth],backgroundColor:['rgba(16,185,129,0.7)','rgba(245,158,11,0.7)','rgba(239,68,68,0.7)','rgba(100,116,139,0.5)'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#6e7a94',font:{size:10}}}}}
   });
 
-  // Top spike list
-  const topSpikes=[...spikes].sort((a,b)=>b.magnitude-a.magnitude).slice(0,8);
-  const maxMagAll=topSpikes[0]?topSpikes[0].magnitude:1;
-  document.getElementById('spikeList').innerHTML=topSpikes.map(s=>{
-    const barW=Math.round((s.magnitude/maxMagAll)*100);
-    const color=s.tick>0?'#22c97a':'#ff4d6d';
+  const sorted=[...spikes].sort((a,b)=>b.magnitude-a.magnitude).slice(0,6);
+  const maxMagAll=sorted[0]?sorted[0].magnitude:1;
+  document.getElementById('spikeList').innerHTML=sorted.map(s=>{
+    const barW=Math.round(s.magnitude/maxMagAll*100);
+    const color=s.tick>0?'#10b981':'#ef4444';
     return `<div class="spike-item">
-      <div class="spike-header">
+      <div class="spike-hd">
         <div>
-          <div class="spike-time">${s.time}</div>
-          <div style="display:flex;align-items:center;gap:8px;margin-top:3px">
+          <div style="font-size:10px;color:var(--text3);font-family:var(--font)">${s.time}</div>
+          <div style="display:flex;gap:7px;margin-top:3px">
             <span class="badge ${s.tick>0?'b-dir':'b-close'}">${s.tick>0?'↑ BULLISH':'↓ BEARISH'}</span>
             <span class="badge b-spike">SPIKE</span>
+            ${IS_NEW_FORMAT&&s.tier?tierBadge(s.tier):''}
           </div>
         </div>
         <div class="spike-mag" style="color:${color}">${s.tick>0?'+':''}${s.tick.toFixed(1)}</div>
       </div>
-      <div class="spike-bar-wrap">
-        <div class="spike-bar-bg"><div class="spike-bar-fill" style="width:${barW}%;background:${color}"></div></div>
-      </div>
-      <div class="spike-meta">
-        <span>Price: ${s.price.toFixed(2)}</span>
-        <span>Gap: ${s.gap>0?'+':''}${s.gap.toFixed(2)}pts</span>
-        <span>Magnitude: ${s.magnitude.toFixed(1)} pts</span>
-      </div>
+      <div class="spike-bar-bg"><div class="spike-bar-fill" style="width:${barW}%;background:${color}"></div></div>
+      <div class="spike-meta"><span>Price: ${s.price.toFixed(2)}</span><span>Mag: ${s.magnitude.toFixed(1)}pts</span>${IS_NEW_FORMAT?`<span>Tier: ${s.tier||'N/A'}</span>`:''}</div>
     </div>`;
   }).join('');
 
-  // Spike trigger table
   document.getElementById('spikeTrigTbody').innerHTML=spikeClose.map(r=>{
-    const rIdx=ALL.indexOf(r);
-    const prevTicks=ALL.slice(Math.max(0,rIdx-5),rIdx).filter(x=>g(x,C.Type)==='TICK');
+    const ridx=ALL.indexOf(r);
+    const prevTicks=ALL.slice(Math.max(0,ridx-5),ridx).filter(x=>g(x,CMAP.Type)==='TICK');
     const trigTick=prevTicks[prevTicks.length-1];
-    const tickVal=trigTick?gf(trigTick,C.Tick):0;
-    const priceB=trigTick?gf(trigTick,C.Price):0;
-    const priceA=gf(r,C.Price);
-    const gap=priceA-priceB;
-    const fl=gf(r,C.TotalFL);
+    const tickVal=trigTick?gf(trigTick,CMAP.Tick):0;
+    const fl=gf(r,CMAP.TotalFL);
+    const tier=IS_NEW_FORMAT&&trigTick?g(trigTick,C.SpreadTier):'N/A';
+    const avgS=IS_NEW_FORMAT&&trigTick?gf(trigTick,C.AvgSpread):0;
     return `<tr>
-      <td class="mono">${g(r,C.Time)}</td>
-      <td class="mono" style="color:${Math.abs(tickVal)>100?'#ff4d6d':'#f59e0b'}">${tickVal>0?'+':''}${tickVal.toFixed(1)}</td>
-      <td class="mono">${priceB.toFixed(2)}</td>
-      <td class="mono">${priceA.toFixed(2)}</td>
-      <td class="mono" style="color:${gap<0?'#ff4d6d':'#22c97a'}">${gap>0?'+':''}${gap.toFixed(2)}</td>
+      <td class="mono">${g(r,CMAP.Time)}</td>
+      <td class="mono" style="color:${Math.abs(tickVal)>100?'var(--red)':'var(--amber)'}">${tickVal>0?'+':''}${tickVal.toFixed(1)}</td>
+      <td class="mono">${gf(r,CMAP.Price).toFixed(2)}</td>
       <td class="mono" style="color:${pnlColor(fl)}">${fl!==0?(fl>0?'+':'')+fl.toFixed(2):'0.00'}</td>
-      <td style="font-size:10px;color:#3d4a60">${g(r,C.Note)}</td>
+      <td>${IS_NEW_FORMAT?tierBadge(tier):'—'}</td>
+      <td class="mono" style="color:${tierColor(tier)}">${avgS>0?avgS.toFixed(2):'—'}</td>
+      <td style="font-size:10px;color:var(--text3)">${g(r,CMAP.Note)}</td>
     </tr>`;
   }).join('');
 }
 
 // ===== HEDGE =====
 function renderHedge(){
-  const hinits=ALL.filter(r=>g(r,C.Type)==='HEDGE_INIT').length;
-  const hhits=ALL.filter(r=>g(r,C.Type)==='HEDGE_HIT').length;
-  const hplace=ALL.filter(r=>g(r,C.Type)==='HEDGE_PLACE').length;
-  const maxL=Math.max(...ALL.map(r=>Math.abs(gi(r,C.HedgeLayer))));
-  const maxFL=Math.min(...ALL.filter(r=>g(r,C.Type).startsWith('HEDGE')).map(r=>gf(r,C.TotalFL)));
+  const hinits=ALL.filter(r=>g(r,CMAP.Type)==='HEDGE_INIT').length;
+  const hhits=ALL.filter(r=>g(r,CMAP.Type)==='HEDGE_HIT').length;
+  const hplace=ALL.filter(r=>g(r,CMAP.Type)==='HEDGE_PLACE').length;
+  const maxL=Math.max(0,...ALL.map(r=>Math.abs(gi(r,CMAP.HedgeLayer))));
+  const minFL=ALL.filter(r=>g(r,CMAP.Type).startsWith('HEDGE')).reduce((m,r)=>Math.min(m,gf(r,CMAP.TotalFL)),0);
+  const avgDynStep=IS_NEW_FORMAT?ALL.filter(r=>gi(r,C.DynStep)>0).reduce((a,r,_,arr)=>a+gi(r,C.DynStep)/arr.length,0):0;
 
   document.getElementById('hedgeMetrics').innerHTML=[
-    {l:'Inisiasi',v:hinits,c:'v-neu'},{l:'Layer Hit',v:hhits,c:hhits>3?'v-amber':'v-neu'},
-    {l:'Place Order',v:hplace,c:'v-neu'},{l:'Max Layer',v:'L'+maxL,c:maxL>=4?'v-red':maxL>=2?'v-amber':'v-green'},
-    {l:'Max Float',v:maxFL.toFixed(2),c:'v-red'},{l:'Est Loss',v:SLIP_DATA.reduce((a,s)=>a+s.usdEst,0).toFixed(2),c:'v-amber'},
-  ].map(x=>`<div class="mc"><div class="mc-lbl">${x.l}</div><div class="mc-val ${x.c}">${x.v}</div></div>`).join('');
+    {l:'Inisiasi',v:hinits,c:'v-n'},{l:'Layer Hit',v:hhits,c:hhits>3?'v-a':'v-n'},
+    {l:'Place Order',v:hplace,c:'v-n'},{l:'Max Layer',v:'L'+maxL,c:maxL>=4?'v-r':maxL>=2?'v-a':'v-g'},
+    {l:'Max Float Loss',v:minFL.toFixed(2),c:'v-r'},{l:'Avg DynStep',v:IS_NEW_FORMAT?avgDynStep.toFixed(0)+'p':'N/A',c:avgDynStep>=60?'v-r':avgDynStep>=40?'v-a':'v-g'},
+  ].map(x=>`<div class="mc"><div class="mc-l">${x.l}</div><div class="mc-v ${x.c}">${x.v}</div></div>`).join('');
 
-  const hedgePts=ALL.filter(r=>g(r,C.Type).startsWith('HEDGE')||(g(r,C.Type)==='TICK'&&Math.abs(gi(r,C.HedgeLayer))>0));
+  const hedgePts=ALL.filter(r=>g(r,CMAP.Type).startsWith('HEDGE')||(g(r,CMAP.Type)==='TICK'&&Math.abs(gi(r,CMAP.HedgeLayer))>0));
   const s=hedgePts.filter((_,i)=>i%3===0);
   if(charts.hedge)charts.hedge.destroy();
   charts.hedge=new Chart(document.getElementById('hedgeC'),{
-    type:'line',data:{labels:s.map(r=>ts(g(r,C.Time))),datasets:[
-      {label:'Layer',data:s.map(r=>Math.abs(gi(r,C.HedgeLayer))),borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.06)',borderWidth:2,pointRadius:1,tension:0,fill:true,yAxisID:'y'},
-      {label:'TotalFL',data:s.map(r=>gf(r,C.TotalFL)),borderColor:'rgba(255,77,109,0.5)',borderWidth:1.5,pointRadius:0,tension:0.2,borderDash:[3,3],yAxisID:'y1'}
+    type:'line',data:{labels:s.map(r=>ts(g(r,CMAP.Time))),datasets:[
+      {label:'Layer',data:s.map(r=>Math.abs(gi(r,CMAP.HedgeLayer))),borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.06)',borderWidth:2,pointRadius:1,tension:0,fill:true,yAxisID:'y'},
+      {label:'TotalFL',data:s.map(r=>gf(r,CMAP.TotalFL)),borderColor:'rgba(239,68,68,0.5)',borderWidth:1.5,pointRadius:0,tension:0.2,borderDash:[3,3],yAxisID:'y1'},
+      ...(IS_NEW_FORMAT?[{label:'DynStep',data:s.map(r=>gi(r,C.DynStep)),borderColor:'rgba(20,184,166,0.4)',borderWidth:1,pointRadius:0,tension:0,borderDash:[2,4],yAxisID:'y2'}]:[])
     ]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
       scales:{
-        x:{ticks:{color:'#3d4a60',maxTicksLimit:8,font:{size:9}},grid:{color:'rgba(255,255,255,0.02)'}},
+        x:{ticks:{color:'#333d52',maxTicksLimit:8,font:{size:9}},grid:{color:'rgba(255,255,255,0.02)'}},
         y:{ticks:{color:'#f59e0b',stepSize:1,font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'},min:0},
-        y1:{position:'right',ticks:{color:'#ff4d6d',font:{size:9}},grid:{display:false}}
+        y1:{position:'right',ticks:{color:'#ef4444',font:{size:9}},grid:{display:false}},
+        ...(IS_NEW_FORMAT?{y2:{position:'right',ticks:{color:'#14b8a6',font:{size:9}},grid:{display:false},display:false}}:{})
       }}
   });
 
-  const hr=ALL.filter(r=>g(r,C.Type).startsWith('HEDGE'));
+  const hr=ALL.filter(r=>g(r,CMAP.Type).startsWith('HEDGE'));
   document.getElementById('hedgeTbody').innerHTML=hr.map(r=>{
-    const fl=gf(r,C.TotalFL),d=gf(r,C.Daily),l=Math.abs(gi(r,C.HedgeLayer));
+    const fl=gf(r,CMAP.TotalFL),l=Math.abs(gi(r,CMAP.HedgeLayer));
+    const tier=IS_NEW_FORMAT?g(r,C.SpreadTier):'';
     return `<tr>
-      <td class="mono">${ts(g(r,C.Time))}</td>
-      <td><span class="badge b-hedge">${g(r,C.Type)}</span></td>
-      <td class="mono">${gf(r,C.Price).toFixed(2)}</td>
-      <td class="mono" style="color:${l>=4?'#ff4d6d':l>=2?'#f59e0b':'#7a85a0'}">L${l}</td>
-      <td class="mono">${gf(r,C.HedgeLot).toFixed(2)}</td>
+      <td class="mono">${ts(g(r,CMAP.Time))}</td>
+      <td><span class="badge b-hedge">${g(r,CMAP.Type)}</span></td>
+      <td class="mono">${gf(r,CMAP.Price).toFixed(2)}</td>
+      <td class="mono" style="color:${l>=4?'var(--red)':l>=2?'var(--amber)':'#6e7a94'}">L${l}</td>
+      <td class="mono">${gf(r,CMAP.HedgeLot).toFixed(2)}</td>
       <td class="mono" style="color:${pnlColor(fl)}">${fl>0?'+':''}${fl.toFixed(2)}</td>
-      <td class="mono" style="color:${pnlColor(d)}">${d>0?'+':''}${d.toFixed(2)}</td>
-      <td style="font-size:10px;color:#3d4a60;max-width:180px;overflow:hidden;text-overflow:ellipsis">${g(r,C.Note)}</td>
+      <td>${IS_NEW_FORMAT?tierBadge(tier):'—'}</td>
+      <td class="mono" style="color:${IS_NEW_FORMAT?tierColor(tier):'#333d52'}">${IS_NEW_FORMAT?gf(r,C.AvgSpread).toFixed(2):'—'}</td>
+      <td class="mono" style="color:${IS_NEW_FORMAT&&gi(r,C.DynStep)>=60?'var(--red)':IS_NEW_FORMAT&&gi(r,C.DynStep)>=40?'var(--amber)':'#6e7a94'}">${IS_NEW_FORMAT?gi(r,C.DynStep)+'p':'—'}</td>
+      <td style="font-size:10px;color:var(--text3);max-width:200px;overflow:hidden;text-overflow:ellipsis">${g(r,CMAP.Note)}</td>
     </tr>`;
   }).join('');
 }
 
 // ===== DOMINANCE =====
 function renderDominance(){
-  const ticks=ALL.filter(r=>g(r,C.Type)==='TICK').filter((_,i)=>i%4===0);
-  const labels=ticks.map(r=>ts(g(r,C.Time)));
-  const buy=ticks.map(r=>gf(r,C.BuyP));
-  const sell=ticks.map(r=>gf(r,C.SellP));
-  const power=ticks.map(r=>gf(r,C.Power));
-  const flow=ticks.map(r=>gf(r,C.Flow));
+  const ticks=ALL.filter(r=>g(r,CMAP.Type)==='TICK').filter((_,i)=>i%4===0);
+  const labels=ticks.map(r=>ts(g(r,CMAP.Time)));
   if(charts.dom)charts.dom.destroy();
   charts.dom=new Chart(document.getElementById('domC'),{
     type:'line',data:{labels,datasets:[
-      {label:'Buy%',data:buy,borderColor:'#3b8bff',borderWidth:1.5,pointRadius:0,tension:0.3},
-      {label:'Sell%',data:sell,borderColor:'#ff4d6d',borderWidth:1.5,pointRadius:0,tension:0.3,borderDash:[4,3]}
+      {data:ticks.map(r=>gf(r,CMAP.BuyP)),borderColor:'#3b82f6',borderWidth:1.5,pointRadius:0,tension:0.3,label:'Buy%'},
+      {data:ticks.map(r=>gf(r,CMAP.SellP)),borderColor:'#ef4444',borderWidth:1.5,pointRadius:0,tension:0.3,borderDash:[4,3],label:'Sell%'}
     ]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#3d4a60',maxTicksLimit:10,font:{size:9}},grid:{color:'rgba(255,255,255,0.02)'}},
-              y:{min:0,max:100,ticks:{color:'#3d4a60',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}}}}
+      scales:{x:{ticks:{color:'#333d52',maxTicksLimit:10,font:{size:9}},grid:{color:'rgba(255,255,255,0.02)'}},
+              y:{min:0,max:100,ticks:{color:'#333d52',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}}}}
   });
   if(charts.pwr)charts.pwr.destroy();
   charts.pwr=new Chart(document.getElementById('pwrC'),{
-    type:'line',data:{labels,datasets:[{data:power,borderColor:'#9b6dff',backgroundColor:'rgba(155,109,255,0.06)',borderWidth:1.5,pointRadius:0,tension:0.3,fill:true}]},
+    type:'line',data:{labels,datasets:[{data:ticks.map(r=>gf(r,CMAP.Power)),borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,0.06)',borderWidth:1.5,pointRadius:0,tension:0.3,fill:true}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#3d4a60',maxTicksLimit:8,font:{size:9}},grid:{display:false}},
-              y:{ticks:{color:'#3d4a60',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}}}}
+      scales:{x:{ticks:{color:'#333d52',maxTicksLimit:8,font:{size:9}},grid:{display:false}},y:{ticks:{color:'#333d52',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}}}}
   });
   if(charts.flow)charts.flow.destroy();
   charts.flow=new Chart(document.getElementById('flowC'),{
-    type:'bar',data:{labels,datasets:[{data:flow,backgroundColor:flow.map(v=>v>=0?'rgba(34,201,122,0.4)':'rgba(255,77,109,0.4)')}]},
+    type:'bar',data:{labels,datasets:[{data:ticks.map(r=>gf(r,CMAP.Flow)),backgroundColor:ticks.map(r=>gf(r,CMAP.Flow)>=0?'rgba(16,185,129,0.4)':'rgba(239,68,68,0.4)')}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#3d4a60',maxTicksLimit:8,font:{size:9}},grid:{display:false}},
-              y:{ticks:{color:'#3d4a60',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}}}}
+      scales:{x:{ticks:{color:'#333d52',maxTicksLimit:8,font:{size:9}},grid:{display:false}},y:{ticks:{color:'#333d52',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}}}}
   });
+}
+
+// ===== NARRATIVE v3 (dengan Spread Adaptive context) =====
+function buildCycles(){
+  const cycles=[];
+  const entryIdxs=ALL.map((r,i)=>g(r,CMAP.Type)==='ENTRY'?i:-1).filter(i=>i>=0);
+  entryIdxs.forEach((startIdx,ci)=>{
+    const endIdx=entryIdxs[ci+1]||ALL.length;
+    const cycleRows=ALL.slice(startIdx,endIdx);
+    const preRows=ALL.slice(Math.max(0,startIdx-30),startIdx);
+    const preDirs=preRows.filter(r=>g(r,CMAP.Type)==='DIR');
+    cycles.push({cycleRows,preRows,preDirs,startIdx,endIdx,num:ci+1});
+  });
+  return cycles;
+}
+
+function renderNarrative(){
+  const cycles=buildCycles();
+  if(cycles.length===0){
+    document.getElementById('narrativeList').innerHTML='<div style="text-align:center;padding:40px;color:var(--text3);font-family:var(--font)">Tidak ada siklus trade ditemukan.</div>';
+    return;
+  }
+
+  document.getElementById('narrativeList').innerHTML=cycles.map(cyc=>{
+    const {cycleRows,preDirs,num}=cyc;
+    const entry=cycleRows.find(r=>g(r,CMAP.Type)==='ENTRY');
+    const dirEvents=cycleRows.filter(r=>g(r,CMAP.Type)==='DIR');
+    const hInits=cycleRows.filter(r=>g(r,CMAP.Type)==='HEDGE_INIT');
+    const hHits=cycleRows.filter(r=>g(r,CMAP.Type)==='HEDGE_HIT');
+    const hPlaces=cycleRows.filter(r=>g(r,CMAP.Type)==='HEDGE_PLACE');
+    const basket=cycleRows.find(r=>g(r,CMAP.Type)==='BASKET');
+    const closes=cycleRows.filter(r=>g(r,CMAP.Type)==='CLOSE_ALL');
+    const systemDeinit=cycleRows.find(r=>g(r,CMAP.Type)==='SYSTEM'&&g(r,CMAP.Note).includes('DEINIT'));
+    const allDirs=[...preDirs,...dirEvents];
+    if(!entry) return '';
+
+    const entryTime=g(entry,CMAP.Time);
+    const entryPrice=gf(entry,CMAP.Price);
+    const dir=gi(entry,CMAP.Dir);
+    const dirLabel=dir===1?'BUY':'SELL';
+    // Spread context at entry
+    const entryTier=IS_NEW_FORMAT?g(entry,C.SpreadTier):'';
+    const entryAvgSprd=IS_NEW_FORMAT?gf(entry,C.AvgSpread):0;
+    const entryDynStep=IS_NEW_FORMAT?gi(entry,C.DynStep):0;
+    const lastClose=closes[closes.length-1];
+    const finalPnl=lastClose?gf(lastClose,CMAP.TotalFL):gf(cycleRows[cycleRows.length-1],CMAP.TotalFL);
+    const finalDaily=lastClose?gf(lastClose,CMAP.Daily):gf(cycleRows[cycleRows.length-1],CMAP.Daily);
+    const maxLayer=Math.max(0,...cycleRows.map(r=>Math.abs(gi(r,CMAP.HedgeLayer))));
+
+    let outcome='partial',outcomeLabel='MASIH OPEN';
+    if(systemDeinit){outcome='deinit';outcomeLabel='EA DEINIT';}
+    else if(lastClose){
+      const cn=g(lastClose,CMAP.Note);
+      if(cn.includes('SPIKE')&&finalPnl<0){outcome='loss';outcomeLabel='LOSS — SPIKE';}
+      else if(cn.includes('SPIKE')){outcome='partial';outcomeLabel='SPIKE NEUTRAL';}
+      else if(finalPnl>0){outcome='win';outcomeLabel=`WIN +${finalPnl.toFixed(2)}`;}
+      else if(finalPnl<0){outcome='loss';outcomeLabel=`LOSS ${finalPnl.toFixed(2)}`;}
+      else{outcome='partial';outcomeLabel='BREAKEVEN';}
+    }
+
+    const steps=[];
+
+    // Pre-entry DIR stabilization
+    const lockDirs=allDirs.filter(r=>g(r,CMAP.Note).includes('LOCK')&&!g(r,CMAP.Note).includes('NO LOCK'));
+    const noLockDirs=allDirs.filter(r=>g(r,CMAP.Note).includes('NO LOCK'));
+    if(lockDirs.length>0){
+      const fl=lockDirs[0];
+      const stab=g(fl,CMAP.Note).includes('Stab=')?g(fl,CMAP.Note).split('Stab=')[1]:'?';
+      steps.push({color:'#10b981',text:`<strong>Sinyal terkunci</strong> — EA mendeteksi dominance <span class="hl-p">${dirLabel}</span> di harga <span class="hl-p">${gf(fl,CMAP.Price).toFixed(2)}</span> dengan stabilitas <strong>${stab}</strong>.${noLockDirs.length>0?` Sebelumnya ada ${noLockDirs.length}x NO LOCK — EA menunggu konfirmasi penuh.`:''}`});
+    }
+
+    // Spread context at entry
+    if(IS_NEW_FORMAT){
+      const tierLabel=entryTier.includes('1')?'<span class="hl-t1">TIER 1 (Normal)</span>':entryTier.includes('2')?'<span class="hl-t2">TIER 2 (Medium)</span>':entryTier.includes('3')?'<span class="hl-t3">TIER 3 (Wide)</span>':'—';
+      steps.push({color:tierColor(entryTier),text:`<span class="hl-spread">Kondisi spread saat entry</span> — AvgSpread <strong>${entryAvgSprd.toFixed(2)} pip</strong>, masuk ${tierLabel}. DynHedgeStep aktif: <strong>${entryDynStep} pip</strong>${entryTier.includes('1')?` — kondisi ideal, hedge step normal.`:entryTier.includes('2')?` — spread sedang, hedge step diperbesar.`:` — <span class="hl-t3">spread lebar, hedge step max. EA menempatkan pending hedge lebih jauh dari normal.</span>`}`});
+    }
+
+    // Entry
+    steps.push({color:'#3b82f6',text:`<strong>Entry ${dirLabel}</strong> dieksekusi jam <span class="hl-p">${entryTime.substring(11,19)}</span> di harga <span class="hl-p">${entryPrice.toFixed(2)}</span>. Hedge pertama dipasang: <em>${hInits.length>0?g(hInits[0],CMAP.Note):'—'}</em>.`});
+
+    // Hedge hits dengan spread context
+    hHits.forEach((hit,i)=>{
+      const hn=g(hit,CMAP.Note);
+      const layer=hn.includes('L=')?hn.split('L=')[1].split(' ')[0]:'?';
+      const hitPrice=hn.includes('P=')?parseFloat(hn.split('P=')[1].split(' ')[0]):0;
+      const hitDir=hn.includes('Dir=1')?'BUY':'SELL';
+      const fl=gf(hit,CMAP.TotalFL);
+      const place=hPlaces[i];
+      const hitTier=IS_NEW_FORMAT?g(hit,C.SpreadTier):'';
+      const hitAvgSprd=IS_NEW_FORMAT?gf(hit,C.AvgSpread):0;
+      const hitDynStep=IS_NEW_FORMAT?gi(hit,C.DynStep):0;
+      const tierChanged=IS_NEW_FORMAT&&entryTier&&hitTier&&!hitTier.includes(entryTier.charAt(5));
+      steps.push({color:'#f59e0b',text:`<span class="hl-hedge">⚡ Hedge L${layer} kena</span> — harga menyentuh <span class="hl-p">${hitPrice.toFixed(2)}</span> (arah ${hitDir}). Floating: <span class="${fl<0?'hl-loss':'hl-win'}">${fl>=0?'+':''}${fl.toFixed(2)}</span>.${IS_NEW_FORMAT?` Spread saat ini: <span style="color:${tierColor(hitTier)}">${hitTier||'N/A'}</span> (${hitAvgSprd.toFixed(2)} pip, DynStep ${hitDynStep}p).${tierChanged?` <span class="hl-warn">⚠ Tier berubah dari entry (${entryTier}) — spread melebar saat hedge kena.</span>`:''}`:''} ${place?`Next hedge: <em>${g(place,CMAP.Note)}</em>`:''}`});
+    });
+
+    // Basket
+    if(basket){
+      const pk=g(basket,CMAP.Note).includes('Pk=')?g(basket,CMAP.Note).split('Pk=')[1].split(' ')[0]:'?';
+      const tf=gf(basket,CMAP.TotalFL);
+      steps.push({color:'#8b5cf6',text:`<span class="hl-win">🧺 Basket condition</span> — peak floating mencapai <strong>${pk}</strong>. Floating: <span class="hl-win">+${tf.toFixed(2)}</span>. EA trigger close.`});
+    }
+
+    // Closes
+    closes.forEach(cl=>{
+      const cn=g(cl,CMAP.Note);
+      const fl=gf(cl,CMAP.TotalFL);
+      const daily=gf(cl,CMAP.Daily);
+      const clTier=IS_NEW_FORMAT?g(cl,C.SpreadTier):'';
+      if(cn.includes('LOCK_PROFIT')){
+        steps.push({color:'#10b981',text:`<span class="hl-win">✅ LOCK PROFIT</span> jam ${ts(g(cl,CMAP.Time))} di ${gf(cl,CMAP.Price).toFixed(2)}. Profit siklus: <span class="hl-win">+${fl.toFixed(2)}</span>. Daily P&L: <span class="hl-win">+${daily.toFixed(2)}</span>.`});
+      } else if(cn.includes('SPIKE')){
+        steps.push({color:'#ef4444',text:`<span class="hl-warn">⚡ SPIKE</span> jam ${ts(g(cl,CMAP.Time))} — harga loncat ke ${gf(cl,CMAP.Price).toFixed(2)}. EA trigger CLOSE_ALL.${IS_NEW_FORMAT?` Spread saat spike: <span style="color:${tierColor(clTier)}">${clTier||'N/A'}</span>.`:''} Floating saat close: <span class="${fl<0?'hl-loss':'hl-win'}">${fl>=0?'+':''}${fl.toFixed(2)}</span>.`});
+      } else {
+        steps.push({color:'#f97316',text:`<strong>CLOSE_ALL</strong> jam ${ts(g(cl,CMAP.Time))} — reason: <em>${cn}</em>. P&L: <span class="${fl<0?'hl-loss':'hl-win'}">${fl>=0?'+':''}${fl.toFixed(2)}</span>.`});
+      }
+    });
+
+    // DEINIT
+    if(systemDeinit){
+      const lastRow=cycleRows[cycleRows.length-1];
+      const fl=gf(lastRow,CMAP.TotalFL);
+      steps.push({color:'#8b5cf6',text:`<span class="hl-warn">⛔ EA DEINIT</span> jam ${ts(g(systemDeinit,CMAP.Time))} — EA dihentikan. Floating saat itu: <span class="hl-loss">${fl.toFixed(2)}</span>. Hedge mencapai <span class="hl-hedge">Layer ${maxLayer}</span> sebelum deinit. Posisi kemungkinan masih terbuka di broker.`});
+    }
+
+    // Duration
+    const duration=(()=>{
+      const endRow=systemDeinit||lastClose;
+      if(!endRow) return '—';
+      try{
+        const t1=new Date(g(entry,CMAP.Time).replace(' ','T'));
+        const t2=new Date(g(endRow,CMAP.Time).replace(' ','T'));
+        const diff=Math.round((t2-t1)/60000);
+        return diff<60?diff+'m':Math.floor(diff/60)+'h'+(diff%60)+'m';
+      }catch(e){return '—';}
+    })();
+
+    const stepsHtml=steps.map(s=>`<div class="narr-step"><div class="narr-step-dot" style="background:${s.color}"></div><div class="narr-step-text">${s.text}</div></div>`).join('');
+    return `<div class="narr-card ${outcome}">
+      <span class="narr-num">Siklus #${num}</span>
+      <div class="narr-header">
+        <div class="narr-title">🦅 Siklus #${num} — ${dirLabel} @ ${entryPrice.toFixed(2)}</div>
+        <span class="narr-outcome ${outcome}">${outcomeLabel}</span>
+        ${IS_NEW_FORMAT?`<span class="badge ${entryTier.includes('1')?'b-t1':entryTier.includes('2')?'b-t2':'b-t3'}">${entryTier.split(' ')[0]||'—'}</span>`:''}
+      </div>
+      <div class="narr-body"><div class="narr-timeline">${stepsHtml}</div></div>
+      <div class="narr-meta">
+        <div class="narr-stat"><div class="narr-stat-label">Entry</div><div class="narr-stat-val">${entryTime.substring(11,19)}</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">Durasi</div><div class="narr-stat-val">${duration}</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">Max Layer</div><div class="narr-stat-val" style="color:${maxLayer>=4?'var(--red)':maxLayer>=2?'var(--amber)':'var(--green)'}">L${maxLayer}</div></div>
+        <div class="narr-stat"><div class="narr-stat-label">Hedge Hit</div><div class="narr-stat-val">${hHits.length}x</div></div>
+        ${IS_NEW_FORMAT?`<div class="narr-stat"><div class="narr-stat-label">Tier Entry</div><div class="narr-stat-val" style="color:${tierColor(entryTier)}">${entryTier.split(' ')[0]||'—'}</div></div>`:''}
+        ${IS_NEW_FORMAT?`<div class="narr-stat"><div class="narr-stat-label">DynStep</div><div class="narr-stat-val" style="color:${entryDynStep>=60?'var(--red)':entryDynStep>=40?'var(--amber)':'var(--green)'}">${entryDynStep}p</div></div>`:''}
+        <div class="narr-stat"><div class="narr-stat-label">Daily P&L</div><div class="narr-stat-val" style="color:${finalDaily>=0?'var(--green)':'var(--red)'}">${finalDaily>=0?'+':''}${finalDaily.toFixed(2)}</div></div>
+      </div>
+    </div>`;
+  }).filter(Boolean).join('');
 }
 
 // ===== TIMELINE =====
 function renderTimeline(){
-  const imp=['ENTRY','HEDGE_INIT','HEDGE_HIT','HEDGE_PLACE','HEDGE_TIMEOUT','CLOSE_ALL','BASKET','GUARDIAN','SYSTEM','DIR'];
-  const rows=ALL.filter(r=>imp.includes(g(r,C.Type)));
+  const imp=['ENTRY','HEDGE_INIT','HEDGE_HIT','HEDGE_PLACE','HEDGE_TIMEOUT','CLOSE_ALL','BASKET','GUARDIAN','SYSTEM','DIR','ORPHAN_CLEAN'];
+  const rows=ALL.filter(r=>imp.includes(g(r,CMAP.Type)));
   document.getElementById('tlList').innerHTML=rows.map(r=>{
-    const t=g(r,C.Type), fl=gf(r,C.TotalFL);
+    const t=g(r,CMAP.Type),fl=gf(r,CMAP.TotalFL);
+    const tier=IS_NEW_FORMAT?g(r,C.SpreadTier):'';
     return `<div class="tl-item">
       <div class="tl-dot" style="background:${dotColor(t)}"></div>
-      <div class="tl-time">${g(r,C.Time)}</div>
+      <div class="tl-time">${g(r,CMAP.Time)}</div>
       <div class="tl-row">
         <span class="badge ${badgeClass(t)}">${t}</span>
-        <span class="mono" style="font-size:11px;color:#7a85a0">${gf(r,C.Price).toFixed(2)}</span>
+        <span class="mono" style="font-size:11px;color:#6e7a94">${gf(r,CMAP.Price).toFixed(2)}</span>
         ${fl!==0?`<span class="mono" style="font-size:11px;color:${pnlColor(fl)}">${fl>0?'+':''}${fl.toFixed(2)}</span>`:''}
+        ${IS_NEW_FORMAT&&tier?tierBadge(tier):''}
       </div>
-      ${g(r,C.Note)?`<div class="tl-note">${g(r,C.Note)}</div>`:''}
+      ${g(r,CMAP.Note)?`<div class="tl-note">${g(r,CMAP.Note)}</div>`:''}
     </div>`;
   }).join('');
 }
 
 // ===== LOGS =====
 function renderLogs(){
-  const types=[...new Set(ALL.map(r=>g(r,C.Type)))].filter(Boolean).sort();
+  const types=[...new Set(ALL.map(r=>g(r,CMAP.Type)))].filter(Boolean).sort();
   document.getElementById('frRow').innerHTML=
     `<button class="chip ${activeFilter==='ALL'?'on':''}" onclick="setFilter('ALL')">ALL (${ALL.length})</button>`
-    +types.map(t=>{const c=ALL.filter(r=>g(r,C.Type)===t).length;
-      return `<button class="chip ${activeFilter===t?'on':''}" onclick="setFilter('${t}')">${t} (${c})</button>`;
-    }).join('');
-  const fil=activeFilter==='ALL'?ALL:ALL.filter(r=>g(r,C.Type)===activeFilter);
+    +types.map(t=>`<button class="chip ${activeFilter===t?'on':''}" onclick="setFilter('${t}')">${t} (${ALL.filter(r=>g(r,CMAP.Type)===t).length})</button>`).join('');
+  const fil=activeFilter==='ALL'?ALL:ALL.filter(r=>g(r,CMAP.Type)===activeFilter);
   const show=fil.slice(-200);
   document.getElementById('logTbody').innerHTML=show.map(r=>{
-    const t=g(r,C.Type),fl=gf(r,C.TotalFL),d=gf(r,C.Daily),tot=gf(r,C.Total),l=Math.abs(gi(r,C.HedgeLayer));
-    const dir=g(r,C.Dir);
+    const t=g(r,CMAP.Type),fl=gf(r,CMAP.TotalFL),d=gf(r,CMAP.Daily),tot=gf(r,CMAP.Total);
+    const l=Math.abs(gi(r,CMAP.HedgeLayer));
+    const tier=IS_NEW_FORMAT?g(r,C.SpreadTier):'';
+    const dir=gi(r,CMAP.Dir);
     return `<tr>
-      <td class="mono" style="color:#3d4a60">${ts(g(r,C.Time))}</td>
+      <td class="mono" style="color:#333d52">${ts(g(r,CMAP.Time))}</td>
       <td><span class="badge ${badgeClass(t)}">${t}</span></td>
-      <td class="mono">${gf(r,C.Price).toFixed(2)}</td>
-      <td class="mono" style="color:#3d4a60">${g(r,C.Spread)}</td>
-      <td>${dir==='1'?'<span style="color:#3b8bff">↑B</span>':dir==='-1'?'<span style="color:#ff4d6d">↓S</span>':'—'}</td>
-      <td class="mono" style="color:${l>=4?'#ff4d6d':l>=2?'#f59e0b':'#3d4a60'}">L${l}</td>
+      <td class="mono">${gf(r,CMAP.Price).toFixed(2)}</td>
+      <td class="mono" style="color:#333d52">${gf(r,CMAP.Spread).toFixed(1)}</td>
+      <td class="mono" style="color:${IS_NEW_FORMAT?tierColor(tier):'#333d52'}">${IS_NEW_FORMAT?gf(r,C.AvgSpread).toFixed(2):'—'}</td>
+      <td>${IS_NEW_FORMAT?tierBadge(tier):'—'}</td>
+      <td class="mono" style="color:${IS_NEW_FORMAT&&gi(r,C.DynStep)>=60?'var(--red)':IS_NEW_FORMAT&&gi(r,C.DynStep)>=40?'var(--amber)':'#333d52'}">${IS_NEW_FORMAT?gi(r,C.DynStep)+'p':'—'}</td>
+      <td class="mono" style="color:#333d52">${gf(r,CMAP.Tick).toFixed(1)}</td>
+      <td>${dir===1?'<span style="color:var(--blue)">↑B</span>':dir===-1?'<span style="color:var(--red)">↓S</span>':'—'}</td>
+      <td class="mono" style="color:${l>=4?'var(--red)':l>=2?'var(--amber)':'#333d52'}">L${l}</td>
       <td class="mono" style="color:${pnlColor(fl)}">${fl!==0?(fl>0?'+':'')+fl.toFixed(2):''}</td>
       <td class="mono" style="color:${pnlColor(d)}">${d!==0?(d>0?'+':'')+d.toFixed(2):''}</td>
       <td class="mono" style="color:${pnlColor(tot)}">${tot!==0?(tot>0?'+':'')+tot.toFixed(2):''}</td>
-      <td style="font-size:10px;color:#3d4a60;max-width:160px;overflow:hidden;text-overflow:ellipsis">${g(r,C.Note)}</td>
+      <td style="font-size:10px;color:#333d52;max-width:180px;overflow:hidden;text-overflow:ellipsis">${g(r,CMAP.Note)}</td>
     </tr>`;
   }).join('');
   document.getElementById('logCnt').textContent=`Showing ${show.length} of ${fil.length}${fil.length>200?' (last 200)':''}`;
@@ -1130,40 +1259,38 @@ dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')})
 dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
 dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');const f=e.dataTransfer.files[0];if(f)readFile(f);});
 document.getElementById('fi').addEventListener('change',e=>{if(e.target.files[0])readFile(e.target.files[0]);});
-
 function readFile(file){
   const pill=document.getElementById('statPill');
   pill.className='pill warn';pill.textContent='LOADING...';
   document.getElementById('finfo').textContent=file.name;
-  const r=new FileReader();
-  r.onload=e=>{
+  const reader=new FileReader();
+  reader.onload=e=>{
     ALL=parseCSV(e.target.result);
-    if(ALL.length>0){
-      pill.className='pill live';pill.textContent=ALL.length.toLocaleString()+' ROWS';
-      renderAll();
-    } else {
-      pill.className='pill';pill.textContent='PARSE ERROR';
-    }
+    if(ALL.length>0){pill.className='pill live';pill.textContent=ALL.length.toLocaleString()+' ROWS';renderAll();}
+    else{pill.className='pill';pill.textContent='PARSE ERROR';}
   };
-  r.readAsArrayBuffer(file);
+  reader.readAsArrayBuffer(file);
 }
 
-// ===== DEMO =====
+// ===== DEMO DATA =====
 function loadDemo(){
-  document.getElementById('finfo').textContent='FalconRavager_v54_demo.csv';
-  const types=['TICK','TICK','TICK','DIR','ENTRY','HEDGE_INIT','TICK','HEDGE_HIT','HEDGE_PLACE',
-    'TICK','TICK','HEDGE_HIT','HEDGE_PLACE','TICK','HEDGE_HIT','HEDGE_PLACE',
-    'TICK','BASKET','CLOSE_ALL','SYSTEM','TICK','TICK','DIR','ENTRY','HEDGE_INIT',
-    'TICK','TICK','HEDGE_HIT','HEDGE_PLACE','TICK','CLOSE_ALL','SYSTEM'];
+  IS_NEW_FORMAT=true; CMAP=C;
+  document.getElementById('finfo').textContent='FR_v54B2R_SA_demo.csv';
+  // Demo data with spread adaptive columns
+  const tiers=['TIER 1 (NORMAL)','TIER 1 (NORMAL)','TIER 1 (NORMAL)','TIER 2 (MEDIUM)','TIER 2 (MEDIUM)','TIER 3 (WIDE)','TIER 3 (WIDE)','TIER 2 (MEDIUM)','TIER 1 (NORMAL)'];
+  const dynSteps=[20,20,20,40,40,60,60,40,20];
+  const types=['TICK','TICK','TICK','DIR','ENTRY','HEDGE_INIT','TICK','TICK','HEDGE_HIT','HEDGE_PLACE','TICK','BASKET','CLOSE_ALL','SYSTEM',
+    'TICK','DIR','ENTRY','HEDGE_INIT','TICK','HEDGE_HIT','HEDGE_PLACE','TICK','HEDGE_HIT','HEDGE_PLACE','TICK','HEDGE_HIT','HEDGE_PLACE','CLOSE_ALL','SYSTEM'];
   let daily=0,total=0,hl=0,dir=-1,price=80604;
   const base=new Date('2026-05-10T02:14:00');
   ALL=types.map((t,i)=>{
     const d=new Date(base.getTime()+i*52000);
     const dstr=d.toISOString().replace('T',' ').substring(0,19);
     price+=(Math.random()-0.48)*18;
+    const tIdx=Math.min(Math.floor(i/3),tiers.length-1);
+    const tier=tiers[tIdx], dynStep=dynSteps[tIdx];
+    const avgSprd=tier.includes('1')?1.5:tier.includes('2')?2.8:4.2;
     const buy=Math.round(30+Math.random()*40),sell=100-buy;
-    const pwr=+(0.3+Math.random()*0.6).toFixed(2);
-    const flow=Math.round((Math.random()-0.5)*60);
     const tickV=+(Math.random()-0.5)*60;
     if(t==='ENTRY')hl=0;
     if(t==='HEDGE_INIT')hl=-1;
@@ -1172,187 +1299,28 @@ function loadDemo(){
     if(t==='DIR')dir=Math.random()>0.5?1:-1;
     const tfl=hl!==0?+(hl*0.8*(Math.random()+0.4)).toFixed(2)*-1:0;
     const lot=Math.abs(hl)*0.1;
-    const slipRnd=+(Math.random()*4-1).toFixed(2);
     const note={DIR:dir===1?'BUY LOCK Stab=3/3':'SELL LOCK Stab=3/3',
       ENTRY:dir===1?'BUY':'SELL',
-      HEDGE_INIT:`${dir===1?'SELL':'BUY'}_STOP ${(price+24).toFixed(5)} Lot=0.10`,
-      HEDGE_HIT:`L=${Math.abs(hl)} Dir=${-dir} P=${(price+24+slipRnd).toFixed(5)} Lot=${lot.toFixed(2)}`,
-      HEDGE_PLACE:`${dir===1?'SELL':'BUY'}_STOP ${(price-10).toFixed(5)} Lot=${(lot*2).toFixed(2)} L=${Math.abs(hl)+1}`,
+      HEDGE_INIT:`${dir===1?'SELL':'BUY'}_STOP ${(price+dynStep).toFixed(5)} Lot=0.10 DynStep=${dynStep} AvgSpread=${avgSprd.toFixed(2)}`,
+      HEDGE_HIT:`L=${Math.abs(hl)} Dir=${-dir} P=${(price+dynStep+1.5).toFixed(5)} Lot=${lot.toFixed(2)}`,
+      HEDGE_PLACE:`${dir===1?'SELL':'BUY'}_STOP ${(price-dynStep).toFixed(5)} Lot=${(lot*2).toFixed(2)} L=${Math.abs(hl)+1} DynStep=${dynStep}`,
       BASKET:`Pk=${(Math.abs(daily)+0.5).toFixed(2)} TF=${tfl.toFixed(2)}`,
       CLOSE_ALL:Math.random()>0.5?`LOCK_PROFIT TF=${tfl}`:`SPIKE TF=${tfl}`,
       SYSTEM:'WAIT DOMINANCE',TICK:''}[t]||'';
-    return [dstr,t,price.toFixed(2),'140.0',tickV.toFixed(1),buy.toString(),sell.toString(),
-      flow.toString(),pwr.toString(),dir.toString(),'3',hl!==0?'1':'0',hl!==0?'1':'0','0',
-      hl.toString(),lot.toFixed(2),'ACTIVE',tfl.toFixed(2),(Math.abs(daily)+0.2).toFixed(2),
-      '0','false','',daily.toFixed(2),total.toFixed(2),note];
+    // 30 columns: Time,Type,Price,Spread,AvgSpread,SpreadTier,DynHedgeStep,Tick,Buy%,Sell%,Flow,Power,Dir,Stab,MainPos,HedgePos,HedgePend,HedgeLayer,HedgeDir,HedgeLot,HedgeSt,TotalFL,Peak,CycleTime,Guardian,GTrigger,Daily,Total,Orphan,Note
+    return [dstr,t,price.toFixed(2),'140.0',avgSprd.toFixed(2),tier,dynStep.toString(),
+      tickV.toFixed(1),buy.toString(),sell.toString(),
+      (Math.random()-0.5).toFixed(0),(0.3+Math.random()*0.6).toFixed(2),
+      dir.toString(),'3',hl!==0?'1':'0',hl!==0?'1':'0','0',
+      hl.toString(),(-dir).toString(),lot.toFixed(2),'ACTIVE',
+      tfl.toFixed(2),(Math.abs(daily)+0.2).toFixed(2),'0','false','',
+      daily.toFixed(2),total.toFixed(2),'0',note];
   });
+  document.getElementById('compatWarn').style.display='none';
   document.getElementById('statPill').className='pill live';
   document.getElementById('statPill').textContent=ALL.length+' ROWS';
   renderAll();
 }
-
-// ===== NARRATIVE ENGINE (Ravager) =====
-function buildCycles(){
-  // A cycle = from one ENTRY to the next ENTRY (or end of log)
-  // Include: preceding DIR events, all HEDGE events, BASKET/CLOSE_ALL
-  const cycles = [];
-  const entryIdxs = ALL.map((r,i)=>g(r,C.Type)==='ENTRY'?i:-1).filter(i=>i>=0);
-  entryIdxs.forEach((startIdx, ci) => {
-    const endIdx = entryIdxs[ci+1] || ALL.length;
-    const cycleRows = ALL.slice(startIdx, endIdx);
-    // Get DIR events just before this entry (lookback 30 rows)
-    const preRows = ALL.slice(Math.max(0, startIdx-30), startIdx);
-    const preDirs = preRows.filter(r=>g(r,C.Type)==='DIR');
-    cycles.push({cycleRows, preRows, preDirs, startIdx, endIdx, num: ci+1});
-  });
-  return cycles;
-}
-
-function narrateRavager(){
-  const cycles = buildCycles();
-  return cycles.map(cyc => {
-    const {cycleRows, preDirs, num} = cyc;
-    const entry     = cycleRows.find(r=>g(r,C.Type)==='ENTRY');
-    const dirEvents = cycleRows.filter(r=>g(r,C.Type)==='DIR');
-    const hInits    = cycleRows.filter(r=>g(r,C.Type)==='HEDGE_INIT');
-    const hHits     = cycleRows.filter(r=>g(r,C.Type)==='HEDGE_HIT');
-    const hPlaces   = cycleRows.filter(r=>g(r,C.Type)==='HEDGE_PLACE');
-    const basket    = cycleRows.find(r=>g(r,C.Type)==='BASKET');
-    const closes    = cycleRows.filter(r=>g(r,C.Type)==='CLOSE_ALL');
-    const system    = cycleRows.find(r=>g(r,C.Type)==='SYSTEM'&&g(r,C.Note).includes('DEINIT'));
-    const allDirs   = [...preDirs, ...dirEvents];
-
-    if(!entry) return null;
-
-    const entryTime  = g(entry,C.Time);
-    const entryPrice = gf(entry,C.Price);
-    const dir        = gi(entry,C.Dir);
-    const dirLabel   = dir===1?'BUY':'SELL';
-    const lastClose  = closes[closes.length-1];
-    const finalPnl   = lastClose?gf(lastClose,C.TotalFL):gf(cycleRows[cycleRows.length-1],C.TotalFL);
-    const finalDaily = lastClose?gf(lastClose,C.Daily):gf(cycleRows[cycleRows.length-1],C.Daily);
-    const maxLayer   = Math.max(...cycleRows.map(r=>Math.abs(gi(r,C.HedgeLayer))));
-
-    // Determine outcome
-    let outcome = 'partial', outcomeLabel='MASIH OPEN';
-    if(system){ outcome='deinit'; outcomeLabel='EA DEINIT';}
-    else if(lastClose){
-      const closeNote = g(lastClose,C.Note);
-      if(closeNote.includes('SPIKE')&&finalPnl<0){ outcome='loss'; outcomeLabel='LOSS — SPIKE'; }
-      else if(closeNote.includes('SPIKE')){ outcome='partial'; outcomeLabel='SPIKE (NEUTRAL)'; }
-      else if(finalPnl>0){ outcome='win'; outcomeLabel=`WIN +${finalPnl.toFixed(2)}`; }
-      else if(finalPnl<0){ outcome='loss'; outcomeLabel=`LOSS ${finalPnl.toFixed(2)}`; }
-      else { outcome='partial'; outcomeLabel='BREAKEVEN'; }
-    }
-
-    // Build narrative steps
-    const steps = [];
-
-    // Pre-entry: DIR stabilization
-    const lockDirs = allDirs.filter(r=>g(r,C.Note).includes('LOCK')&&!g(r,C.Note).includes('NO LOCK'));
-    const noLockDirs = allDirs.filter(r=>g(r,C.Note).includes('NO LOCK'));
-    if(lockDirs.length>0){
-      const firstLock = lockDirs[0];
-      const lockNote = g(firstLock,C.Note);
-      const stab = lockNote.includes('Stab=')?lockNote.split('Stab=')[1]:'?';
-      steps.push({color:'#22c97a', text:`<strong>Sinyal terkunci</strong> — EA mendeteksi dominance <span class="hl-price">${dirLabel}</span> di <span class="hl-price">${gf(firstLock,C.Price).toFixed(2)}</span> dengan stabilitas <strong>${stab}</strong>. ${noLockDirs.length>0?`Sebelumnya sempat ${noLockDirs.length}x sinyal tidak stabil (NO LOCK) — EA menunggu konfirmasi penuh.`:''}`});
-    }
-
-    // Entry
-    steps.push({color:'#3b8bff', text:`<strong>Entry ${dirLabel}</strong> dieksekusi jam <span class="hl-price">${g(entry,C.Time).substring(11,19)}</span> di harga <span class="hl-price">${entryPrice.toFixed(2)}</span>. EA sekaligus pasang pending hedge order (${hInits.length>0?g(hInits[0],C.Note):'—'}).`});
-
-    // Hedge hits
-    hHits.forEach((hit,i) => {
-      const hitNote = g(hit,C.Note);
-      const layer = hitNote.includes('L=')?hitNote.split('L=')[1].split(' ')[0]:'?';
-      const hitPrice = hitNote.includes('P=')?hitNote.split('P=')[1].split(' ')[0]:'?';
-      const hitDir = hitNote.includes('Dir=1')?'BUY':'SELL';
-      const fl = gf(hit,C.TotalFL);
-      const place = hPlaces[i];
-      const placeNote = place?g(place,C.Note):'';
-      steps.push({color:'#f59e0b', text:`<span class="hl-hedge">⚡ Hedge L${layer} kena</span> — harga menyentuh <span class="hl-price">${parseFloat(hitPrice||0).toFixed(2)}</span> (arah ${hitDir}). Floating saat itu: <span class="${fl<0?'hl-loss':'hl-profit'}">${fl>=0?'+':''}${fl.toFixed(2)}</span>.${place?` EA langsung pasang hedge berikutnya: <em>${placeNote}</em>`:''}`});
-    });
-
-    // Basket
-    if(basket){
-      const pk = g(basket,C.Note).includes('Pk=')?g(basket,C.Note).split('Pk=')[1].split(' ')[0]:'?';
-      const tf = gf(basket,C.TotalFL);
-      steps.push({color:'#9b6dff', text:`<span class="hl-profit">🧺 Basket condition tercapai</span> — peak floating mencapai <strong>${pk}</strong>. Floating saat itu: <span class="hl-profit">+${tf.toFixed(2)}</span>. EA siap trigger close.`});
-    }
-
-    // Closes
-    closes.forEach((cl,i) => {
-      const closeNote = g(cl,C.Note);
-      const fl = gf(cl,C.TotalFL);
-      const daily = gf(cl,C.Daily);
-      if(closeNote.includes('LOCK_PROFIT')){
-        steps.push({color:'#22c97a', text:`<span class="hl-profit">✅ LOCK PROFIT</span> — semua posisi ditutup jam ${g(cl,C.Time).substring(11,19)} di <span class="hl-price">${gf(cl,C.Price).toFixed(2)}</span>. Profit siklus ini: <span class="hl-profit">+${fl.toFixed(2)}</span>. Daily P&L: <span class="hl-profit">+${daily.toFixed(2)}</span>.`});
-      } else if(closeNote.includes('SPIKE')){
-        const spikeFl = fl!==0?fl:0;
-        steps.push({color:'#ff4d6d', text:`<span class="hl-warn">⚡ SPIKE terdeteksi</span> jam ${g(cl,C.Time).substring(11,19)} — harga loncat tiba-tiba ke <span class="hl-price">${gf(cl,C.Price).toFixed(2)}</span>. EA trigger CLOSE_ALL sebagai proteksi. Floating saat close: <span class="${spikeFl<0?'hl-loss':'hl-profit'}">${spikeFl>=0?'+':''}${spikeFl.toFixed(2)}</span>.`});
-      } else {
-        steps.push({color:'#fb923c', text:`<strong>CLOSE_ALL</strong> jam ${g(cl,C.Time).substring(11,19)} — reason: <em>${closeNote}</em>. P&L: <span class="${fl<0?'hl-loss':'hl-profit'}">${fl>=0?'+':''}${fl.toFixed(2)}</span>.`});
-      }
-    });
-
-    // DEINIT
-    if(system){
-      const lastRow = cycleRows[cycleRows.length-1];
-      const fl = gf(lastRow,C.TotalFL);
-      steps.push({color:'#8b5cf6', text:`<span class="hl-warn">⛔ EA DEINIT</span> — EA dihentikan paksa (restart/manual stop) jam ${g(system,C.Time).substring(11,19)}. Posisi masih floating: <span class="hl-loss">${fl.toFixed(2)}</span>. Hedge mencapai <span class="hl-hedge">Layer ${maxLayer}</span> sebelum deinit. <strong>Posisi kemungkinan ditutup manual atau oleh broker.</strong>`});
-    }
-
-    // Summary
-    const duration = (() => {
-      if(!lastClose&&!system) return '—';
-      const endRow = system||lastClose;
-      const t1 = new Date(g(entry,C.Time).replace('.','T').replace(/\./g,'-').replace('T','T').replace(' ','T'));
-      const t2 = new Date(g(endRow,C.Time).replace(' ','T'));
-      const diff = Math.round((t2-t1)/60000);
-      return diff<60?diff+'m':(Math.floor(diff/60)+'h'+diff%60+'m');
-    })();
-
-    return {num, outcome, outcomeLabel, dirLabel, entryTime, entryPrice, steps,
-      maxLayer, hHitCount:hHits.length, finalDaily,
-      duration, closes, system};
-  }).filter(Boolean);
-}
-
-function renderNarrative(){
-  const narrs = narrateRavager();
-  if(narrs.length===0){
-    document.getElementById('narrativeList').innerHTML='<div style="text-align:center;padding:40px;color:var(--text3);font-family:var(--font)">Tidak ada siklus trade ditemukan di log ini.</div>';
-    return;
-  }
-
-  document.getElementById('narrativeList').innerHTML = narrs.map(n => {
-    const stepsHtml = n.steps.map(s=>`
-      <div class="narr-step">
-        <div class="narr-step-dot" style="background:${s.color}"></div>
-        <div class="narr-step-text">${s.text}</div>
-      </div>`).join('');
-
-    return `<div class="narr-card ${n.outcome}">
-      <span class="narr-num">Siklus #${n.num}</span>
-      <div class="narr-header">
-        <div class="narr-title">🦅 Siklus #${n.num} — ${n.dirLabel} @ ${n.entryPrice.toFixed(2)}</div>
-        <span class="narr-outcome ${n.outcome}">${n.outcomeLabel}</span>
-      </div>
-      <div class="narr-body">
-        <div class="narr-timeline">${stepsHtml}</div>
-      </div>
-      <div class="narr-meta">
-        <div class="narr-stat"><div class="narr-stat-label">Entry Time</div><div class="narr-stat-val">${n.entryTime.substring(11,19)}</div></div>
-        <div class="narr-stat"><div class="narr-stat-label">Durasi</div><div class="narr-stat-val">${n.duration}</div></div>
-        <div class="narr-stat"><div class="narr-stat-label">Max Hedge Layer</div><div class="narr-stat-val" style="color:${n.maxLayer>=4?'var(--red)':n.maxLayer>=2?'var(--amber)':'var(--green)'}">L${n.maxLayer}</div></div>
-        <div class="narr-stat"><div class="narr-stat-label">Hedge Hit</div><div class="narr-stat-val">${n.hHitCount}x</div></div>
-        <div class="narr-stat"><div class="narr-stat-label">Daily P&L</div><div class="narr-stat-val" style="color:${n.finalDaily>=0?'var(--green)':'var(--red)'}">${n.finalDaily>=0?'+':''}${n.finalDaily.toFixed(2)}</div></div>
-        <div class="narr-stat"><div class="narr-stat-label">Outcome</div><div class="narr-stat-val">${n.outcomeLabel}</div></div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
 </script>
 </body>
 </html>
