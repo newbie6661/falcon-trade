@@ -459,7 +459,7 @@
       <span class="badge badge-blue">UTBot Signal</span>
       <span class="badge badge-blue">Multi-EMA Filter</span>
       <span class="badge badge-blue">DirLock Tick</span>
-      <span class="badge badge-orange">Dynamic Trail</span>
+      <span class="badge badge-orange">Fixed Pip Trail</span>
       <span class="badge badge-orange">Signal Flip Exit</span>
       <span class="badge badge-green">BUY/SELL Independent</span>
       <span class="badge badge-green">Spread Adaptive</span>
@@ -757,7 +757,7 @@ Total floating = -$45 + (-$38) + (-$21) = -$104
 <div class="container">
   <div class="section-header">
     <span class="section-num">05</span>
-    <h2 class="section-title">Dynamic Trailing — Phase C</h2>
+    <h2 class="section-title">Dynamic Trailing — Fixed Pip</h2>
     <div class="section-line"></div>
   </div>
 
@@ -778,9 +778,9 @@ Total floating = -$45 + (-$38) + (-$21) = -$104
     </div>
     <div class="phase-box p3">
       <div class="phase-num">3</div>
-      <div class="phase-title">Fase 3 — ATR Trail</div>
-      <p style="font-size:13px">Saat profit ≥ <code>TrailStartPips</code> pip, SL mulai trailing mengikuti ATR. Semakin volatile market, semakin longgar trailing-nya.</p>
-      <p style="font-size:12px; color:var(--muted)">Default: aktif di 500 pip. SL = harga - (ATR × multiplier).</p>
+      <div class="phase-title">Fase 3 — Fixed Pip Trail</div>
+      <p style="font-size:13px">Saat profit ≥ <code>TrailStartPips</code> pip, SL mulai trailing mengikuti harga dengan jarak tetap <code>TrailFixedPips</code>. Jarak SL selalu konsisten dan predictable.</p>
+      <p style="font-size:12px; color:var(--muted)">Default: aktif di 500 pip. SL = harga - TrailFixedPips pip (BUY) / harga + TrailFixedPips pip (SELL).</p>
     </div>
   </div>
 
@@ -793,19 +793,18 @@ bid   = 1.08650 → profit = 150 pip
 <span class="cw">if</span> profit_pip ≥ 100:
   new_SL = open + spread    <span class="cm">= 1.08501 (breakeven)</span>
 
-<span class="cm">// Fase 3 aktif (TrailStartPips = 500)</span>
+<span class="cm">// Fase 3 aktif (TrailStartPips = 500, TrailFixedPips = 30)</span>
 <span class="cw">if</span> profit_pip ≥ 500:
-  ATR_current = 0.00080  <span class="cm">(contoh)</span>
-  ATR_SL      = 0.00080 × 1.5 = 0.00120
-  new_SL      = bid - ATR_SL = 1.08650 - 0.00120 = <span class="cv">1.08530</span>
+  new_SL = bid - (30 pip)   <span class="cm">= 1.08650 - 0.00300 = <span class="cv">1.08350</span></span>
 
-<span class="cm">// SL hanya bisa naik (untuk BUY), tidak pernah turun</span>
+<span class="cm">// SL hanya bisa naik (BUY), tidak pernah turun</span>
+<span class="cm">// Jarak trailing selalu konsisten — tidak terpengaruh volatilitas ATR</span>
 new_SL > current_SL → update | new_SL ≤ current_SL → skip
   </div>
 
   <div class="alert green">
     <span class="alert-icon">✅</span>
-    <div><strong>Keuntungan ATR Trail:</strong> Saat market volatile (ATR besar), trailing lebih longgar sehingga posisi tidak kena saat koreksi normal. Saat market tenang (ATR kecil), trailing lebih ketat sehingga profit terjaga.</div>
+    <div><strong>Keuntungan Fixed Pip Trail:</strong> Jarak SL selalu tetap dan predictable. Tidak ada kejutan SL terlalu jauh saat ATR spike, tidak ada SL terlalu dekat saat ATR mengecil. Anda tahu persis berapa pip yang di-lock setiap saat.</div>
   </div>
 </div>
 </section>
@@ -978,19 +977,14 @@ new_SL > current_SL → update | new_SL ≤ current_SL → skip
         <td><span class="param-name">TrailStartPips</span></td>
         <td><span class="param-default">500</span></td>
         <td><span class="param-unit">pip</span></td>
-        <td><span class="param-desc">Profit dalam pip untuk mengaktifkan Fase 3 (ATR trailing). Setelah profit mencapai nilai ini, SL mulai mengikuti harga dengan jarak ATR × multiplier. Harus lebih besar dari TrailBreakevenPips.</span></td>
+        <td><span class="param-desc">Profit dalam pip untuk mengaktifkan Fase 3 (Fixed Pip trailing). Setelah profit mencapai nilai ini, SL mulai mengikuti harga dengan jarak tetap TrailFixedPips. Harus lebih besar dari TrailBreakevenPips.</span></td>
       </tr>
       <tr>
-        <td><span class="param-name">TrailATRPeriod</span></td>
-        <td><span class="param-default">14</span></td>
-        <td><span class="param-unit">candle</span></td>
-        <td><span class="param-desc">Period ATR yang digunakan untuk menghitung jarak trailing di Fase 3. Dihitung dari TF chart (bukan UTBot_TF). ATR 14 candle adalah standar yang umum digunakan.</span></td>
-      </tr>
-      <tr>
-        <td><span class="param-name">TrailATRMultiplier</span></td>
-        <td><span class="param-default">1.5</span></td>
-        <td><span class="param-unit">multiplier</span></td>
-        <td><span class="param-desc">Pengali ATR untuk jarak SL trailing. Jarak SL = ATR × multiplier. Nilai lebih besar = trailing lebih longgar (profit lebih bisa run tapi risiko lebih besar). Nilai lebih kecil = trailing lebih ketat.</span></td>
+        <td><span class="param-name">TrailFixedPips</span></td>
+        <td><span class="param-default">30</span></td>
+        <td><span class="param-unit">pip</span></td>
+        <td><span class="param-desc">Jarak fixed SL dari harga saat ini pada Fase 3. BUY: SL = bid − TrailFixedPips. SELL: SL = ask + TrailFixedPips. Bebas di-set sesuai volatilitas pair — makin volatile, makin besar nilainya.</span>
+        <div class="param-note">Rekomendasi XAUUSD M1: 20–50 pip. Forex major: 10–30 pip.</div></td>
       </tr>
     </table>
   </div>
@@ -1329,7 +1323,7 @@ UseSignalFlip     = true
 
 TrailBreakevenPips = 100
 TrailStartPips     = 300    <span class="cm">(turunkan dari default untuk XAUUSD)</span>
-TrailATRMultiplier = 1.5
+TrailFixedPips     = 30     <span class="cm">(jarak trailing fixed — sesuaikan volatilitas pair)</span>
   </div>
 
   <h3>A/B Testing Signal Gate</h3>
@@ -1361,7 +1355,7 @@ RequireEMA     = <span class="cw">false</span>
 
   <div class="alert green" style="margin-top:12px">
     <span class="alert-icon">✅</span>
-    <div><strong>Tip Trailing:</strong> Untuk XAUUSD di M1, XAUUSD bergerak ratusan pip per hari. Set TrailBreakevenPips=50 dan TrailStartPips=150-200 agar lebih cepat breakeven dan aktif trailing. Default 100/500 lebih cocok untuk Forex major.</div>
+    <div><strong>Tip Trailing:</strong> Untuk XAUUSD di M1, set TrailBreakevenPips=50, TrailStartPips=150-200, dan TrailFixedPips=30-50. Untuk Forex major, TrailFixedPips=10-20 sudah cukup. Semakin volatile pair, semakin besar nilai TrailFixedPips yang disarankan agar tidak kena SL saat koreksi normal.</div>
   </div>
 
   <div class="alert info" style="margin-top:12px">
