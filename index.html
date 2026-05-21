@@ -154,6 +154,48 @@
 }
   </script>
 </div>
+<div class="custom-ticker-wrapper" style="background: #000; border-top: 1px solid #333; border-bottom: 1px solid #333; overflow: hidden; padding: 10px 0; margin-bottom: 20px;">
+    <div class="custom-ticker" id="ticker-idr" style="display: flex; white-space: nowrap; animation: marquee 20s linear infinite; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #fff;">
+        <span style="margin: 0 auto;">SYNCING MARKET DATA...</span>
+    </div>
+</div>
+
+<style>
+    @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+    .ticker-item { margin: 0 30px; }
+    .ticker-item span { color: #d4af37; font-weight: bold; }
+</style>
+
+<script>
+    async function updateTicker() {
+        try {
+            const cryptoRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd');
+            const cryptoData = await cryptoRes.json();
+            
+            const fxRes = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+            const fxData = await fxRes.json();
+            const usdIdr = fxData.rates.IDR;
+
+            const ticker = document.getElementById('ticker-idr');
+            
+            const btcIdr = (cryptoData.bitcoin.usd * usdIdr).toLocaleString('id-ID', {minimumFractionDigits: 0});
+            const ethIdr = (cryptoData.ethereum.usd * usdIdr).toLocaleString('id-ID', {minimumFractionDigits: 0});
+            const solIdr = (cryptoData.solana.usd * usdIdr).toLocaleString('id-ID', {minimumFractionDigits: 0});
+
+            ticker.innerHTML = `
+                <div class="ticker-item">BTC/IDR: <span>Rp ${btcIdr}</span></div>
+                <div class="ticker-item">ETH/IDR: <span>Rp ${ethIdr}</span></div>
+                <div class="ticker-item">SOL/IDR: <span>Rp ${solIdr}</span></div>
+                <div class="ticker-item">USD/IDR: <span>Rp ${usdIdr.toLocaleString('id-ID')}</span></div>
+            `;
+        } catch (error) {
+            document.getElementById('ticker-idr').innerHTML = "<span style='margin:0 auto;'>MARKET DATA UNAVAILABLE</span>";
+        }
+    }
+    
+    updateTicker();
+    setInterval(updateTicker, 60000); // Auto-update tiap 60 detik
+</script>
     
   <a href="labs.html" class="labs-banner" style="
     background: rgba(255, 255, 255, 0.03); 
