@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FALCON RAVAGER v5.6 — Documentation</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #070b10;
+    --bg2:       #0d1520;
+    --bg3:       #111e2e;
+    --border:    #1a3a5c;
+    --accent:    #00d4ff;
+    --accent2:   #ff6b00;
+    --accent3:   #00ff88;
+    --warn:      #ffcc00;
+    --danger:    #ff3a3a;
+    --text:      #c8dff0;
+    --muted:     #4a6a8a;
+    --mono:      'Share Tech Mono', monospace;
+    --head:      'Rajdhani', sans-serif;
+    --body:      'Exo 2', sans-serif;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* SCANLINE OVERLAY */
+  body::before {
+    content:'';
+    position:fixed; inset:0; pointer-events:none; z-index:9999;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 2px,
+      rgba(0,212,255,0.015) 2px, rgba(0,212,255,0.015) 4px
+    );
+  }
+
+  /* HERO */
+  .hero {
+    position: relative;
+    background: linear-gradient(135deg, #050a12 0%, #0a1a2e 50%, #050e1a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 60px 40px 50px;
+    overflow: hidden;
+  }
+  .hero::before {
+    content:'';
+    position:absolute; inset:0;
+    background:
+      radial-gradient(ellipse 600px 300px at 80% 50%, rgba(0,212,255,0.06) 0%, transparent 70%),
+      radial-gradient(ellipse 400px 200px at 20% 80%, rgba(255,107,0,0.04) 0%, transparent 70%);
+  }
+  .hero-grid {
+    position:absolute; inset:0; pointer-events:none;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .hero-content { position:relative; z-index:1; max-width:1100px; margin:0 auto; }
+  .hero-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    opacity: 0.8;
+  }
+  .hero h1 {
+    font-family: var(--head);
+    font-size: clamp(36px, 6vw, 72px);
+    font-weight: 700;
+    letter-spacing: 2px;
+    line-height: 1;
+    color: #fff;
+    text-shadow: 0 0 40px rgba(0,212,255,0.3);
+  }
+  .hero h1 span { color: var(--accent); }
+  .hero-sub {
+    font-family: var(--head);
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--accent2);
+    letter-spacing: 3px;
+    margin-top: 8px;
+    text-transform: uppercase;
+  }
+  .hero-desc {
+    margin-top: 20px;
+    max-width: 600px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.8;
+  }
+  .hero-badges {
+    display: flex; flex-wrap:wrap; gap: 10px;
+    margin-top: 24px;
+  }
+  .badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 12px;
+    border: 1px solid;
+    border-radius: 2px;
+    letter-spacing: 1px;
+  }
+  .badge-blue  { border-color: var(--accent);  color: var(--accent);  background: rgba(0,212,255,0.07); }
+  .badge-orange{ border-color: var(--accent2); color: var(--accent2); background: rgba(255,107,0,0.07); }
+  .badge-green { border-color: var(--accent3); color: var(--accent3); background: rgba(0,255,136,0.07); }
+  .badge-warn  { border-color: var(--warn);    color: var(--warn);    background: rgba(255,204,0,0.07); }
+
+  /* NAV */
+  nav {
+    position: sticky; top:0; z-index: 100;
+    background: rgba(7,11,16,0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+  }
+  .nav-inner {
+    max-width: 1100px; margin: 0 auto;
+    display: flex; gap: 0; overflow-x: auto;
+  }
+  nav a {
+    font-family: var(--head);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 14px 18px;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* LAYOUT */
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 40px; }
+
+  section {
+    padding: 60px 0;
+    border-bottom: 1px solid rgba(26,58,92,0.4);
+  }
+
+  .section-header {
+    display: flex; align-items: center; gap: 16px;
+    margin-bottom: 40px;
+  }
+  .section-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    opacity: 0.6;
+  }
+  .section-title {
+    font-family: var(--head);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #fff;
+    text-transform: uppercase;
+  }
+  .section-line {
+    flex:1; height:1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 24px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .card::before {
+    content:'';
+    position:absolute; left:0; top:0; bottom:0;
+    width: 3px;
+  }
+  .card.blue::before  { background: var(--accent); }
+  .card.orange::before{ background: var(--accent2); }
+  .card.green::before { background: var(--accent3); }
+  .card.warn::before  { background: var(--warn); }
+  .card.danger::before{ background: var(--danger); }
+  .card:hover { border-color: rgba(0,212,255,0.3); }
+
+  .card-title {
+    font-family: var(--head);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    color: #fff;
+  }
+  .card-title.accent  { color: var(--accent); }
+  .card-title.orange  { color: var(--accent2); }
+  .card-title.green   { color: var(--accent3); }
+
+  /* FLOW DIAGRAM */
+  .flow {
+    display: flex; align-items: stretch;
+    flex-wrap: wrap; gap: 0;
+    margin: 30px 0;
+  }
+  .flow-step {
+    flex: 1; min-width: 160px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 20px 16px;
+    text-align: center;
+    position: relative;
+  }
+  .flow-step:not(:last-child)::after {
+    content: '▶';
+    position: absolute; right: -13px; top:50%;
+    transform: translateY(-50%);
+    color: var(--accent); font-size: 16px; z-index:1;
+  }
+  .flow-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    opacity: 0.6;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .flow-label {
+    font-family: var(--head);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #fff;
+  }
+  .flow-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+  .flow-step.active { border-color: var(--accent); background: rgba(0,212,255,0.06); }
+  .flow-step.orange { border-color: var(--accent2); background: rgba(255,107,0,0.06); }
+  .flow-step.green  { border-color: var(--accent3); background: rgba(0,255,136,0.06); }
+
+  /* PARAM TABLE */
+  .param-group {
+    margin-bottom: 40px;
+  }
+  .param-group-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    padding: 8px 16px;
+    background: rgba(0,212,255,0.06);
+    border: 1px solid rgba(0,212,255,0.2);
+    border-left: 3px solid var(--accent);
+    margin-bottom: 2px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  th {
+    font-family: var(--head);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 10px 14px;
+    text-align: left;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(26,58,92,0.3);
+    vertical-align: top;
+  }
+  tr:hover td { background: rgba(0,212,255,0.03); }
+  .param-name {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .param-default {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent3);
+  }
+  .param-unit {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent2);
+    white-space: nowrap;
+  }
+  .param-desc { color: var(--text); line-height: 1.6; }
+  .param-note {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  /* CODE BLOCK */
+  .code-block {
+    background: #060d16;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    padding: 20px;
+    border-radius: 2px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 2;
+    color: #7ecfff;
+    overflow-x: auto;
+    margin: 16px 0;
+  }
+  .code-block .cm  { color: var(--muted); }
+  .code-block .ck  { color: var(--accent); }
+  .code-block .cv  { color: var(--accent3); }
+  .code-block .co  { color: var(--accent2); }
+  .code-block .cw  { color: var(--warn); }
+
+  /* PHASE BOX */
+  .phases { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap:16px; margin:20px 0; }
+  .phase-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 20px;
+    position: relative;
+  }
+  .phase-num {
+    font-family: var(--mono);
+    font-size: 32px;
+    font-weight: 900;
+    opacity: 0.08;
+    position: absolute;
+    right: 16px; top: 10px;
+    color: var(--accent);
+  }
+  .phase-title {
+    font-family: var(--head);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .phase-box.p1 { border-left: 3px solid var(--muted); }
+  .phase-box.p1 .phase-title { color: var(--muted); }
+  .phase-box.p2 { border-left: 3px solid var(--warn); }
+  .phase-box.p2 .phase-title { color: var(--warn); }
+  .phase-box.p3 { border-left: 3px solid var(--accent3); }
+  .phase-box.p3 .phase-title { color: var(--accent3); }
+
+  /* GRID 2 COL */
+  .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+  @media(max-width:700px){ .grid2 { grid-template-columns:1fr; } .flow-step:not(:last-child)::after{display:none;} }
+
+  /* INLINE BADGE */
+  .ib {
+    display:inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 1px 7px;
+    border-radius: 2px;
+    vertical-align: middle;
+    margin-left: 4px;
+  }
+  .ib-blue  { background:rgba(0,212,255,0.15);  color:var(--accent);  border:1px solid rgba(0,212,255,0.3); }
+  .ib-green { background:rgba(0,255,136,0.12);  color:var(--accent3); border:1px solid rgba(0,255,136,0.3); }
+  .ib-orange{ background:rgba(255,107,0,0.12);  color:var(--accent2); border:1px solid rgba(255,107,0,0.3); }
+  .ib-warn  { background:rgba(255,204,0,0.12);  color:var(--warn);    border:1px solid rgba(255,204,0,0.3); }
+  .ib-red   { background:rgba(255,58,58,0.12);  color:var(--danger);  border:1px solid rgba(255,58,58,0.3); }
+
+  /* ALERT BOX */
+  .alert {
+    padding: 14px 18px;
+    border-radius: 3px;
+    margin: 16px 0;
+    font-size: 13px;
+    display:flex; gap:12px; align-items:flex-start;
+  }
+  .alert-icon { font-size:16px; margin-top:1px; flex-shrink:0; }
+  .alert.info  { background:rgba(0,212,255,0.07);  border:1px solid rgba(0,212,255,0.25); }
+  .alert.warn  { background:rgba(255,204,0,0.07);  border:1px solid rgba(255,204,0,0.25); }
+  .alert.danger{ background:rgba(255,58,58,0.07);  border:1px solid rgba(255,58,58,0.25); }
+  .alert.green { background:rgba(0,255,136,0.07);  border:1px solid rgba(0,255,136,0.25); }
+
+  /* FOOTER */
+  footer {
+    padding: 40px;
+    text-align: center;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+    font-family: var(--mono);
+  }
+  footer a { color: var(--accent); text-decoration:none; }
+
+  h3 {
+    font-family: var(--head);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #fff;
+    margin: 24px 0 12px;
+    text-transform: uppercase;
+  }
+  p { margin-bottom: 12px; color: var(--text); }
+  ul { padding-left: 20px; margin-bottom:12px; }
+  li { margin-bottom: 6px; color: var(--text); }
+  li::marker { color: var(--accent); }
+
+  /* SCROLL */
+  ::-webkit-scrollbar { width:6px; height:6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius:3px; }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-tag">// Expert Advisor Documentation</div>
+    <h1>FALCON <span>RAVAGER</span></h1>
+    <div class="hero-sub">v5.6 — Operation WW III</div>
+    <p class="hero-desc">
+      EA berbasis sinyal UT Bot + Multi-EMA Structure Filter + DirLock (Tick Dominance).
+      BUY & SELL berjalan independent, dynamic trailing tiga fase, tanpa sistem hedge.
+      Dirancang untuk akurasi entry tinggi dengan manajemen posisi yang fleksibel.
+    </p>
+    <div class="hero-badges">
+      <span class="badge badge-blue">UTBot Signal</span>
+      <span class="badge badge-blue">Multi-EMA Filter</span>
+      <span class="badge badge-blue">DirLock Tick</span>
+      <span class="badge badge-orange">Dynamic Trail</span>
+      <span class="badge badge-orange">Signal Flip Exit</span>
+      <span class="badge badge-green">BUY/SELL Independent</span>
+      <span class="badge badge-green">Spread Adaptive</span>
+      <span class="badge badge-warn">No Hedge | No Martingale Recovery</span>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#overview">Overview</a>
+    <a href="#flow">Alur Kerja</a>
+    <a href="#entry">Sistem Entry</a>
+    <a href="#exit">Sistem Exit</a>
+    <a href="#trailing">Dynamic Trail</a>
+    <a href="#params">Parameter</a>
+    <a href="#panel">Panel</a>
+    <a href="#tips">Tips</a>
+  </div>
+</nav>
+
+<!-- SECTION 1: OVERVIEW -->
+<section id="overview">
+<div class="container">
+  <div class="section-header">
+    <span class="section-num">01</span>
+    <h2 class="section-title">Overview</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card blue">
+      <div class="card-title accent">Filosofi EA</div>
+      <p>Falcon Ravager v5.6 adalah EA yang menggabungkan tiga lapisan konfirmasi sebelum entry: <strong>struktur market (EMA)</strong>, <strong>momentum flip (UT Bot)</strong>, dan <strong>tekanan tick realtime (DirLock)</strong>.</p>
+      <p>Tidak ada hedge, tidak ada recovery martingale. Setiap posisi dibuka berdasarkan sinyal yang valid dan dikelola dengan trailing dinamis.</p>
+    </div>
+    <div class="card orange">
+      <div class="card-title orange">Dua Arah Independent</div>
+      <p>BUY dan SELL masing-masing memiliki slot <code>MaxLayer</code> sendiri. Keduanya bisa aktif bersamaan selama sinyal masing-masing terpenuhi.</p>
+      <p>Magic number dipisah: <code>FR_BUY_MAGIC = 250001</code> dan <code>FR_SELL_MAGIC = 250002</code> sehingga tracking floating, layer, dan exit masing-masing independen.</p>
+    </div>
+  </div>
+
+  <div class="card green" style="margin-top:0">
+    <div class="card-title green">Timeframe yang Digunakan</div>
+    <div class="grid2">
+      <div>
+        <strong style="color:var(--accent)">TF Chart (misal M1)</strong>
+        <ul style="margin-top:8px">
+          <li>DirLock bekerja di sini</li>
+          <li>Tick pressure & dominance dihitung per tick M1</li>
+          <li>Dynamic trailing menggunakan ATR dari TF chart</li>
+        </ul>
+      </div>
+      <div>
+        <strong style="color:var(--accent2)">UTBot_TF (misal M5)</strong>
+        <ul style="margin-top:8px">
+          <li>UT Bot signal dihitung di sini</li>
+          <li>EMA structure filter dihitung di sini</li>
+          <li>Sinyal hanya diupdate saat candle baru close (anti-repaint)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="alert info" style="margin-top:16px">
+      <span class="alert-icon">ℹ️</span>
+      <div>Rekomendasi: gunakan UTBot_TF <strong>lebih tinggi</strong> dari TF chart. Misal chart M1 → UTBot M5 atau M15. Ini memberi konteks struktur market yang lebih besar sebagai filter entry.</div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- SECTION 2: ALUR KERJA -->
+<section id="flow">
+<div class="container">
+  <div class="section-header">
+    <span class="section-num">02</span>
+    <h2 class="section-title">Alur Kerja</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <h3>Alur Entry</h3>
+  <div class="flow">
+    <div class="flow-step active">
+      <span class="flow-num">STEP 01</span>
+      <div class="flow-label">UT Bot</div>
+      <div class="flow-sub">Candle close di UTBot_TF → deteksi crossover ATR Trailing Stop</div>
+    </div>
+    <div class="flow-step active">
+      <span class="flow-num">STEP 02</span>
+      <div class="flow-label">EMA Filter</div>
+      <div class="flow-sub">Close harus di atas/bawah semua EMA aktif</div>
+    </div>
+    <div class="flow-step active">
+      <span class="flow-num">STEP 03</span>
+      <div class="flow-label">Signal Gate</div>
+      <div class="flow-sub">UT Bot + EMA + DirLock harus sepakat</div>
+    </div>
+    <div class="flow-step orange">
+      <span class="flow-num">STEP 04</span>
+      <div class="flow-label">DirLock</div>
+      <div class="flow-sub">Tick dominance M1 konfirmasi arah per tick</div>
+    </div>
+    <div class="flow-step green">
+      <span class="flow-num">STEP 05</span>
+      <div class="flow-label">Entry</div>
+      <div class="flow-sub">Layer baru dibuka sesuai LotMode dan LayerStep</div>
+    </div>
+  </div>
+
+  <h3>Alur Exit</h3>
+  <div class="flow">
+    <div class="flow-step" style="border-color:var(--accent2)">
+      <span class="flow-num">EXIT A</span>
+      <div class="flow-label">Signal Flip</div>
+      <div class="flow-sub">UT Bot flip arah → close semua posisi berlawanan (jika aktif)</div>
+    </div>
+    <div class="flow-step" style="border-color:var(--accent3)">
+      <span class="flow-num">EXIT B</span>
+      <div class="flow-label">Lock Profit</div>
+      <div class="flow-sub">Total floating semua posisi ≥ LockProfit → close all</div>
+    </div>
+    <div class="flow-step" style="border-color:var(--danger)">
+      <span class="flow-num">EXIT C</span>
+      <div class="flow-label">Float Loss</div>
+      <div class="flow-sub">Hit MaxFloatingLoss — per layer atau total tergantung mode</div>
+    </div>
+    <div class="flow-step" style="border-color:var(--warn)">
+      <span class="flow-num">EXIT D</span>
+      <div class="flow-label">Trailing SL</div>
+      <div class="flow-sub">SL kena setelah breakeven atau ATR trail aktif</div>
+    </div>
+  </div>
+
+  <div class="code-block">
+<span class="cm">// Pseudo-logic alur keseluruhan di OnTick()</span>
+
+<span class="ck">OnTick()</span> {
+  PushSpread()                          <span class="cm">// Update buffer spread adaptive</span>
+  <span class="cw">if</span> Spread > MaxSpread → <span class="co">return</span>     <span class="cm">// Skip tick kalau spread terlalu lebar</span>
+
+  CalcDirLock()                         <span class="cm">// Update tick dominance (M1)</span>
+
+  <span class="cw">if</span> candle baru di UTBot_TF:
+    CalcUTBot()                         <span class="cm">// Update UT Bot + EMA (anti-repaint)</span>
+    CheckSignalFlip()                   <span class="cm">// Cek apakah perlu close posisi berlawanan</span>
+
+  CheckLockProfit()                     <span class="cm">// Total floating ≥ LockProfit → close all</span>
+  CheckFloatingLoss()                   <span class="cm">// Layer/total floating loss check</span>
+  DynamicTrailing()                     <span class="cm">// Update SL fase 2 & 3</span>
+
+  <span class="cw">if</span> dalam session &amp;&amp; tidak guardian:
+    TryEntry(<span class="cv">BUY</span>)                      <span class="cm">// Cek SignalGate + LayerStep → entry BUY</span>
+    TryEntry(<span class="cv">SELL</span>)                     <span class="cm">// Cek SignalGate + LayerStep → entry SELL</span>
+}
+  </div>
+</div>
+</section>
+
+<!-- SECTION 3: SISTEM ENTRY -->
+<section id="entry">
+<div class="container">
+  <div class="section-header">
+    <span class="section-num">03</span>
+    <h2 class="section-title">Sistem Entry</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <h3>UT Bot Signal</h3>
+  <p>UT Bot adalah ATR-based trailing stop yang mendeteksi momentum flip. Sinyal muncul saat harga melintasi garis trailing stop dari arah yang benar.</p>
+  <div class="code-block">
+<span class="cm">// Logika UT Bot (port dari Pine Script)</span>
+nLoss = UTBot_KeyValue × ATR(UTBot_ATRPeriod)
+
+<span class="cm">// Recalc ATR Trailing Stop setiap candle close</span>
+<span class="cw">if</span> close > prev_TS &amp;&amp; prev_close > prev_TS:
+  new_TS = max(prev_TS, close - nLoss)    <span class="cm">// Trending UP — trail naik</span>
+<span class="cw">elif</span> close &lt; prev_TS &amp;&amp; prev_close &lt; prev_TS:
+  new_TS = min(prev_TS, close + nLoss)    <span class="cm">// Trending DOWN — trail turun</span>
+<span class="cw">else</span>:
+  new_TS = close - nLoss (atau + nLoss)   <span class="cm">// Flip arah</span>
+
+<span class="cm">// Deteksi sinyal</span>
+BUY_signal  = close > new_TS <span class="cv">AND</span> crossover(close, TS)  <span class="cm">← harga tembus TS dari bawah</span>
+SELL_signal = close &lt; new_TS <span class="cv">AND</span> crossunder(close, TS) <span class="cm">← harga tembus TS dari atas</span>
+  </div>
+  <div class="alert warn">
+    <span class="alert-icon">⚠️</span>
+    <div><strong>Anti-repaint:</strong> Semua kalkulasi menggunakan candle <code>[1]</code> (sudah closed), bukan candle <code>[0]</code> yang masih berjalan. Ini memastikan sinyal tidak berubah setelah terbentuk.</div>
+  </div>
+
+  <h3>EMA Structure Filter</h3>
+  <p>Filter ini memastikan entry hanya terjadi saat harga berada di posisi struktural yang benar terhadap EMA yang dipilih.</p>
+  <div class="grid2">
+    <div class="card blue">
+      <div class="card-title accent">BUY Valid</div>
+      <p>Close <strong>di atas semua EMA aktif</strong> sekaligus. Jika EMA1 (10) dan EMA3 (50) aktif, maka close harus > EMA10 <em>dan</em> > EMA50.</p>
+    </div>
+    <div class="card" style="border-left:3px solid var(--danger)">
+      <div class="card-title" style="color:var(--danger)">SELL Valid</div>
+      <p>Close <strong>di bawah semua EMA aktif</strong> sekaligus. Jika ada EMA yang belum tembus, sinyal tidak valid.</p>
+    </div>
+  </div>
+
+  <h3>DirLock — Tick Dominance</h3>
+  <p>DirLock menganalisis tekanan tick realtime pada TF chart. Sebelum DirLock terkunci, EA tidak akan entry meskipun UT Bot sudah signal.</p>
+  <div class="code-block">
+<span class="cm">// Kalkulasi DirLock dari buffer tick</span>
+buyPercent  = (jumlah tick positif / total tick) × 100
+sellPercent = (jumlah tick negatif / total tick) × 100
+avgPower    = rata-rata |delta harga| per tick
+netFlow     = total delta (positif = net buying pressure)
+
+<span class="cm">// Kondisi BUY LOCK</span>
+BUY_valid  = buyPercent  ≥ DominancePercent  <span class="cm">(default 55%)</span>
+           <span class="cv">AND</span> avgPower ≥ MinPower            <span class="cm">(default 0.3)</span>
+           <span class="cv">AND</span> netFlow > 0
+
+<span class="cm">// Stability: harus konsisten N kali berturut-turut</span>
+<span class="cw">if</span> rawDir stabil selama DirStabilityCount tick → dirLock terkunci
+  </div>
+
+  <h3>Signal Gate — Kondisi Final Entry</h3>
+  <div class="code-block">
+<span class="cm">// Semua filter harus terpenuhi (berdasarkan setting RequireXxx)</span>
+entryBUY  = SignalGate(BUY)
+          = (RequireDirLock  → dirLock == 1)
+            <span class="cv">AND</span> (RequireUTBot  → utBuySignal == true)
+            <span class="cv">AND</span> (RequireEMA    → close > semua EMA aktif)
+
+<span class="cm">// Layer check: jarak dari posisi terakhir ≥ LayerStep (dynamic)</span>
+<span class="cw">if</span> AllowNewLayer(BUY) <span class="cv">AND</span> TotalBuyPos &lt; MaxLayer:
+  lot = CalcLotByLayer(nextLayer)   <span class="cm">// sesuai LotMode</span>
+  OpenBuy(lot)
+  </div>
+</div>
+</section>
+
+<!-- SECTION 4: SISTEM EXIT -->
+<section id="exit">
+<div class="container">
+  <div class="section-header">
+    <span class="section-num">04</span>
+    <h2 class="section-title">Sistem Exit</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card orange">
+      <div class="card-title orange">Signal Flip Exit</div>
+      <p>Ketika UT Bot menghasilkan sinyal baru di arah berlawanan (<code>BarsAgo = 0</code>), semua posisi di arah lama langsung ditutup.</p>
+      <p><strong>Contoh:</strong> Ada 3 posisi BUY aktif. UT Bot SELL signal muncul → ketiga BUY ditutup sekaligus.</p>
+      <p>Dapat di-toggle via parameter <code>UseSignalFlip</code>.</p>
+    </div>
+    <div class="card green">
+      <div class="card-title green">Lock Profit</div>
+      <p>Ketika <strong>total floating semua posisi</strong> (BUY + SELL combined) mencapai atau melampaui nilai <code>LockProfit</code>, semua posisi ditutup.</p>
+      <p>Ini adalah target profit harian per siklus trading. Setelah close, EA menunggu dominance baru sebelum entry lagi.</p>
+    </div>
+  </div>
+
+  <h3>Floating Loss — Dua Mode</h3>
+  <div class="grid2">
+    <div class="card" style="border-left:3px solid var(--danger)">
+      <div class="card-title" style="color:var(--danger)">Mode: FLOAT_LAYER</div>
+      <p><span class="ib ib-green">DEFAULT</span> Setiap posisi dievaluasi secara individual. Posisi yang floating loss-nya mencapai <code>-MaxFloatingLoss</code> ditutup sendiri, posisi lain tetap berjalan.</p>
+      <div class="code-block" style="margin-top:12px; font-size:11px">
+<span class="cm">// Contoh: MaxFloatingLoss = 100</span>
+BUY Layer 1: -$30  → masih jalan
+BUY Layer 2: -$85  → masih jalan
+BUY Layer 3: -$102 → <span class="co">CLOSE layer ini saja</span>
+BUY Layer 4: -$15  → masih jalan
+      </div>
+    </div>
+    <div class="card" style="border-left:3px solid var(--warn)">
+      <div class="card-title" style="color:var(--warn)">Mode: FLOAT_TOTAL</div>
+      <p>Semua posisi dievaluasi secara combined. Ketika total floating semua posisi (BUY + SELL) mencapai <code>-MaxFloatingLoss</code>, semua posisi ditutup sekaligus.</p>
+      <div class="code-block" style="margin-top:12px; font-size:11px">
+<span class="cm">// Contoh: MaxFloatingLoss = 100</span>
+Total floating = -$45 + (-$38) + (-$21) = -$104
+→ <span class="co">CLOSE ALL positions</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert warn">
+    <span class="alert-icon">⚠️</span>
+    <div><strong>Penting:</strong> Nilai <code>MaxFloatingLoss</code> adalah dalam satuan <strong>mata uang akun</strong> (USD/IDR dst), bukan pip. Pastikan nilainya sesuai dengan ukuran akun dan risk tolerance Anda.</div>
+  </div>
+</div>
+</section>
+
+<!-- SECTION 5: DYNAMIC TRAILING -->
+<section id="trailing">
+<div class="container">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <h2 class="section-title">Dynamic Trailing — Phase C</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <p>Sistem trailing tiga fase yang dirancang agar posisi tidak ditutup terlalu dini saat terjadi koreksi normal, namun tetap melindungi profit saat sudah cukup jauh.</p>
+
+  <div class="phases">
+    <div class="phase-box p1">
+      <div class="phase-num">1</div>
+      <div class="phase-title">Fase 1 — Free Running</div>
+      <p style="font-size:13px">Posisi baru dibuka. <strong>Tidak ada SL</strong> yang dipasang. Posisi bebas bergerak. Tidak ada trailing aktif.</p>
+      <p style="font-size:12px; color:var(--muted)">Berlaku sampai profit mencapai TrailBreakevenPips.</p>
+    </div>
+    <div class="phase-box p2">
+      <div class="phase-num">2</div>
+      <div class="phase-title">Fase 2 — Breakeven</div>
+      <p style="font-size:13px">Saat profit ≥ <code>TrailBreakevenPips</code> pip, SL digeser ke harga open + spread. Posisi tidak bisa rugi setelah ini.</p>
+      <p style="font-size:12px; color:var(--muted)">Default: aktif di 100 pip profit. SL = open price.</p>
+    </div>
+    <div class="phase-box p3">
+      <div class="phase-num">3</div>
+      <div class="phase-title">Fase 3 — ATR Trail</div>
+      <p style="font-size:13px">Saat profit ≥ <code>TrailStartPips</code> pip, SL mulai trailing mengikuti ATR. Semakin volatile market, semakin longgar trailing-nya.</p>
+      <p style="font-size:12px; color:var(--muted)">Default: aktif di 500 pip. SL = harga - (ATR × multiplier).</p>
+    </div>
+  </div>
+
+  <div class="code-block">
+<span class="cm">// Contoh untuk posisi BUY (pip values)</span>
+open  = 1.08500
+bid   = 1.08650 → profit = 150 pip
+
+<span class="cm">// Fase 2 aktif (TrailBreakevenPips = 100)</span>
+<span class="cw">if</span> profit_pip ≥ 100:
+  new_SL = open + spread    <span class="cm">= 1.08501 (breakeven)</span>
+
+<span class="cm">// Fase 3 aktif (TrailStartPips = 500)</span>
+<span class="cw">if</span> profit_pip ≥ 500:
+  ATR_current = 0.00080  <span class="cm">(contoh)</span>
+  ATR_SL      = 0.00080 × 1.5 = 0.00120
+  new_SL      = bid - ATR_SL = 1.08650 - 0.00120 = <span class="cv">1.08530</span>
+
+<span class="cm">// SL hanya bisa naik (untuk BUY), tidak pernah turun</span>
+new_SL > current_SL → update | new_SL ≤ current_SL → skip
+  </div>
+
+  <div class="alert green">
+    <span class="alert-icon">✅</span>
+    <div><strong>Keuntungan ATR Trail:</strong> Saat market volatile (ATR besar), trailing lebih longgar sehingga posisi tidak kena saat koreksi normal. Saat market tenang (ATR kecil), trailing lebih ketat sehingga profit terjaga.</div>
+  </div>
+</div>
+</section>
+
+<!-- SECTION 6: PARAMETER -->
+<section id="params">
+<div class="container">
+  <div class="section-header">
+    <span class="section-num">06</span>
+    <h2 class="section-title">Parameter Lengkap</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <!-- MAIN TRADE -->
+  <div class="param-group">
+    <div class="param-group-title">=== MAIN TRADE ===</div>
+    <table>
+      <tr><th>Parameter</th><th>Default</th><th>Satuan</th><th>Penjelasan</th></tr>
+      <tr>
+        <td><span class="param-name">LotSize</span></td>
+        <td><span class="param-default">0.01</span></td>
+        <td><span class="param-unit">lot</span></td>
+        <td><span class="param-desc">Ukuran lot dasar untuk layer pertama. Pada mode Fixed, semua layer menggunakan nilai ini. Pada mode Linear/Martingale, ini adalah lot awal yang akan bertambah per layer.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">MaxLayer</span></td>
+        <td><span class="param-default">10</span></td>
+        <td><span class="param-unit">posisi</span></td>
+        <td><span class="param-desc">Jumlah maksimal posisi yang bisa dibuka per arah. BUY dan SELL masing-masing memiliki batas MaxLayer sendiri. Total posisi maksimal = MaxLayer × 2.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">MaxSpread</span></td>
+        <td><span class="param-default">30</span></td>
+        <td><span class="param-unit">pip</span></td>
+        <td><span class="param-desc">Batas maksimal spread. Jika spread melebihi nilai ini, seluruh proses di OnTick() dilewati. Melindungi dari eksekusi saat spread abnormal (news, low liquidity).</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">SpikeThreshold</span></td>
+        <td><span class="param-default">150</span></td>
+        <td><span class="param-unit">pip</span></td>
+        <td><span class="param-desc">Batas pergerakan harga per tick. Jika satu tick bergerak ≥ nilai ini, semua posisi ditutup dan EA menunggu dominance baru. Melindungi dari spike harga tiba-tiba.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">Slippage</span></td>
+        <td><span class="param-default">10</span></td>
+        <td><span class="param-unit">pip</span></td>
+        <td><span class="param-desc">Toleransi slippage maksimal saat order eksekusi. Dalam pip. Nilai lebih tinggi meningkatkan peluang order terisi tapi dengan harga yang mungkin lebih buruk.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">InvertSignal</span></td>
+        <td><span class="param-default">false</span></td>
+        <td><span class="param-unit">bool</span></td>
+        <td><span class="param-desc">Balik arah semua sinyal entry. BUY menjadi SELL dan sebaliknya. Berguna untuk testing atau pair tertentu yang berperilaku terbalik dari biasanya.</span></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- LAYER STEP -->
+  <div class="param-group">
+    <div class="param-group-title">=== LAYER STEP (SPREAD ADAPTIVE) ===</div>
+    <table>
+      <tr><th>Parameter</th><th>Default</th><th>Satuan</th><th>Penjelasan</th></tr>
+      <tr>
+        <td><span class="param-name">LayerStepTier1</span></td>
+        <td><span class="param-default">5</span></td>
+        <td><span class="param-unit">pip</span></td>
+        <td><span class="param-desc">Jarak minimum antar layer saat spread normal (≤ SpreadTier1). Layer baru hanya bisa dibuka jika harga sudah bergerak minimal N pip dari posisi terakhir di arah yang sama.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">LayerStepTier2</span></td>
+        <td><span class="param-default">10</span></td>
+        <td><span class="param-unit">pip</span></td>
+        <td><span class="param-desc">Jarak minimum antar layer saat spread medium (SpreadTier1 &lt; spread ≤ SpreadTier2). Otomatis lebih jauh agar tidak over-entry saat spread mulai melebar.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">LayerStepTier3</span></td>
+        <td><span class="param-default">20</span></td>
+        <td><span class="param-unit">pip</span></td>
+        <td><span class="param-desc">Jarak minimum antar layer saat spread lebar (> SpreadTier2). Layer paling jauh untuk menghindari entry terlalu rapat saat kondisi market kurang likuid.</span></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- AUTO LOT -->
+  <div class="param-group">
+    <div class="param-group-title">=== AUTO LOT ===</div>
+    <table>
+      <tr><th>Parameter</th><th>Default</th><th>Satuan</th><th>Penjelasan</th></tr>
+      <tr>
+        <td><span class="param-name">LotMode</span></td>
+        <td><span class="param-default">LOT_FIXED</span></td>
+        <td><span class="param-unit">enum</span></td>
+        <td>
+          <span class="param-desc">Mode perhitungan lot per layer:</span>
+          <div class="param-note">• <strong>FIXED</strong>: Semua layer pakai LotSize yang sama</div>
+          <div class="param-note">• <strong>LINEAR</strong>: Layer N = LotSize + (N-1) × LotLinearStep. Contoh: 0.01, 0.02, 0.03...</div>
+          <div class="param-note">• <strong>MARTINGALE</strong>: Layer N = LotSize × LotMultiplier^(N-1). Contoh: 0.01, 0.02, 0.04...</div>
+        </td>
+      </tr>
+      <tr>
+        <td><span class="param-name">LotLinearStep</span></td>
+        <td><span class="param-default">0.01</span></td>
+        <td><span class="param-unit">lot</span></td>
+        <td><span class="param-desc">Tambahan lot per layer pada mode LINEAR. Layer 1=0.01, Layer 2=0.02, Layer 3=0.03, dst (jika LotSize=0.01 dan step=0.01).</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">LotMultiplier</span></td>
+        <td><span class="param-default">2.0</span></td>
+        <td><span class="param-unit">multiplier</span></td>
+        <td><span class="param-desc">Pengali lot per layer pada mode MARTINGALE. Layer 1=0.01, Layer 2=0.02, Layer 3=0.04, Layer 4=0.08, dst (jika LotSize=0.01 dan multiplier=2.0).</span>
+        <div class="param-note">⚠️ Gunakan dengan hati-hati — lot tumbuh eksponensial dan bisa menguras margin dengan cepat.</div></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- EXIT CONTROL -->
+  <div class="param-group">
+    <div class="param-group-title">=== EXIT CONTROL ===</div>
+    <table>
+      <tr><th>Parameter</th><th>Default</th><th>Satuan</th><th>Penjelasan</th></tr>
+      <tr>
+        <td><span class="param-name">LockProfit</span></td>
+        <td><span class="param-default">5.00</span></td>
+        <td><span class="param-unit">currency</span></td>
+        <td><span class="param-desc">Target profit per siklus. Ketika total floating (semua posisi BUY + SELL) mencapai nilai ini, semua posisi ditutup. Dalam satuan mata uang akun (USD, dll).</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">UseSignalFlip</span></td>
+        <td><span class="param-default">true</span></td>
+        <td><span class="param-unit">bool</span></td>
+        <td><span class="param-desc">Aktifkan exit berbasis signal flip. Ketika UT Bot menghasilkan sinyal baru (BarsAgo=0) di arah berlawanan, semua posisi di arah lama ditutup sekaligus. Sangat efektif untuk mengurangi drawdown.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">FloatingMode</span></td>
+        <td><span class="param-default">FLOAT_LAYER</span></td>
+        <td><span class="param-unit">enum</span></td>
+        <td>
+          <span class="param-desc">Mode pengecekan floating loss:</span>
+          <div class="param-note">• <strong>FLOAT_LAYER</strong>: Cek per posisi individual. Posisi yang hit -MaxFloatingLoss ditutup sendiri, sisanya tetap jalan.</div>
+          <div class="param-note">• <strong>FLOAT_TOTAL</strong>: Cek combined semua posisi. Jika total floating semua posisi hit -MaxFloatingLoss, semua ditutup.</div>
+        </td>
+      </tr>
+      <tr>
+        <td><span class="param-name">MaxFloatingLoss</span></td>
+        <td><span class="param-default">100.00</span></td>
+        <td><span class="param-unit">currency</span></td>
+        <td><span class="param-desc">Batas floating loss. Interpretasi bergantung FloatingMode. Dalam satuan mata uang akun. Nilai ini adalah risiko maksimal per posisi (LAYER mode) atau per siklus (TOTAL mode).</span></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- DYNAMIC TRAILING -->
+  <div class="param-group">
+    <div class="param-group-title">=== DYNAMIC TRAILING ===</div>
+    <table>
+      <tr><th>Parameter</th><th>Default</th><th>Satuan</th><th>Penjelasan</th></tr>
+      <tr>
+        <td><span class="param-name">UseDynamicTrail</span></td>
+        <td><span class="param-default">true</span></td>
+        <td><span class="param-unit">bool</span></td>
+        <td><span class="param-desc">Aktifkan sistem trailing dinamis tiga fase. Jika false, tidak ada SL yang dipasang secara otomatis (posisi hanya keluar via LockProfit, FloatingLoss, atau SignalFlip).</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">TrailBreakevenPips</span></td>
+        <td><span class="param-default">100</span></td>
+        <td><span class="param-unit">pip</span></td>
+        <td><span class="param-desc">Profit dalam pip untuk mengaktifkan Fase 2 (breakeven). Ketika posisi sudah untung sebesar ini, SL digeser ke harga open + spread. Posisi tidak bisa rugi setelah ini.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">TrailStartPips</span></td>
+        <td><span class="param-default">500</span></td>
+        <td><span class="param-unit">pip</span></td>
+        <td><span class="param-desc">Profit dalam pip untuk mengaktifkan Fase 3 (ATR trailing). Setelah profit mencapai nilai ini, SL mulai mengikuti harga dengan jarak ATR × multiplier. Harus lebih besar dari TrailBreakevenPips.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">TrailATRPeriod</span></td>
+        <td><span class="param-default">14</span></td>
+        <td><span class="param-unit">candle</span></td>
+        <td><span class="param-desc">Period ATR yang digunakan untuk menghitung jarak trailing di Fase 3. Dihitung dari TF chart (bukan UTBot_TF). ATR 14 candle adalah standar yang umum digunakan.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">TrailATRMultiplier</span></td>
+        <td><span class="param-default">1.5</span></td>
+        <td><span class="param-unit">multiplier</span></td>
+        <td><span class="param-desc">Pengali ATR untuk jarak SL trailing. Jarak SL = ATR × multiplier. Nilai lebih besar = trailing lebih longgar (profit lebih bisa run tapi risiko lebih besar). Nilai lebih kecil = trailing lebih ketat.</span></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- UT BOT -->
+  <div class="param-group">
+    <div class="param-group-title">=== UT BOT SIGNAL ===</div>
+    <table>
+      <tr><th>Parameter</th><th>Default</th><th>Satuan</th><th>Penjelasan</th></tr>
+      <tr>
+        <td><span class="param-name">UseUTBot</span></td>
+        <td><span class="param-default">true</span></td>
+        <td><span class="param-unit">bool</span></td>
+        <td><span class="param-desc">Aktifkan UT Bot sebagai filter. Jika false, UT Bot tidak dihitung sama sekali dan sinyal EMA + DirLock cukup untuk entry (tergantung setting RequireXxx).</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">UTBot_KeyValue</span></td>
+        <td><span class="param-default">1.0</span></td>
+        <td><span class="param-unit">multiplier</span></td>
+        <td><span class="param-desc">Sensitivitas ATR trailing stop UT Bot. Nilai lebih kecil = trailing lebih ketat = sinyal lebih sensitif tapi lebih banyak false signal. Nilai lebih besar = trailing lebih longgar = sinyal lebih jarang tapi lebih kuat.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">UTBot_ATRPeriod</span></td>
+        <td><span class="param-default">10</span></td>
+        <td><span class="param-unit">candle</span></td>
+        <td><span class="param-desc">Period ATR untuk perhitungan nLoss di UT Bot. Dihitung dari UTBot_TF. Nilai lebih kecil = lebih responsif terhadap volatilitas terkini. Nilai lebih besar = lebih smooth.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">UTBot_TF</span></td>
+        <td><span class="param-default">PERIOD_M5</span></td>
+        <td><span class="param-unit">timeframe</span></td>
+        <td><span class="param-desc">Timeframe untuk sinyal UT Bot dan EMA filter. Sebaiknya lebih tinggi dari TF chart. Rekomendasi: chart M1 → set M5 atau M15, chart M5 → set M15 atau H1.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">UTBot_Lookback</span></td>
+        <td><span class="param-default">3</span></td>
+        <td><span class="param-unit">candle (UTBot_TF)</span></td>
+        <td><span class="param-desc">Berapa candle sinyal UT Bot masih dianggap valid. Jika sinyal muncul di candle C, masih berlaku hingga C+Lookback candle berikutnya. Sinyal baru di arah berlawanan langsung menggantikan. Nilai 0 = hanya valid di candle yang sama.</span></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- EMA FILTER -->
+  <div class="param-group">
+    <div class="param-group-title">=== EMA STRUCTURE FILTER ===</div>
+    <table>
+      <tr><th>Parameter</th><th>Default</th><th>Satuan</th><th>Penjelasan</th></tr>
+      <tr>
+        <td><span class="param-name">UseEMAFilter</span></td>
+        <td><span class="param-default">true</span></td>
+        <td><span class="param-unit">bool</span></td>
+        <td><span class="param-desc">Aktifkan EMA structure filter secara global. Jika false, semua EMA dinonaktifkan meskipun EMA1_Active=true.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">EMA1_Active</span></td>
+        <td><span class="param-default">true</span></td>
+        <td><span class="param-unit">bool</span></td>
+        <td><span class="param-desc">Aktifkan EMA 1 sebagai salah satu filter. Jika aktif, close harus di atas (BUY) atau di bawah (SELL) EMA ini.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">EMA1_Period</span></td>
+        <td><span class="param-default">10</span></td>
+        <td><span class="param-unit">candle (UTBot_TF)</span></td>
+        <td><span class="param-desc">Period EMA 1. Dihitung dari UTBot_TF menggunakan candle yang sudah closed. Bisa diubah ke nilai apapun sesuai kebutuhan strategi.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">EMA2~5_Active</span></td>
+        <td><span class="param-default">false</span></td>
+        <td><span class="param-unit">bool</span></td>
+        <td><span class="param-desc">Aktifkan EMA 2 hingga 5. Default nonaktif. Setiap EMA yang diaktifkan menambah satu syarat konfirmasi struktur. Semakin banyak EMA aktif, semakin ketat filter.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">EMA2~5_Period</span></td>
+        <td><span class="param-default">20/50/100/200</span></td>
+        <td><span class="param-unit">candle (UTBot_TF)</span></td>
+        <td><span class="param-desc">Period masing-masing EMA 2 hingga 5. Dapat diubah bebas. Disarankan menggunakan nilai yang berbeda-beda untuk membaca struktur multi-level.</span></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- SIGNAL MODE -->
+  <div class="param-group">
+    <div class="param-group-title">=== SIGNAL MODE ===</div>
+    <table>
+      <tr><th>Parameter</th><th>Default</th><th>Satuan</th><th>Penjelasan</th></tr>
+      <tr>
+        <td><span class="param-name">RequireDirLock</span></td>
+        <td><span class="param-default">true</span></td>
+        <td><span class="param-unit">bool</span></td>
+        <td><span class="param-desc">DirLock wajib konfirmasi entry. Jika true, entry hanya terjadi jika DirLock terkunci searah sinyal. Jika false, DirLock diabaikan dan UT Bot + EMA cukup untuk entry.</span>
+        <div class="param-note">Sangat disarankan tetap true — DirLock adalah timing entry per tick yang krusial.</div></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">RequireUTBot</span></td>
+        <td><span class="param-default">true</span></td>
+        <td><span class="param-unit">bool</span></td>
+        <td><span class="param-desc">UT Bot sinyal wajib ada saat entry. Jika false, UT Bot diabaikan sebagai syarat entry (meskipun UseUTBot=true untuk display).</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">RequireEMA</span></td>
+        <td><span class="param-default">true</span></td>
+        <td><span class="param-unit">bool</span></td>
+        <td><span class="param-desc">EMA structure filter wajib terpenuhi untuk entry. Set false untuk melonggarkan filter saat backtesting atau di market kondisi tertentu.</span></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- TICK DOMINANCE -->
+  <div class="param-group">
+    <div class="param-group-title">=== TICK DOMINANCE ===</div>
+    <table>
+      <tr><th>Parameter</th><th>Default</th><th>Satuan</th><th>Penjelasan</th></tr>
+      <tr>
+        <td><span class="param-name">TickWindow</span></td>
+        <td><span class="param-default">90</span></td>
+        <td><span class="param-unit">tick</span></td>
+        <td><span class="param-desc">Jumlah tick yang disimpan dalam buffer untuk analisis dominance. Buffer yang lebih besar = sinyal lebih stabil tapi lebih lambat merespons perubahan arah.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">DominancePercent</span></td>
+        <td><span class="param-default">55</span></td>
+        <td><span class="param-unit">persen (%)</span></td>
+        <td><span class="param-desc">Persentase minimum tick searah untuk mengklaim dominance. 55% artinya dari 90 tick, minimal 50 harus ke arah yang sama. Nilai lebih tinggi = lebih selektif.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">MinPower</span></td>
+        <td><span class="param-default">0.3</span></td>
+        <td><span class="param-unit">pip (rata-rata)</span></td>
+        <td><span class="param-desc">Rata-rata kekuatan minimal setiap tick. Menghindari DirLock terkunci saat market sangat choppy dengan banyak tick kecil. Dalam pip rata-rata per tick.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">DirStabilityCount</span></td>
+        <td><span class="param-default">3</span></td>
+        <td><span class="param-unit">konfirmasi</span></td>
+        <td><span class="param-desc">Berapa kali arah yang sama harus terdeteksi berturut-turut sebelum DirLock terkunci. Mencegah DirLock flip-flop di market noise.</span></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- SPREAD ADAPTIVE -->
+  <div class="param-group">
+    <div class="param-group-title">=== SPREAD ADAPTIVE ===</div>
+    <table>
+      <tr><th>Parameter</th><th>Default</th><th>Satuan</th><th>Penjelasan</th></tr>
+      <tr>
+        <td><span class="param-name">UseSpreadAdaptive</span></td>
+        <td><span class="param-default">true</span></td>
+        <td><span class="param-unit">bool</span></td>
+        <td><span class="param-desc">Aktifkan spread adaptive untuk LayerStep dinamis. Jika false, selalu menggunakan LayerStepTier1.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">SpreadTickWindow</span></td>
+        <td><span class="param-default">50</span></td>
+        <td><span class="param-unit">tick</span></td>
+        <td><span class="param-desc">Jumlah tick yang digunakan untuk menghitung rata-rata spread. Rata-rata ini menentukan tier spread yang aktif saat ini.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">SpreadTier1</span></td>
+        <td><span class="param-default">2.0</span></td>
+        <td><span class="param-unit">pip</span></td>
+        <td><span class="param-desc">Batas atas spread untuk Tier 1 (normal). AvgSpread ≤ nilai ini → LayerStepTier1 aktif.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">SpreadTier2</span></td>
+        <td><span class="param-default">3.5</span></td>
+        <td><span class="param-unit">pip</span></td>
+        <td><span class="param-desc">Batas atas spread untuk Tier 2 (medium). SpreadTier1 &lt; AvgSpread ≤ nilai ini → LayerStepTier2. Di atas nilai ini → Tier 3 (LayerStepTier3).</span></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- OPERATION CONTROL -->
+  <div class="param-group">
+    <div class="param-group-title">=== OPERATION CONTROL ===</div>
+    <table>
+      <tr><th>Parameter</th><th>Default</th><th>Satuan</th><th>Penjelasan</th></tr>
+      <tr>
+        <td><span class="param-name">UseDailyControl</span></td>
+        <td><span class="param-default">true</span></td>
+        <td><span class="param-unit">bool</span></td>
+        <td><span class="param-desc">Aktifkan semua kontrol sesi harian: jam trading, daily target, daily max drawdown, dan guardian mode.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">StartHourLocal</span></td>
+        <td><span class="param-default">7</span></td>
+        <td><span class="param-unit">jam (local time)</span></td>
+        <td><span class="param-desc">Jam mulai sesi trading dalam waktu lokal. Dikombinasikan dengan StartMinuteLocal.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">StopHourLocal</span></td>
+        <td><span class="param-default">4</span></td>
+        <td><span class="param-unit">jam (local time)</span></td>
+        <td><span class="param-desc">Jam akhir sesi trading dalam waktu lokal. Jika StopHour &lt; StartHour, sesi dianggap melewati tengah malam (misal 07:00 - 04:00 = 21 jam).</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">DailyTargetProfit</span></td>
+        <td><span class="param-default">50.00</span></td>
+        <td><span class="param-unit">currency</span></td>
+        <td><span class="param-desc">Target profit harian. Ketika dailyProfit mencapai nilai ini, Guardian Mode aktif dan entry baru diblok. Posisi yang sudah ada tetap dimanage hingga close.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">DailyMaxDrawdown</span></td>
+        <td><span class="param-default">-30.00</span></td>
+        <td><span class="param-unit">currency</span></td>
+        <td><span class="param-desc">Batas kerugian harian. Jika dailyProfit turun ke nilai ini, semua posisi ditutup, operasi dihentikan, dan Guardian Mode aktif hingga sesi berikutnya. Nilai harus negatif.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">LocalGMTOffset</span></td>
+        <td><span class="param-default">8</span></td>
+        <td><span class="param-unit">jam</span></td>
+        <td><span class="param-desc">Selisih waktu lokal Anda terhadap GMT. Indonesia WIB = GMT+7, WITA = GMT+8, WIT = GMT+9. Digunakan untuk konversi waktu sesi dan Guardian Mode.</span></td>
+      </tr>
+      <tr>
+        <td><span class="param-name">GuardianHours</span></td>
+        <td><span class="param-default">4</span></td>
+        <td><span class="param-unit">jam</span></td>
+        <td><span class="param-desc">Berapa jam sebelum StopHour, Guardian Mode otomatis aktif berdasarkan waktu. Melindungi profit akhir sesi dari entry baru yang berisiko. 4 jam = Guardian aktif 4 jam sebelum sesi berakhir.</span></td>
+      </tr>
+    </table>
+  </div>
+</div>
+</section>
+
+<!-- SECTION 7: PANEL -->
+<section id="panel">
+<div class="container">
+  <div class="section-header">
+    <span class="section-num">07</span>
+    <h2 class="section-title">Panel Monitor</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="grid2">
+    <div>
+      <h3>Kolom Kiri</h3>
+      <div class="card blue" style="margin-bottom:8px">
+        <div class="card-title accent" style="font-size:13px">[ STATUS ]</div>
+        <p style="font-size:12px">Status EA (ON AIR/IN HANGAR), runtime, status sesi, info broker, broker time, local time.</p>
+      </div>
+      <div class="card blue" style="margin-bottom:8px">
+        <div class="card-title accent" style="font-size:13px">[ SIGNAL MONITOR ]</div>
+        <p style="font-size:12px">UTBot_TF, status sinyal UT Bot + berapa bar lalu, nilai ATR Trailing Stop, status Signal Flip, status EMA struktur, nilai setiap EMA aktif (above/below), status Signal Gate (OPEN/CLOSED).</p>
+      </div>
+      <div class="card blue" style="margin-bottom:8px">
+        <div class="card-title accent" style="font-size:13px">[ SPREAD ADAPTIVE ]</div>
+        <p style="font-size:12px">Status, spread live, avg spread, tier aktif, dynamic layer step.</p>
+      </div>
+      <div class="card blue" style="margin-bottom:8px">
+        <div class="card-title accent" style="font-size:13px">[ GUARDIAN MODE ]</div>
+        <p style="font-size:12px">Status, trigger, status entry (OPEN/BLOCKED), countdown.</p>
+      </div>
+      <div class="card blue">
+        <div class="card-title accent" style="font-size:13px">[ MARKET RADAR ]</div>
+        <p style="font-size:12px">DirLock vector, pull UP%, pull DN%, net flow, thrust power, stability counter.</p>
+      </div>
+    </div>
+    <div>
+      <h3>Kolom Kanan</h3>
+      <div class="card orange" style="margin-bottom:8px">
+        <div class="card-title orange" style="font-size:13px">[ P&L ]</div>
+        <p style="font-size:12px">Daily profit, target, max DD, progress %, total profit, status misi.</p>
+      </div>
+      <div class="card orange" style="margin-bottom:8px">
+        <div class="card-title orange" style="font-size:13px">[ POSITION ]</div>
+        <p style="font-size:12px">Jumlah posisi BUY/SELL vs MaxLayer, floating BUY, floating SELL, total floating, floating mode, floating limit.</p>
+      </div>
+      <div class="card orange" style="margin-bottom:8px">
+        <div class="card-title orange" style="font-size:13px">[ DYNAMIC TRAIL ]</div>
+        <p style="font-size:12px">Status trailing, threshold fase 2 & 3, nilai ATR saat ini, jarak SL ATR.</p>
+      </div>
+      <div class="card orange" style="margin-bottom:8px">
+        <div class="card-title orange" style="font-size:13px">[ AUTO LOT ]</div>
+        <p style="font-size:12px">Mode lot, preview L1>L4, lot untuk layer berikutnya BUY dan SELL.</p>
+      </div>
+      <div class="card orange">
+        <div class="card-title orange" style="font-size:13px">[ DD WARNING ]</div>
+        <p style="font-size:12px">Status level DD (NORMAL/CAUTION/WARNING/DANGER/CRITICAL), nilai DD, persentase DD.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>Tombol Kontrol</h3>
+  <div class="grid2">
+    <div class="card green">
+      <div class="card-title green">TAKEOFF</div>
+      <p style="font-size:13px">Mulai EA. Reset semua state, catat balance awal sebagai baseBalance, mulai kalkulasi UT Bot dan DirLock. Log params snapshot ke CSV.</p>
+    </div>
+    <div class="card" style="border-left:3px solid var(--danger)">
+      <div class="card-title" style="color:var(--danger)">HANGAR</div>
+      <p style="font-size:13px">Hentikan EA dan tutup semua posisi. State direset tapi profit counter (daily/total) tidak direset.</p>
+    </div>
+    <div class="card warn">
+      <div class="card-title warn">RESET</div>
+      <p style="font-size:13px">HANGAR + reset semua profit counter (daily, total), session ID, base balance. Full clean slate.</p>
+    </div>
+    <div class="card blue">
+      <div class="card-title accent">BLACKBOX</div>
+      <p style="font-size:13px">Toggle logging CSV. Saat ON, setiap tick, entry, exit, dan signal dicatat ke file CSV di folder data MT5. Berguna untuk analisis backtest dan debugging.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- SECTION 8: TIPS -->
+<section id="tips">
+<div class="container">
+  <div class="section-header">
+    <span class="section-num">08</span>
+    <h2 class="section-title">Tips & Rekomendasi</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <h3>Setting Awal untuk Backtest</h3>
+  <div class="code-block">
+<span class="cm">// Rekomendasi setting awal backtest — chart M1, pair XAUUSD</span>
+UTBot_TF          = PERIOD_M5
+UTBot_KeyValue    = 1.0
+UTBot_ATRPeriod   = 10
+UTBot_Lookback    = 3
+
+EMA1_Active       = true,  EMA1_Period = 10
+EMA2_Active       = false  <span class="cm">(nonaktif dulu, test 1 EMA)</span>
+
+RequireDirLock    = true
+RequireUTBot      = true
+RequireEMA        = true
+
+LotMode           = LOT_FIXED
+LotSize           = 0.01
+MaxLayer          = 5        <span class="cm">(batasi dulu untuk backtest)</span>
+
+FloatingMode      = FLOAT_LAYER
+MaxFloatingLoss   = 50.00
+LockProfit        = 10.00
+UseSignalFlip     = true
+
+TrailBreakevenPips = 100
+TrailStartPips     = 300    <span class="cm">(turunkan dari default untuk XAUUSD)</span>
+TrailATRMultiplier = 1.5
+  </div>
+
+  <h3>A/B Testing Signal Gate</h3>
+  <div class="grid2">
+    <div class="card blue">
+      <div class="card-title accent">Test 1 — Full Gate</div>
+      <div class="code-block" style="font-size:11px; margin:8px 0">
+RequireDirLock = <span class="cv">true</span>
+RequireUTBot   = <span class="cv">true</span>
+RequireEMA     = <span class="cv">true</span>
+      </div>
+      <p style="font-size:12px">Paling ketat. Entry paling sedikit tapi kualitas tertinggi. Cocok untuk akun kecil.</p>
+    </div>
+    <div class="card orange">
+      <div class="card-title orange">Test 2 — Tanpa EMA</div>
+      <div class="code-block" style="font-size:11px; margin:8px 0">
+RequireDirLock = <span class="cv">true</span>
+RequireUTBot   = <span class="cv">true</span>
+RequireEMA     = <span class="cw">false</span>
+      </div>
+      <p style="font-size:12px">EMA diabaikan. Lebih banyak entry. Berguna di market yang sedang dalam transisi struktur.</p>
+    </div>
+  </div>
+
+  <div class="alert warn" style="margin-top:24px">
+    <span class="alert-icon">⚠️</span>
+    <div><strong>Peringatan Martingale:</strong> Jika menggunakan LotMode=MARTINGALE dengan MaxLayer=10, lot di layer ke-10 adalah LotSize × 2^9 = 512× lot awal. Dengan LotSize=0.01 → lot ke-10 = 5.12 lot. Pastikan margin akun mencukupi atau batasi MaxLayer ke 5-6.</div>
+  </div>
+
+  <div class="alert green" style="margin-top:12px">
+    <span class="alert-icon">✅</span>
+    <div><strong>Tip Trailing:</strong> Untuk XAUUSD di M1, XAUUSD bergerak ratusan pip per hari. Set TrailBreakevenPips=50 dan TrailStartPips=150-200 agar lebih cepat breakeven dan aktif trailing. Default 100/500 lebih cocok untuk Forex major.</div>
+  </div>
+
+  <div class="alert info" style="margin-top:12px">
+    <span class="alert-icon">ℹ️</span>
+    <div><strong>Signal Flip + LayerStep:</strong> Kombinasi UseSignalFlip=true dengan LayerStep yang cukup besar adalah kunci mengurangi akumulasi posisi yang salah arah. Signal Flip memastikan posisi berlawanan langsung bersih saat market flip.</div>
+  </div>
+</div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div>FALCON RAVAGER v5.6 — Operation WW III</div>
+  <div style="margin-top:8px">
+    Telegram: <a href="https://t.me/falcon_trader666">t.me/falcon_trader666</a> &nbsp;|&nbsp;
+    Web: <a href="https://linktr.ee/falcontradesystem">linktr.ee/falcontradesystem</a>
+  </div>
+  <div style="margin-top:8px; opacity:0.4">© 2025 Ravager Series, Genz - Falcon Trade System</div>
+</footer>
+
+</body>
+</html>
