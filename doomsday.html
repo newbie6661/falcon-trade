@@ -1,1 +1,279 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPERATION DOOMSDAY v6.0 | Falcon Intelligence Division</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg: #050505;
+            --card-bg: #0a0a0a;
+            --ember: #e74c3c;
+            --text-main: #d1d5db;
+            --text-dim: #64748b;
+        }
 
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Background Aura (Bara Api Redup) */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 80% 10%, rgba(231, 76, 60, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 10% 90%, rgba(231, 76, 60, 0.03) 0%, transparent 40%);
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        /* Logo Decrypted */
+        .hero-logo {
+            width: 140px;
+            height: auto;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            padding: 5px;
+            background: #000;
+            box-shadow: 0 0 30px rgba(231, 76, 60, 0.2);
+        }
+
+        h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2.8rem;
+            color: #ffffff;
+            margin: 0;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        .tagline {
+            color: var(--ember);
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            letter-spacing: 6px;
+            font-size: 0.9rem;
+            margin-bottom: 50px;
+            text-transform: uppercase;
+        }
+
+        /* Frame Screenshot */
+        .screenshot-container {
+            position: relative;
+            background: #000;
+            border: 1px solid #1a1a1a;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+            margin-bottom: 60px;
+        }
+
+        .screenshot-container img {
+            width: 100%;
+            display: block;
+            border-radius: 6px;
+            filter: brightness(0.9) contrast(1.1);
+        }
+
+        .screenshot-container::after {
+            content: "DECRYPTED DATA STREAM";
+            position: absolute;
+            top: -12px;
+            right: 30px;
+            background: var(--ember);
+            color: #fff;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            padding: 2px 10px;
+            border-radius: 3px;
+        }
+
+        /* Features Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 60px;
+            text-align: left;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            padding: 35px;
+            border-radius: 8px;
+            border: 1px solid #111;
+            border-left: 3px solid var(--ember);
+            transition: 0.3s;
+        }
+
+        .feature-card:hover {
+            background: #0f0f0f;
+            border-color: rgba(231, 76, 60, 0.5);
+        }
+
+        .feature-card h3 {
+            color: #fff;
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 0;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .feature-card p {
+            font-size: 0.95rem;
+            color: var(--text-main);
+            margin-bottom: 0;
+        }
+
+        /* CTA SECTION */
+        .cta-box {
+            margin-top: 40px;
+            padding: 50px 30px;
+            background: linear-gradient(180deg, rgba(231, 76, 60, 0.05) 0%, transparent 100%);
+            border: 1px dashed rgba(231, 76, 60, 0.3);
+            border-radius: 15px;
+        }
+
+        .cta-box h2 {
+            font-family: 'JetBrains Mono', monospace;
+            color: #fff;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+        }
+
+        .btn-telegram {
+            display: inline-block;
+            background: var(--ember);
+            color: #fff;
+            padding: 18px 45px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+            margin-top: 20px;
+            transition: 0.4s;
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 20px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn-telegram:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(231, 76, 60, 0.6);
+        }
+
+        .nav-back {
+            margin-top: 50px;
+            display: inline-block;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .nav-back:hover {
+            color: var(--ember);
+        }
+
+        /* Animasi Pulse */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+        }
+
+        footer {
+            margin-top: 100px;
+            padding: 40px;
+            border-top: 1px solid #111;
+            font-size: 0.75rem;
+            color: #333;
+            letter-spacing: 1px;
+        }
+
+        /* Responsive Mobile */
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            .container { padding: 40px 15px; }
+            .content-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <img src="doomsday_indicator_logo.png" class="hero-logo" alt="Falcon Doomsday Logo">
+    <h1>OPERATION DOOMSDAY</h1>
+    <div class="tagline">The Final Arbiter v6.0</div>
+
+    <div class="screenshot-container">
+        <img src="Screenshot1_Doomsday.png" alt="Falcon Doomsday Performance">
+    </div>
+
+    <div class="content-grid">
+        <div class="feature-card">
+            <h3><i class="fa-solid fa-microchip"></i> Precision Logic</h3>
+            <p>Mengintegrasikan Multi-EMA Structure Filter dengan UTBot v6 Engine. Dirancang khusus untuk mendeteksi breakout dengan tingkat akurasi yang mematikan.</p>
+        </div>
+        <div class="feature-card">
+            <h3><i class="fa-solid fa-bolt-lightning"></i> Low Latency</h3>
+            <p>Arsitektur script yang dioptimalkan untuk eksekusi real-time. Tidak ada lagi sinyal yang tertinggal saat volatilitas market memuncak.</p>
+        </div>
+        <div class="feature-card">
+            <h3><i class="fa-solid fa-shield-halved"></i> Signal Security</h3>
+            <p>Algoritma anti-repaint murni. Apa yang Anda lihat di chart adalah data absolut yang telah melalui validasi struktural berlapis.</p>
+        </div>
+        <div class="feature-card">
+            <h3><i class="fa-solid fa-crosshairs"></i> Sniper Execution</h3>
+            <p>Filter volume dinamis memastikan Anda hanya masuk saat momentum institusi sedang bergerak. Minimal noise, maksimal profit run.</p>
+        </div>
+    </div>
+
+    <div class="cta-box">
+        <h2>READY FOR DEPLOYMENT?</h2>
+        <p>Bergabunglah dengan elit trader yang menggunakan teknologi "The Final Arbiter" untuk mendominasi chart.</p>
+        <a href="https://t.me/falcon_trader666" class="btn-telegram">
+            <i class="fa-brands fa-telegram"></i> Request Access (Telegram)
+        </a>
+    </div>
+
+    <a href="index.html" class="nav-back">
+        <i class="fa-solid fa-arrow-left"></i> Back to Command Center
+    </a>
+
+    <footer>
+        <p>FALCON INTELLIGENCE DIVISION &copy; 2026 | CLASSIFIED TRADING TOOLS</p>
+        <p style="margin-top: 10px; opacity: 0.5;">Restricted access for authorized personnel only.</p>
+    </footer>
+</div>
+
+</body>
+</html>
