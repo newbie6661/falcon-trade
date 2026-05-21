@@ -169,32 +169,33 @@
 <script>
     async function updateTicker() {
         try {
-            const cryptoRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd');
+            // Kita tambah 'pi-network' ke list fetch
+            const cryptoRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,pi-network&vs_currencies=usd');
             const cryptoData = await cryptoRes.json();
-            
             const fxRes = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
             const fxData = await fxRes.json();
             const usdIdr = fxData.rates.IDR;
-
-            const ticker = document.getElementById('ticker-idr');
-            
+            const ticker = document.getElementById('ticker-idr');    
+            // Kalkulasi
             const btcIdr = (cryptoData.bitcoin.usd * usdIdr).toLocaleString('id-ID', {minimumFractionDigits: 0});
             const ethIdr = (cryptoData.ethereum.usd * usdIdr).toLocaleString('id-ID', {minimumFractionDigits: 0});
             const solIdr = (cryptoData.solana.usd * usdIdr).toLocaleString('id-ID', {minimumFractionDigits: 0});
-
+            const piIdr = (cryptoData['pi-network'].usd * usdIdr).toLocaleString('id-ID', {minimumFractionDigits: 0});
+            // Update isi Ticker
             ticker.innerHTML = `
                 <div class="ticker-item">BTC/IDR: <span>Rp ${btcIdr}</span></div>
                 <div class="ticker-item">ETH/IDR: <span>Rp ${ethIdr}</span></div>
                 <div class="ticker-item">SOL/IDR: <span>Rp ${solIdr}</span></div>
+                <div class="ticker-item">PI/IDR: <span>Rp ${piIdr}</span></div>
                 <div class="ticker-item">USD/IDR: <span>Rp ${usdIdr.toLocaleString('id-ID')}</span></div>
             `;
         } catch (error) {
-            document.getElementById('ticker-idr').innerHTML = "<span style='margin:0 auto;'>MARKET DATA UNAVAILABLE</span>";
+            document.getElementById('ticker-idr').innerHTML = "<span style='margin:0 auto; color: #e74c3c;'>DATA SYNC ERROR</span>";
         }
     }
-    
+    // Jalankan pertama kali dan set auto-update tiap 60 detik
     updateTicker();
-    setInterval(updateTicker, 60000); // Auto-update tiap 60 detik
+    setInterval(updateTicker, 60000); 
 </script>
     
   <a href="labs.html" class="labs-banner" style="
