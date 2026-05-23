@@ -3,791 +3,651 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Falcon Ravager v5.6 — Parameter Simulator</title>
+<title>Falcon Ravager v5.6 — Doomsday Simulator</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600&display=swap');
-
-  :root {
-    --bg: #0a0c10;
-    --bg2: #111418;
-    --bg3: #181c22;
-    --border: #1f2530;
-    --border2: #2a3240;
-    --accent: #f0a500;
-    --accent2: #d4861a;
-    --green: #22c55e;
-    --green-bg: rgba(34,197,94,0.08);
-    --red: #ef4444;
-    --red-bg: rgba(239,68,68,0.08);
-    --amber: #f59e0b;
-    --blue: #3b82f6;
-    --text: #e2e8f0;
-    --text2: #94a3b8;
-    --text3: #475569;
-    --mono: 'JetBrains Mono', monospace;
-    --sans: 'Inter', sans-serif;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { background: var(--bg); color: var(--text); font-family: var(--sans); }
-  body { min-height: 100vh; padding: 0; }
-
-  .app-header {
-    background: var(--bg2);
-    border-bottom: 1px solid var(--border);
-    padding: 16px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky; top: 0; z-index: 100;
-  }
-  .header-logo { display: flex; align-items: center; gap: 10px; }
-  .logo-icon {
-    width: 32px; height: 32px; background: var(--accent);
-    border-radius: 6px; display: flex; align-items: center;
-    justify-content: center; font-size: 16px; color: #000;
-  }
-  .header-title { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--accent); letter-spacing: 0.05em; }
-  .header-sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
-  .badge-live { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); padding: 3px 10px; border-radius: 20px; font-size: 11px; font-family: var(--mono); }
-
-  .main { display: grid; grid-template-columns: 320px 1fr; min-height: calc(100vh - 57px); }
-
-  .sidebar {
-    background: var(--bg2);
-    border-right: 1px solid var(--border);
-    overflow-y: auto;
-    padding: 16px;
-  }
-
-  .param-section { margin-bottom: 20px; }
-  .param-section-title {
-    font-size: 10px; font-weight: 600; text-transform: uppercase;
-    letter-spacing: 0.1em; color: var(--text3); margin-bottom: 10px;
-    padding-bottom: 6px; border-bottom: 1px solid var(--border);
-  }
-  .param-row { margin-bottom: 10px; }
-  .param-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-  .param-name { font-size: 12px; color: var(--text2); }
-  .param-value {
-    font-family: var(--mono); font-size: 12px; font-weight: 500;
-    color: var(--accent); background: var(--bg3);
-    border: 1px solid var(--border); border-radius: 4px;
-    padding: 2px 6px;
-  }
-  input[type=range] {
-    width: 100%; height: 4px; -webkit-appearance: none;
-    background: var(--bg3); border-radius: 2px; outline: none;
-    cursor: pointer; margin: 4px 0;
-  }
-  input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 14px; height: 14px;
-    background: var(--accent); border-radius: 50%; cursor: pointer;
-    border: 2px solid var(--bg2);
-  }
-  .param-hint { font-size: 10px; color: var(--text3); margin-top: 2px; }
-
-  .run-btn {
-    width: 100%; padding: 12px; background: var(--accent); color: #000;
-    border: none; border-radius: 8px; font-family: var(--mono);
-    font-weight: 700; font-size: 13px; cursor: pointer;
-    letter-spacing: 0.05em; transition: all 0.2s;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-  }
-  .run-btn:hover { background: var(--accent2); transform: translateY(-1px); }
-  .run-btn:active { transform: translateY(0); }
-
-  .monte-btn {
-    width: 100%; padding: 10px; background: transparent;
-    color: var(--blue); border: 1px solid rgba(59,130,246,0.3);
-    border-radius: 8px; font-family: var(--mono); font-size: 11px;
-    cursor: pointer; margin-top: 8px; transition: all 0.2s;
-  }
-  .monte-btn:hover { background: rgba(59,130,246,0.1); }
-
-  .results { padding: 20px; overflow-y: auto; background: var(--bg); }
-  .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-  .results-title { font-size: 14px; font-weight: 500; color: var(--text2); }
-  .run-count { font-family: var(--mono); font-size: 11px; color: var(--text3); }
-
-  .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
-  .metric-card {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: 10px; padding: 14px 16px;
-    transition: border-color 0.2s;
-  }
-  .metric-card.positive { border-color: rgba(34,197,94,0.2); }
-  .metric-card.negative { border-color: rgba(239,68,68,0.2); }
-  .metric-card.warn { border-color: rgba(245,158,11,0.2); }
-  .metric-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 6px; }
-  .metric-val { font-family: var(--mono); font-size: 22px; font-weight: 700; }
-  .metric-val.pos { color: var(--green); }
-  .metric-val.neg { color: var(--red); }
-  .metric-val.neu { color: var(--accent); }
-  .metric-val.blu { color: var(--blue); }
-  .metric-sub { font-size: 10px; color: var(--text3); margin-top: 4px; }
-
-  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-  .chart-card {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: 10px; padding: 16px;
-  }
-  .chart-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 12px; }
-  canvas { width: 100% !important; }
-
-  .compare-card {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: 10px; padding: 16px; margin-bottom: 16px;
-  }
-  .compare-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 12px; }
-  .compare-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  .compare-table th { padding: 7px 10px; text-align: left; background: var(--bg3); color: var(--text3); font-weight: 500; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
-  .compare-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text); }
-  .compare-table tr:last-child td { border-bottom: none; }
-  .td-pos { color: var(--green) !important; font-family: var(--mono); }
-  .td-neg { color: var(--red) !important; font-family: var(--mono); }
-  .td-neu { color: var(--accent) !important; font-family: var(--mono); }
-  .td-mono { font-family: var(--mono); }
-
-  .monte-results {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: 10px; padding: 16px; margin-bottom: 16px;
-  }
-  .fan-chart { position: relative; }
-
-  .risk-badge {
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 2px 8px; border-radius: 4px; font-size: 11px;
-    font-family: var(--mono); font-weight: 600;
-  }
-  .risk-low { background: rgba(34,197,94,0.15); color: var(--green); }
-  .risk-med { background: rgba(245,158,11,0.15); color: var(--amber); }
-  .risk-high { background: rgba(239,68,68,0.15); color: var(--red); }
-
-  .waiting {
-    display: flex; flex-direction: column; align-items: center;
-    justify-content: center; height: 400px; gap: 16px;
-    color: var(--text3);
-  }
-  .waiting-icon { font-size: 48px; opacity: 0.3; }
-  .waiting-text { font-size: 14px; }
-  .waiting-sub { font-size: 12px; color: var(--text3); text-align: center; max-width: 300px; }
-
-  .progress-bar {
-    width: 100%; height: 3px; background: var(--border);
-    border-radius: 2px; margin-top: 8px; overflow: hidden;
-  }
-  .progress-fill {
-    height: 100%; background: var(--accent);
-    border-radius: 2px; transition: width 0.1s;
-    animation: shimmer 1.5s infinite;
-  }
-  @keyframes shimmer {
-    0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; }
-  }
-
-  .tooltip {
-    position: absolute; background: var(--bg3); border: 1px solid var(--border2);
-    border-radius: 6px; padding: 8px 10px; font-size: 11px; font-family: var(--mono);
-    color: var(--text); pointer-events: none; z-index: 50; white-space: nowrap;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-  }
-
-  select {
-    background: var(--bg3); border: 1px solid var(--border2); color: var(--text);
-    border-radius: 4px; padding: 4px 8px; font-size: 12px; font-family: var(--sans);
-    cursor: pointer; outline: none;
-  }
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600&display=swap');
+:root {
+  --bg:#0a0c10; --bg2:#111418; --bg3:#181c22;
+  --border:#1f2530; --border2:#2a3240;
+  --accent:#f0a500; --accent2:#d4861a;
+  --green:#22c55e; --red:#ef4444; --amber:#f59e0b; --blue:#3b82f6;
+  --text:#e2e8f0; --text2:#94a3b8; --text3:#475569;
+  --mono:'JetBrains Mono',monospace; --sans:'Inter',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{background:var(--bg);color:var(--text);font-family:var(--sans);}
+body{min-height:100vh;}
+.app-header{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.header-logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:32px;height:32px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#000;}
+.header-title{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent);letter-spacing:.05em;}
+.header-sub{font-size:10px;color:var(--text3);margin-top:1px;}
+.badge{padding:3px 10px;border-radius:20px;font-size:10px;font-family:var(--mono);}
+.badge-green{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3);}
+.badge-blue{background:rgba(59,130,246,.15);color:var(--blue);border:1px solid rgba(59,130,246,.3);cursor:pointer;margin-left:6px;}
+.main{display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 53px);}
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;padding:14px;}
+.ps{margin-bottom:16px;}
+.ps-title{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border);}
+.pr{margin-bottom:8px;}
+.pl{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}
+.pn{font-size:11px;color:var(--text2);}
+.pv{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--accent);background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:1px 5px;}
+input[type=range]{width:100%;height:3px;-webkit-appearance:none;background:var(--bg3);border-radius:2px;outline:none;cursor:pointer;margin:3px 0;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;background:var(--accent);border-radius:50%;cursor:pointer;border:2px solid var(--bg2);}
+.ph{font-size:9px;color:var(--text3);margin-top:1px;}
+select{background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:3px;padding:3px 6px;font-size:11px;cursor:pointer;outline:none;width:100%;margin-top:3px;}
+.toggle-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.toggle{width:32px;height:16px;background:var(--border2);border-radius:8px;cursor:pointer;position:relative;transition:.2s;flex-shrink:0;}
+.toggle.on{background:var(--green);}
+.toggle::after{content:'';position:absolute;width:12px;height:12px;background:#fff;border-radius:50%;top:2px;left:2px;transition:.2s;}
+.toggle.on::after{left:18px;}
+.toggle-label{font-size:11px;color:var(--text2);}
+.run-btn{width:100%;padding:11px;background:var(--accent);color:#000;border:none;border-radius:7px;font-family:var(--mono);font-weight:700;font-size:12px;cursor:pointer;letter-spacing:.05em;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:6px;}
+.run-btn:hover{background:var(--accent2);transform:translateY(-1px);}
+.monte-btn{width:100%;padding:9px;background:transparent;color:var(--blue);border:1px solid rgba(59,130,246,.3);border-radius:7px;font-family:var(--mono);font-size:11px;cursor:pointer;margin-bottom:6px;transition:all .2s;}
+.monte-btn:hover{background:rgba(59,130,246,.1);}
+.load-btn{width:100%;padding:9px;background:transparent;color:var(--amber);border:1px solid rgba(245,158,11,.3);border-radius:7px;font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .2s;}
+.load-btn:hover{background:rgba(245,158,11,.1);}
+.results{padding:18px;overflow-y:auto;background:var(--bg);}
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+.mc{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:12px 14px;}
+.mc.pos{border-color:rgba(34,197,94,.2);} .mc.neg{border-color:rgba(239,68,68,.2);} .mc.warn{border-color:rgba(245,158,11,.2);}
+.ml{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:5px;}
+.mv{font-family:var(--mono);font-size:20px;font-weight:700;}
+.mv.g{color:var(--green);} .mv.r{color:var(--red);} .mv.a{color:var(--amber);} .mv.b{color:var(--blue);}
+.ms{font-size:9px;color:var(--text3);margin-top:3px;}
+.cc{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:14px;margin-bottom:14px;}
+.ct{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px;}
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+canvas{width:100%!important;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{padding:6px 9px;text-align:left;background:var(--bg3);color:var(--text3);font-weight:500;font-size:9px;text-transform:uppercase;letter-spacing:.06em;}
+td{padding:7px 9px;border-bottom:1px solid var(--border);color:var(--text);}
+tr:last-child td{border-bottom:none;}
+.tp{color:var(--green)!important;font-family:var(--mono);}
+.tn{color:var(--red)!important;font-family:var(--mono);}
+.ta{color:var(--amber)!important;font-family:var(--mono);}
+.tm{font-family:var(--mono);}
+.rb{display:inline-flex;align-items:center;padding:2px 7px;border-radius:3px;font-size:10px;font-family:var(--mono);font-weight:600;}
+.rl{background:rgba(34,197,94,.15);color:var(--green);}
+.rm{background:rgba(245,158,11,.15);color:var(--amber);}
+.rh{background:rgba(239,68,68,.15);color:var(--red);}
+.waiting{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:14px;color:var(--text3);}
+.wi{font-size:44px;opacity:.25;}
+.wt{font-size:13px;}
+.ws{font-size:11px;text-align:center;max-width:320px;line-height:1.6;}
+.pb{width:100%;height:3px;background:var(--border);border-radius:2px;margin-top:6px;overflow:hidden;}
+.pf{height:100%;background:var(--accent);border-radius:2px;animation:shimmer 1.5s infinite;}
+@keyframes shimmer{0%{opacity:.7}50%{opacity:1}100%{opacity:.7}}
+.info-box{padding:10px 12px;background:var(--bg3);border-radius:6px;font-size:9px;color:var(--text3);line-height:1.6;margin-top:10px;}
+.tab-row{display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap;}
+.tab{padding:5px 12px;font-size:11px;font-weight:500;border-radius:6px;cursor:pointer;border:.5px solid var(--border2);color:var(--text2);background:transparent;transition:all .15s;}
+.tab.active{background:var(--bg2);color:var(--text);border-color:var(--accent);}
+.top-combo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.combo-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:all .2s;}
+.combo-card:hover{border-color:var(--accent);}
+.combo-card.selected{border-color:var(--accent);background:rgba(240,165,0,.05);}
+.combo-rank{font-size:9px;color:var(--text3);margin-bottom:4px;}
+.combo-score{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent);}
+.combo-params{font-size:9px;color:var(--text2);margin-top:6px;line-height:1.7;}
+.divi{height:1px;background:var(--border);margin:12px 0;}
 </style>
 </head>
 <body>
-
 <header class="app-header">
   <div class="header-logo">
     <div class="logo-icon">🦅</div>
     <div>
-      <div class="header-title">FALCON RAVAGER v5.6 — SIMULATOR</div>
-      <div class="header-sub">Monte Carlo + Parameter Optimizer · XAUUSDm · Based on Jan–Mei 2026 backtest</div>
+      <div class="header-title">FALCON RAVAGER v5.6 — DOOMSDAY SIMULATOR</div>
+      <div class="header-sub">Monte Carlo + Optimizer · XAUUSDm Exness · 44M ticks Jan–Mei 2026</div>
     </div>
   </div>
-  <div class="badge-live">● READY</div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span class="badge badge-green" id="data-badge">● BACKTEST DATA</span>
+    <span class="badge badge-blue" onclick="document.getElementById('jsonFile').click()">📂 Load JSON</span>
+    <input type="file" id="jsonFile" accept=".json" style="display:none" onchange="loadJSON(this)">
+  </div>
 </header>
 
 <div class="main">
-  <div class="sidebar">
-    <div class="param-section">
-      <div class="param-section-title">💰 Lot & Capital</div>
+<div class="sidebar">
 
-      <div class="param-row">
-        <div class="param-label">
-          <span class="param-name">Initial Deposit</span>
-          <span class="param-value" id="v-deposit">$10,000</span>
-        </div>
-        <input type="range" id="p-deposit" min="1000" max="50000" step="500" value="10000" oninput="syncSlider(this,'v-deposit','$','',0)">
-        <div class="param-hint">Modal awal akun</div>
-      </div>
-
-      <div class="param-row">
-        <div class="param-label">
-          <span class="param-name">LotSize (base)</span>
-          <span class="param-value" id="v-lot">0.05</span>
-        </div>
-        <input type="range" id="p-lot" min="0.01" max="0.20" step="0.01" value="0.05" oninput="syncSlider(this,'v-lot','','',2)">
-        <div class="param-hint">Semakin besar = profit & DD naik</div>
-      </div>
-
-      <div class="param-row">
-        <div class="param-label">
-          <span class="param-name">MaxLayer</span>
-          <span class="param-value" id="v-maxlayer">10</span>
-        </div>
-        <input type="range" id="p-maxlayer" min="1" max="10" step="1" value="10" oninput="syncSlider(this,'v-maxlayer','','',0)">
-        <div class="param-hint">Max layer aktif (backtest: 10)</div>
-      </div>
-
-      <div class="param-row">
-        <div class="param-label">
-          <span class="param-name">LotMode</span>
-          <span class="param-value" id="v-lotmode">LINEAR</span>
-        </div>
-        <select id="p-lotmode" onchange="syncSelect(this,'v-lotmode')">
-          <option value="0">FIXED</option>
-          <option value="1" selected>LINEAR</option>
-          <option value="2">MARTINGALE</option>
-        </select>
-        <div class="param-hint">Mode kenaikan lot per layer</div>
-      </div>
-
-      <div class="param-row">
-        <div class="param-label">
-          <span class="param-name">LotLinearStep</span>
-          <span class="param-value" id="v-lotstep">0.05</span>
-        </div>
-        <input type="range" id="p-lotstep" min="0.01" max="0.10" step="0.01" value="0.05" oninput="syncSlider(this,'v-lotstep','','',2)">
-        <div class="param-hint">Tambahan lot per layer (Linear)</div>
-      </div>
+  <div class="ps">
+    <div class="ps-title">💰 Lot & Modal</div>
+    <div class="pr">
+      <div class="pl"><span class="pn">Initial Deposit</span><span class="pv" id="v-dep">$10,000</span></div>
+      <input type="range" id="p-dep" min="1000" max="100000" step="1000" value="10000" oninput="sv(this,'v-dep','$','',0)">
     </div>
-
-    <div class="param-section">
-      <div class="param-section-title">🛡️ Risk Management</div>
-
-      <div class="param-row">
-        <div class="param-label">
-          <span class="param-name">LockProfit</span>
-          <span class="param-value" id="v-lockprofit">$5,000</span>
-        </div>
-        <input type="range" id="p-lockprofit" min="100" max="10000" step="100" value="5000" oninput="syncSlider(this,'v-lockprofit','$','',0)">
-        <div class="param-hint">Total float profit → close all</div>
-      </div>
-
-      <div class="param-row">
-        <div class="param-label">
-          <span class="param-name">MaxFloatingLoss</span>
-          <span class="param-value" id="v-maxloss">$1,500</span>
-        </div>
-        <input type="range" id="p-maxloss" min="100" max="5000" step="100" value="1500" oninput="syncSlider(this,'v-maxloss','$','',0)">
-        <div class="param-hint">Max floating loss → cut (backtest: $1500)</div>
-      </div>
-
-      <div class="param-row">
-        <div class="param-label">
-          <span class="param-name">LayerStepTier1 (pip)</span>
-          <span class="param-value" id="v-lstep1">100</span>
-        </div>
-        <input type="range" id="p-lstep1" min="20" max="300" step="10" value="100" oninput="syncSlider(this,'v-lstep1','','',0)">
-        <div class="param-hint">Jarak antar layer (normal spread)</div>
-      </div>
+    <div class="pr">
+      <div class="pl"><span class="pn">LotSize (base)</span><span class="pv" id="v-lot">0.01</span></div>
+      <input type="range" id="p-lot" min="0.01" max="0.20" step="0.01" value="0.01" oninput="sv(this,'v-lot','','',2)">
+      <div class="ph">Default .set Doomsday: 0.01</div>
     </div>
-
-    <div class="param-section">
-      <div class="param-section-title">📡 Trailing & Signal</div>
-
-      <div class="param-row">
-        <div class="param-label">
-          <span class="param-name">TrailBreakevenPips</span>
-          <span class="param-value" id="v-trailbe">100</span>
-        </div>
-        <input type="range" id="p-trailbe" min="20" max="300" step="10" value="100" oninput="syncSlider(this,'v-trailbe','','',0)">
-        <div class="param-hint">Pip profit → geser SL ke BE</div>
-      </div>
-
-      <div class="param-row">
-        <div class="param-label">
-          <span class="param-name">TrailStartPips</span>
-          <span class="param-value" id="v-trailstart">500</span>
-        </div>
-        <input type="range" id="p-trailstart" min="100" max="1000" step="50" value="500" oninput="syncSlider(this,'v-trailstart','','',0)">
-        <div class="param-hint">Pip profit → mulai trailing</div>
-      </div>
-
-      <div class="param-row">
-        <div class="param-label">
-          <span class="param-name">TrailFixedPips</span>
-          <span class="param-value" id="v-trailfixed">300</span>
-        </div>
-        <input type="range" id="p-trailfixed" min="50" max="500" step="25" value="300" oninput="syncSlider(this,'v-trailfixed','','',0)">
-        <div class="param-hint">Jarak SL dari harga (pip)</div>
-      </div>
-
-      <div class="param-row">
-        <div class="param-label">
-          <span class="param-name">UTBot_KeyValue</span>
-          <span class="param-value" id="v-keyval">1.0</span>
-        </div>
-        <input type="range" id="p-keyval" min="0.5" max="3.0" step="0.1" value="1.0" oninput="syncSlider(this,'v-keyval','','',1)">
-        <div class="param-hint">Lebih tinggi = signal lebih selektif</div>
-      </div>
-
-      <div class="param-row">
-        <div class="param-label">
-          <span class="param-name">DominancePercent</span>
-          <span class="param-value" id="v-dom">60%</span>
-        </div>
-        <input type="range" id="p-dom" min="50" max="80" step="5" value="60" oninput="syncSlider(this,'v-dom','','%',0)">
-        <div class="param-hint">Threshold tick dominance</div>
-      </div>
+    <div class="pr">
+      <div class="pl"><span class="pn">LotMode</span><span class="pv" id="v-lm">LINEAR</span></div>
+      <select id="p-lm" onchange="ss(this,'v-lm')">
+        <option value="0">FIXED</option>
+        <option value="1" selected>LINEAR</option>
+        <option value="2">MARTINGALE</option>
+      </select>
     </div>
-
-    <div class="param-section">
-      <div class="param-section-title">🎲 Simulasi</div>
-      <div class="param-row">
-        <div class="param-label">
-          <span class="param-name">Jumlah Simulasi (Monte Carlo)</span>
-          <span class="param-value" id="v-mc">500</span>
-        </div>
-        <input type="range" id="p-mc" min="100" max="2000" step="100" value="500" oninput="syncSlider(this,'v-mc','','',0)">
-        <div class="param-hint">Semakin banyak = makin akurat</div>
-      </div>
-      <div class="param-row">
-        <div class="param-label">
-          <span class="param-name">Periode Simulasi</span>
-          <span class="param-value" id="v-days">140</span>
-        </div>
-        <input type="range" id="p-days" min="30" max="365" step="10" value="140" oninput="syncSlider(this,'v-days','','d',0)">
-        <div class="param-hint">Hari trading yang disimulasikan</div>
-      </div>
+    <div class="pr">
+      <div class="pl"><span class="pn">LotLinearStep</span><span class="pv" id="v-ls">0.01</span></div>
+      <input type="range" id="p-ls" min="0.01" max="0.10" step="0.01" value="0.01" oninput="sv(this,'v-ls','','',2)">
     </div>
-
-    <button class="run-btn" onclick="runSingleSim()">▶ JALANKAN SIMULASI</button>
-    <button class="monte-btn" onclick="runMonteCarlo()">🎲 MONTE CARLO (stress test)</button>
-
-    <div style="margin-top: 16px; padding: 10px; background: var(--bg3); border-radius: 6px; font-size: 10px; color: var(--text3); line-height: 1.5;">
-      ⚡ Simulator ini menggunakan distribusi empiris dari 641 trades backtest Jan–Mei 2026. Hasil adalah estimasi statistik, bukan forward test MT5.
+    <div class="pr">
+      <div class="pl"><span class="pn">MaxLayer</span><span class="pv" id="v-ml">10</span></div>
+      <input type="range" id="p-ml" min="1" max="15" step="1" value="10" oninput="sv(this,'v-ml','','',0)">
     </div>
   </div>
 
-  <div class="results" id="results-panel">
-    <div class="waiting" id="waiting-state">
-      <div class="waiting-icon">🦅</div>
-      <div class="waiting-text">Siap menjalankan simulasi</div>
-      <div class="waiting-sub">Set parameter di kiri, lalu tekan <strong>JALANKAN SIMULASI</strong> untuk melihat estimasi hasil atau <strong>MONTE CARLO</strong> untuk stress test 500+ skenario.</div>
+  <div class="ps">
+    <div class="ps-title">🛡️ Risk Management</div>
+    <div class="pr">
+      <div class="pl"><span class="pn">LockProfit ($)</span><span class="pv" id="v-lp">$300</span></div>
+      <input type="range" id="p-lp" min="50" max="5000" step="50" value="300" oninput="sv(this,'v-lp','$','',0)">
+      <div class="ph">Total float → close all (.set: $300)</div>
     </div>
-    <div id="result-content" style="display:none;"></div>
+    <div class="pr">
+      <div class="pl"><span class="pn">MaxFloatingLoss ($)</span><span class="pv" id="v-mfl">$25</span></div>
+      <input type="range" id="p-mfl" min="10" max="500" step="5" value="25" oninput="sv(this,'v-mfl','$','',0)">
+      <div class="ph">Per layer cut loss (.set: $25)</div>
+    </div>
+    <div class="pr">
+      <div class="pl"><span class="pn">FloatingMode</span><span class="pv" id="v-fm">LAYER</span></div>
+      <select id="p-fm" onchange="ss(this,'v-fm')">
+        <option value="0" selected>LAYER (per posisi)</option>
+        <option value="1">TOTAL (semua posisi)</option>
+      </select>
+      <div class="ph">LAYER = cut per posisi (.set: LAYER)</div>
+    </div>
+    <div class="pr">
+      <div class="pl"><span class="pn">LayerStepTier1 (pip)</span><span class="pv" id="v-lst">50</span></div>
+      <input type="range" id="p-lst" min="10" max="300" step="10" value="50" oninput="sv(this,'v-lst','','',0)">
+      <div class="ph">Jarak antar layer (.set: 50 pip)</div>
+    </div>
   </div>
+
+  <div class="ps">
+    <div class="ps-title">📡 Trailing</div>
+    <div class="pr">
+      <div class="pl"><span class="pn">TrailBreakevenPips</span><span class="pv" id="v-tbe">100</span></div>
+      <input type="range" id="p-tbe" min="20" max="300" step="10" value="100" oninput="sv(this,'v-tbe','','',0)">
+    </div>
+    <div class="pr">
+      <div class="pl"><span class="pn">BreakevenOffsetPips</span><span class="pv" id="v-beo">20</span></div>
+      <input type="range" id="p-beo" min="0" max="100" step="5" value="20" oninput="sv(this,'v-beo','','',0)">
+      <div class="ph">Extra profit lock setelah BE (.set: 20)</div>
+    </div>
+    <div class="pr">
+      <div class="pl"><span class="pn">TrailStartPips</span><span class="pv" id="v-tst">300</span></div>
+      <input type="range" id="p-tst" min="100" max="1000" step="50" value="300" oninput="sv(this,'v-tst','','',0)">
+      <div class="ph">Mulai trailing (.set: 300)</div>
+    </div>
+    <div class="pr">
+      <div class="pl"><span class="pn">TrailFixedPips</span><span class="pv" id="v-tfx">200</span></div>
+      <input type="range" id="p-tfx" min="50" max="500" step="25" value="200" oninput="sv(this,'v-tfx','','',0)">
+      <div class="ph">Jarak SL dari harga (.set: 200)</div>
+    </div>
+  </div>
+
+  <div class="ps">
+    <div class="ps-title">🔬 Signal & Filter</div>
+    <div class="pr">
+      <div class="pl"><span class="pn">UTBot_KeyValue</span><span class="pv" id="v-kv">1.0</span></div>
+      <input type="range" id="p-kv" min="0.3" max="3.0" step="0.1" value="1.0" oninput="sv(this,'v-kv','','',1)">
+      <div class="ph">Lebih tinggi = signal makin selektif</div>
+    </div>
+    <div class="pr">
+      <div class="pl"><span class="pn">UTBot_ATRPeriod</span><span class="pv" id="v-atr">1</span></div>
+      <input type="range" id="p-atr" min="1" max="20" step="1" value="1" oninput="sv(this,'v-atr','','',0)">
+      <div class="ph">ATR period (.set: 1 = sangat sensitif)</div>
+    </div>
+    <div class="pr">
+      <div class="pl"><span class="pn">EMA Filter Config</span></div>
+      <div class="toggle-row"><div class="toggle on" id="t-e1" onclick="tog('t-e1')"></div><span class="toggle-label">EMA 3 (aktif di .set)</span></div>
+      <div class="toggle-row"><div class="toggle on" id="t-e2" onclick="tog('t-e2')"></div><span class="toggle-label">EMA 7 (aktif di .set)</span></div>
+      <div class="toggle-row"><div class="toggle" id="t-e3" onclick="tog('t-e3')"></div><span class="toggle-label">EMA 50</span></div>
+      <div class="toggle-row"><div class="toggle on" id="t-e4" onclick="tog('t-e4')"></div><span class="toggle-label">EMA 100 (aktif di .set)</span></div>
+      <div class="toggle-row"><div class="toggle on" id="t-e5" onclick="tog('t-e5')"></div><span class="toggle-label">EMA 200 (aktif di .set)</span></div>
+    </div>
+    <div class="pr">
+      <div class="pl"><span class="pn">UseSignalFlip</span></div>
+      <div class="toggle-row"><div class="toggle on" id="t-sf" onclick="tog('t-sf')"></div><span class="toggle-label">Close opposite saat signal flip</span></div>
+    </div>
+  </div>
+
+  <div class="ps">
+    <div class="ps-title">🎲 Simulasi</div>
+    <div class="pr">
+      <div class="pl"><span class="pn">Monte Carlo Runs</span><span class="pv" id="v-mc">500</span></div>
+      <input type="range" id="p-mc" min="100" max="2000" step="100" value="500" oninput="sv(this,'v-mc','','',0)">
+    </div>
+    <div class="pr">
+      <div class="pl"><span class="pn">Periode (hari)</span><span class="pv" id="v-dy">141</span></div>
+      <input type="range" id="p-dy" min="30" max="365" step="1" value="141" oninput="sv(this,'v-dy','','d',0)">
+      <div class="ph">141 hari = Jan–Mei 2026</div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="runSim()">▶ JALANKAN SIMULASI</button>
+  <button class="monte-btn" onclick="runMC()">🎲 MONTE CARLO STRESS TEST</button>
+  <button class="load-btn" onclick="document.getElementById('jsonFile').click()">📂 LOAD falcon_sim_data.json</button>
+
+  <div class="info-box">
+    ⚡ Simulasi menggunakan distribusi empiris 641 trades dari backtest MT5 Jan–Mei 2026 (44 juta tick Exness XAUUSDm). Parameter default sesuai file Ravager_for_Exness2.set (Operation Doomsday). Hasil adalah estimasi statistik — bukan forward test MT5.
+  </div>
+</div>
+
+<div class="results" id="results">
+  <div class="waiting" id="ws">
+    <div class="wi">🦅</div>
+    <div class="wt">Falcon Ravager v5.6 — Doomsday Simulator</div>
+    <div class="ws">Parameter sudah diset sesuai <strong>Ravager_for_Exness2.set</strong>.<br>Tekan <strong>JALANKAN SIMULASI</strong> atau <strong>MONTE CARLO</strong>.<br><br>Punya <code>falcon_sim_data.json</code>? Klik <strong>📂 LOAD JSON</strong> untuk lihat top kombinasi dari optimasi tick data real.</div>
+  </div>
+  <div id="rc" style="display:none;"></div>
+</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-const PROFIT_DIST = [1355.6,15.6,15.2,13.8,15.6,3008.6,29.8,5.5,13.2,10013.6,16.0,2504.8,4053.0,11.6,9.4,22.4,44.2,22.5,17.6,-947.47,-2049.33,-1886.1,-2021.0,-1019.04,-6886.4,-4742.4,-2839.8,-1321.05,11604.0,26.0,14.6,9112.3,20207.6,26.8,22.0,10.33,13.5,-2059.6,-4840.2,-2922.33,-1839.8,12.8,6.4,5843.6,7036.33,7.55,9.6,11.6,14.4,10398.4,14.8,13.2,5446.4,5429.0,48.8,37.2,-4364.6,-2671.8,-1262.36,13.0,11.6,12.8,8.3,11.8,19379.8,13.4,7.2,11.5,30.4,22.8,-7.0,5.13,11725.8,9701.8,35.8,47.4,33.07,49.07,23.6,1837.1,2383.12,21.4,11.73,-873.6,-2005.2,-4389.47,-1950.2,7264.0,14.0,2813.0,18.8,5.7,15.13,20.0,6.2,15.0,10.0,27.8,15.2,-2411.6,-2906.73,-3461.53,-1733.85,12.6,30.6,4681.1,-3.47,14.0,9.2,27.2,-15007.1,3.4,-273.4,2414.0,2.2,-0.8,1.0,22.0,10.6,9.4,8166.53,-6.25,24.2,36.0,-6793.6,-4369.5,-2791.27,-1494.5,19.4,47.5,0.8,2351.8,35.6,31.9,54.6,2318.4,28.8,33.0,25.0,-17.8,99.6,35.2,3534.93,-810.65,-1.2,63.4,-2606.27,-3598.05,-2836.27,2897.6,7.4,10060.4,69.6,2733.2,24.0,69.2,47.4,32.4,56.0,28.9,62.27,22.5,19.8,39.8,47.47,31.67,3083.6,11.85,49.8,66.3,79.0,13.2,3208.6,27.6,32.2,3059.0,40.4,46.8,5.73,49.87,17.4,47.2,-82.2,57.0,43.6,49.8,24.8,35.2,10.6,-7802.4,-4390.3,-2808.53,-1313.9,63.0,10.5,13250.7,8301.8,71.0,45.4,100.8,116.2,15.93,23.05,2492.4,26.4,73.8,45.6,63.0,47.07,10.45,2981.5,7668.7,667.53,42.8,44.5,45.8,49.6,47.6,29.0,4885.8,4.4,29.1,42.9,-3079.2,-4982.0,-3633.2,80.2,43.9,86.3,23.53,38.3,6616.8,7575.2,2017.8,-188.85,21.2,10.6,78.0,1112.1,102.8,9372.9,4960.2,1232.0,39.0,52.8,102.6,50.8,69.7,49.87,-3066.55,-5629.5,-15189.2,47.2,-3824.3,-4732.53,-2738.93,-4003.4,46.4,5042.4,23.1,44.0,3130.4,36.8,7000.8,3122.2,38.8,50.7,64.0,23.8,-51.1,19.8,36.6,2321.0,10248.6,54.4,39.2,44.0,43.8,31.8,53.8,-2.0,30.0,-6692.0,-4422.7,-2781.53,-1533.7,34.6,52.4,2658.3,35.4,31.2,55.0,43.6,52.4,58.6,64.2,53.0,1531.9,5180.1,24.4,4010.1,39.2,17.6,37.6,5610.0,39.4,2146.0,24.6,24.1,-6112.1,-5384.5,-2650.2,76.0,26.9,3501.4,45.0,75.4,-86.1,-2943.47,-4075.8,53.2,-1604.2,-2328.2,-1294.3,-2395.4,36.0,-850.2,-1538.0,-1172.47,35.4,5366.0,27.0,43.6,3449.0,50.6,6131.4,39.0,47.7,50.27,41.2,47.2,37.6,99.8,34.5,36.9,26.1,25.4,33.2,12337.0,25.8,56.0,48.5,30.9,16.9,53.4,6991.0,4989.2,3203.2,32.2,11799.0,2457.6,4051.2,63.0,10.9,47.5,50.8,22.8,28.4,13.4,39.2,57.2,38.4,38.7,11.2,4942.3,15.0,33.6,3750.8,19.0,32.0,54.5,28.2,3326.4,47.4,28.8,25.6,39.8,28.2,41.0,78.9,8.33,10269.1,35.4,20.0,29.6,3272.2,3.4,51.2,51.8,7987.6,9269.0,31.6,7214.4,31.8,43.2,53.2,55.4,75.0,56.8,72.0,-978.93,-2951.2,-2898.0,-1831.85,54.6,3467.4,39.8,43.9,30.4,50.9,39.8,33.0,111.4,94.0,26.47,10.8,2801.4,47.6,46.8,40.0,50.6,34.4,3301.1,31.53,41.8,31.0,3119.4,4387.5,159.6,77.2,52.27,41.3,34.55,20.55,21.15,72.4,66.67,-1212.15,-3061.1,-6478.73,36.6,5426.0,-327.2,48.5,50.2,34.0,7901.6,73.6,21.3,50.8,76.6,52.8,76.2,21.73,812.2,38.2,28.0,39.2,55.0,53.0,63.2,23.4,79.1,38.67,29.6,-5937.3,-5579.8,-2318.07,29.0,30.2,53.0,19.5,12.2,37.8,28.7,3977.0,39.2,36.8,41.6,26.4,54.8,51.2,39.8,-94.4,2194.8,40.6,48.4,86.4,52.7,42.93,-1862.53,-4191.5,-2673.4,-2019.65,68.2,5126.0,52.47,1435.95,65.0,110.6,29.6,38.0,-2068.8,-3156.9,-3048.6,17.0,55.0,52.0,54.6,23.2,107.6,2603.1,26.8,37.2,16.5,78.0,49.8,17.2,5366.0,36.27,105.4,-1561.6,137.4,-3281.6,-2297.73,-1566.4,15914.4,3146.8,42.4,55.0,9396.8,165.6,18.1,27.6,58.27,78.2,45.1,23.2,34.5,4221.0,19.8,60.9,24.93,-9339.2,-6646.7,39.0,3349.8,6854.0,99.8,38.0,20.3,5608.0,6832.4,20.4,25.4,37.0,37.6,77.6,-8373.9,-4789.3,27.2,16.4,16.8,65.4,1907.8,5072.7,68.0,80.5,2417.07,16.6,36.67,32.8,3613.5,47.0,44.0,76.2,16.6,54.7,12454.2,37.8,6.2,23.2,5827.4,28.6,53.2,36.6,2533.4,48.6,19.8,15.87,6961.53,-11714.6,-5643.3,-2296.93,15.2,2407.6,36.2,2767.6,56.8,77.2,15.9,39.4,1916.2,-589.5,-1122.87,-780.55,20928.4,4583.3,26.6,2969.2,9.2,78.0,-6149.1,-3552.27,-2380.33,11.4,12.7,7200.2,35.2,31.4,12.4,19.6,14.2,37.0,30.1,30.0,-2041.2,-3181.6,-3131.07,-1753.0,-1307.4];
+// ── Empirical P&L distribution dari backtest MT5 (profit per lot, base 0.05) ──
+const PPL = [1355.6,15.6,15.2,13.8,15.6,3008.6,29.8,5.5,13.2,10013.6,16.0,2504.8,4053.0,11.6,9.4,22.4,44.2,22.5,17.6,-947.47,-2049.33,-1886.1,-2021.0,-1019.04,-6886.4,-4742.4,-2839.8,-1321.05,11604.0,26.0,14.6,9112.3,20207.6,26.8,22.0,10.33,13.5,-2059.6,-4840.2,-2922.33,-1839.8,12.8,6.4,5843.6,7036.33,7.55,9.6,11.6,14.4,10398.4,14.8,13.2,5446.4,5429.0,48.8,37.2,-4364.6,-2671.8,-1262.36,13.0,11.6,12.8,8.3,11.8,19379.8,13.4,7.2,11.5,30.4,22.8,-7.0,5.13,11725.8,9701.8,35.8,47.4,33.07,49.07,23.6,1837.1,2383.12,21.4,11.73,-873.6,-2005.2,-4389.47,-1950.2,7264.0,14.0,2813.0,18.8,5.7,15.13,20.0,6.2,15.0,10.0,27.8,15.2,-2411.6,-2906.73,-3461.53,-1733.85,12.6,30.6,4681.1,-3.47,14.0,9.2,27.2,-15007.1,3.4,-273.4,2414.0,2.2,-0.8,1.0,22.0,10.6,9.4,8166.53,-6.25,24.2,36.0,-6793.6,-4369.5,-2791.27,-1494.5,19.4,47.5,0.8,2351.8,35.6,31.9,54.6,2318.4,28.8,33.0,25.0,-17.8,99.6,35.2,3534.93,-810.65,-1.2,63.4,-2606.27,-3598.05,-2836.27,2897.6,7.4,10060.4,69.6,2733.2,24.0,69.2,47.4,32.4,56.0,28.9,62.27,22.5,19.8,39.8,47.47,31.67,3083.6,11.85,49.8,66.3,79.0,13.2,3208.6,27.6,32.2,3059.0,40.4,46.8,5.73,49.87,17.4,47.2,-82.2,57.0,43.6,49.8,24.8,35.2,10.6,-7802.4,-4390.3,-2808.53,-1313.9,63.0,10.5,13250.7,8301.8,71.0,45.4,100.8,116.2,15.93,23.05,2492.4,26.4,73.8,45.6,63.0,47.07,10.45,2981.5,7668.7,667.53,42.8,44.5,45.8,49.6,47.6,29.0,4885.8,4.4,29.1,42.9,-3079.2,-4982.0,-3633.2,80.2,43.9,86.3,23.53,38.3,6616.8,7575.2,2017.8,-188.85,21.2,10.6,78.0,1112.1,102.8,9372.9,4960.2,1232.0,39.0,52.8,102.6,50.8,69.7,49.87,-3066.55,-5629.5,-15189.2,47.2,-3824.3,-4732.53,-2738.93,-4003.4,46.4,5042.4,23.1,44.0,3130.4,36.8,7000.8,3122.2,38.8,50.7,64.0,23.8,-51.1,19.8,36.6,2321.0,10248.6,54.4,39.2,44.0,43.8,31.8,53.8,-2.0,30.0,-6692.0,-4422.7,-2781.53,-1533.7,34.6,52.4,2658.3,35.4,31.2,55.0,43.6,52.4,58.6,64.2,53.0,1531.9,5180.1,24.4,4010.1,39.2,17.6,37.6,5610.0,39.4,2146.0,24.6,24.1,-6112.1,-5384.5,-2650.2,76.0,26.9,3501.4,45.0,75.4,-86.1,-2943.47,-4075.8,53.2,-1604.2,-2328.2,-1294.3,-2395.4,36.0,-850.2,-1538.0,-1172.47,35.4,5366.0,27.0,43.6,3449.0,50.6,6131.4,39.0,47.7,50.27,41.2,47.2,37.6,99.8,34.5,36.9,26.1,25.4,33.2,12337.0,25.8,56.0,48.5,30.9,16.9,53.4,6991.0,4989.2,3203.2,32.2,11799.0,2457.6,4051.2,63.0,10.9,47.5,50.8,22.8,28.4,13.4,39.2,57.2,38.4,38.7,11.2,4942.3,15.0,33.6,3750.8,19.0,32.0,54.5,28.2,3326.4,47.4,28.8,25.6,39.8,28.2,41.0,78.9,8.33,10269.1,35.4,20.0,29.6,3272.2,3.4,51.2,51.8,7987.6,9269.0,31.6,7214.4,31.8,43.2,53.2,55.4,75.0,56.8,72.0,-978.93,-2951.2,-2898.0,-1831.85,54.6,3467.4,39.8,43.9,30.4,50.9,39.8,33.0,111.4,94.0,26.47,10.8,2801.4,47.6,46.8,40.0,50.6,34.4,3301.1,31.53,41.8,31.0,3119.4,4387.5,159.6,77.2,52.27,41.3,34.55,20.55,21.15,72.4,66.67,-1212.15,-3061.1,-6478.73,36.6,5426.0,-327.2,48.5,50.2,34.0,7901.6,73.6,21.3,50.8,76.6,52.8,76.2,21.73,812.2,38.2,28.0,39.2,55.0,53.0,63.2,23.4,79.1,38.67,29.6,-5937.3,-5579.8,-2318.07,29.0,30.2,53.0,19.5,12.2,37.8,28.7,3977.0,39.2,36.8,41.6,26.4,54.8,51.2,39.8,-94.4,2194.8,40.6,48.4,86.4,52.7,42.93,-1862.53,-4191.5,-2673.4,-2019.65,68.2,5126.0,52.47,1435.95,65.0,110.6,29.6,38.0,-2068.8,-3156.9,-3048.6,17.0,55.0,52.0,54.6,23.2,107.6,2603.1,26.8,37.2,16.5,78.0,49.8,17.2,5366.0,36.27,105.4,-1561.6,137.4,-3281.6,-2297.73,-1566.4,15914.4,3146.8,42.4,55.0,9396.8,165.6,18.1,27.6,58.27,78.2,45.1,23.2,34.5,4221.0,19.8,60.9,24.93,-9339.2,-6646.7,39.0,3349.8,6854.0,99.8,38.0,20.3,5608.0,6832.4,20.4,25.4,37.0,37.6,77.6,-8373.9,-4789.3,27.2,16.4,16.8,65.4,1907.8,5072.7,68.0,80.5,2417.07,16.6,36.67,32.8,3613.5,47.0,44.0,76.2,16.6,54.7,12454.2,37.8,6.2,23.2,5827.4,28.6,53.2,36.6,2533.4,48.6,19.8,15.87,6961.53,-11714.6,-5643.3,-2296.93,15.2,2407.6,36.2,2767.6,56.8,77.2,15.9,39.4,1916.2,-589.5,-1122.87,-780.55,20928.4,4583.3,26.6,2969.2,9.2,78.0,-6149.1,-3552.27,-2380.33,11.4,12.7,7200.2,35.2,31.4,12.4,19.6,14.2,37.0,30.1,30.0,-2041.2,-3181.6,-3131.07,-1753.0,-1307.4];
 
 const BASE_LOT = 0.05;
-let singleChart = null, distChart = null, mcChart = null;
+let ch1=null, ch2=null, ch3=null;
+let jsonData = null;
 
-function syncSlider(el, valId, prefix, suffix, decimals) {
-  const v = parseFloat(el.value);
-  let display = v.toFixed(decimals);
-  if (prefix === '$') display = '$' + parseInt(v).toLocaleString();
-  document.getElementById(valId).textContent = prefix + display + suffix;
+// ── UI Helpers ────────────────────────────────────────────
+function sv(el,id,pre,suf,dec){
+  const v=parseFloat(el.value);
+  let d=v.toFixed(dec);
+  if(pre==='$') d='$'+parseInt(v).toLocaleString();
+  document.getElementById(id).textContent=pre+d+suf;
 }
-function syncSelect(el, valId) {
-  const opts = {0:'FIXED',1:'LINEAR',2:'MARTINGALE'};
-  document.getElementById(valId).textContent = opts[el.value];
+function ss(el,id){
+  const m={0:'FIXED',1:'LINEAR',2:'MARTINGALE','0':'LAYER','1':'TOTAL'};
+  const opts={'0':'FIXED','1':'LINEAR','2':'MARTINGALE'};
+  if(id==='v-fm'){document.getElementById(id).textContent=el.value==='0'?'LAYER':'TOTAL';}
+  else document.getElementById(id).textContent=opts[el.value]||el.value;
 }
+function tog(id){
+  document.getElementById(id).classList.toggle('on');
+}
+function isOn(id){return document.getElementById(id).classList.contains('on');}
 
-function getParams() {
+function getP(){
   return {
-    deposit: parseFloat(document.getElementById('p-deposit').value),
-    lot: parseFloat(document.getElementById('p-lot').value),
-    maxLayer: parseInt(document.getElementById('p-maxlayer').value),
-    lotMode: parseInt(document.getElementById('p-lotmode').value),
-    lotStep: parseFloat(document.getElementById('p-lotstep').value),
-    lockProfit: parseFloat(document.getElementById('p-lockprofit').value),
-    maxLoss: parseFloat(document.getElementById('p-maxloss').value),
-    lstep1: parseInt(document.getElementById('p-lstep1').value),
-    trailBE: parseInt(document.getElementById('p-trailbe').value),
-    trailStart: parseInt(document.getElementById('p-trailstart').value),
-    trailFixed: parseInt(document.getElementById('p-trailfixed').value),
-    keyVal: parseFloat(document.getElementById('p-keyval').value),
-    dom: parseInt(document.getElementById('p-dom').value),
-    mcRuns: parseInt(document.getElementById('p-mc').value),
-    days: parseInt(document.getElementById('p-days').value)
+    dep:   parseFloat(document.getElementById('p-dep').value),
+    lot:   parseFloat(document.getElementById('p-lot').value),
+    lm:    parseInt(document.getElementById('p-lm').value),
+    ls:    parseFloat(document.getElementById('p-ls').value),
+    ml:    parseInt(document.getElementById('p-ml').value),
+    lp:    parseFloat(document.getElementById('p-lp').value),
+    mfl:   parseFloat(document.getElementById('p-mfl').value),
+    fm:    parseInt(document.getElementById('p-fm').value),
+    lst:   parseInt(document.getElementById('p-lst').value),
+    tbe:   parseInt(document.getElementById('p-tbe').value),
+    beo:   parseInt(document.getElementById('p-beo').value),
+    tst:   parseInt(document.getElementById('p-tst').value),
+    tfx:   parseInt(document.getElementById('p-tfx').value),
+    kv:    parseFloat(document.getElementById('p-kv').value),
+    atr:   parseInt(document.getElementById('p-atr').value),
+    ema:   [isOn('t-e1'),isOn('t-e2'),isOn('t-e3'),isOn('t-e4'),isOn('t-e5')],
+    sf:    isOn('t-sf'),
+    mc:    parseInt(document.getElementById('p-mc').value),
+    days:  parseInt(document.getElementById('p-dy').value),
   };
 }
 
-function calcLotForLayer(layer, params) {
-  if (params.lotMode === 0) return params.lot;
-  if (params.lotMode === 1) return params.lot + (layer - 1) * params.lotStep;
-  if (params.lotMode === 2) return params.lot * Math.pow(2, layer - 1);
-  return params.lot;
+function lotLayer(layer,p){
+  if(p.lm===0) return p.lot;
+  if(p.lm===1) return p.lot+(layer-1)*p.ls;
+  return p.lot*Math.pow(2,layer-1);
 }
 
-function sampleTrade(params) {
-  const idx = Math.floor(Math.random() * PROFIT_DIST.length);
-  let ppl = PROFIT_DIST[idx];
+// ── Core simulation ───────────────────────────────────────
+function sample(p){
+  const idx=Math.floor(Math.random()*PPL.length);
+  let v=PPL[idx];
+  const lotR=p.lot/BASE_LOT;
 
-  // Scale adjustments based on parameters
-  const lotRatio = params.lot / BASE_LOT;
+  // Signal quality: makin tinggi KV & ATR → lebih selektif → win rate naik sedikit
+  const sigQ=Math.min(1.3,(p.kv/1.0)*Math.min(1.2,5/p.atr));
 
-  // Signal filter effect: higher keyVal/dom → fewer trades but better quality
-  const signalQuality = Math.min(1.2, (params.keyVal / 1.0) * (params.dom / 60));
+  // EMA filter: lebih banyak EMA aktif → lebih selektif
+  const emaCount=p.ema.filter(Boolean).length;
+  const emaQ=Math.min(1.2,0.8+emaCount*0.1);
 
-  // TrailFixed effect: tighter trail = protect profit better on winners
-  const trailEffect = ppl > 0 ? Math.min(1.1, 500 / params.trailFixed) : 1.0;
+  // Trailing effect: tighter trail (kecil tfx) = profit lebih terlindungi
+  const trailQ=v>0?Math.min(1.2,400/p.tfx):1.0;
 
-  // MaxLoss cap: if loss per lot exceeds adjusted maxloss, it's capped
-  const maxLossPerLot = params.maxLoss / params.lot;
-  if (ppl < -maxLossPerLot) ppl = -maxLossPerLot * (0.9 + Math.random() * 0.1);
+  // BreakevenOffset: lebih besar = lebih sering lock di BE + profit
+  const beQ=v>0?Math.min(1.1,1+(p.beo/200)):1.0;
 
-  // LockProfit cap: if win per lot exceeds lockprofit, it's taken
-  const lockPerLot = params.lockProfit / params.lot;
-  if (ppl > lockPerLot) ppl = lockPerLot * (0.85 + Math.random() * 0.15);
+  // Cap per lockProfit & maxFloat
+  const capWin=p.lp/p.lot;
+  const capLoss=p.fm===0?p.mfl/p.lot:p.mfl*p.ml/p.lot;
+  if(v>capWin) v=capWin*(0.85+Math.random()*0.15);
+  if(v<-capLoss) v=-capLoss*(0.9+Math.random()*0.1);
 
-  return ppl * lotRatio * (ppl > 0 ? trailEffect : 1.0) * (ppl > 0 ? signalQuality : 1.0);
+  return v*lotR*(v>0?(trailQ*beQ*sigQ*emaQ):1.0);
 }
 
-function simulateOnce(params, seed) {
-  const tradesPerDay = 4.6 * (60 / params.dom) * (1.0 / params.keyVal);
-  const totalTrades = Math.round(tradesPerDay * params.days);
-  let balance = params.deposit;
-  let equity = params.deposit;
-  let peakEquity = params.deposit;
-  let maxDD = 0;
-  let wins = 0, losses = 0;
-  let totalProfit = 0, totalLoss = 0;
-  const equityCurve = [params.deposit];
-  const balanceCurve = [params.deposit];
-  let layerPnL = 0;
-  let layerCount = 0;
+function simOnce(p){
+  // Trades per day: lebih tinggi KV+ATR = lebih sedikit trades
+  const tpd=Math.max(0.5, 4.6*(1/p.kv)*(1/Math.max(1,p.atr/3)));
+  const total=Math.round(tpd*p.days);
+  let bal=p.dep, eq=p.dep, peak=p.dep, maxDD=0;
+  let wins=0,losses=0,gw=0,gl=0;
+  const eqC=[p.dep],balC=[p.dep];
+  let layerFL=0;
 
-  for (let i = 0; i < totalTrades; i++) {
-    // Simulate layer building
-    layerCount = Math.min(params.maxLayer, Math.max(1, Math.floor(Math.random() * 3 + 1)));
-    let tradePnL = 0;
-    for (let l = 1; l <= layerCount; l++) {
-      tradePnL += sampleTrade(params) * (calcLotForLayer(l, params) / params.lot);
+  for(let i=0;i<total;i++){
+    const layers=Math.min(p.ml,Math.max(1,Math.round(1+Math.random()*2)));
+    let tradePnL=0;
+    for(let l=1;l<=layers;l++){
+      tradePnL+=sample(p)*(lotLayer(l,p)/p.lot);
     }
 
-    // Apply LockProfit: if floating hits lockProfit, close all
-    layerPnL += tradePnL;
-    if (layerPnL >= params.lockProfit) { tradePnL += layerPnL; layerPnL = 0; }
-    if (layerPnL <= -params.maxLoss) { tradePnL += layerPnL; layerPnL = 0; }
+    // FloatingMode LAYER vs TOTAL
+    if(p.fm===0){
+      // per layer — tiap layer punya limit sendiri
+      if(tradePnL>=p.lp){layerFL=0;}
+      if(tradePnL<=-p.mfl){layerFL=0;}
+    } else {
+      layerFL+=tradePnL;
+      if(layerFL>=p.lp){tradePnL+=layerFL;layerFL=0;}
+      if(layerFL<=-p.mfl*p.ml){tradePnL+=layerFL;layerFL=0;}
+    }
 
-    balance += tradePnL;
-    if (balance < 0) balance = 0;
-    equity = balance + layerPnL;
-
-    if (equity > peakEquity) peakEquity = equity;
-    const dd = (peakEquity - equity) / peakEquity * 100;
-    if (dd > maxDD) maxDD = dd;
-
-    if (tradePnL > 0) { wins++; totalProfit += tradePnL; }
-    else if (tradePnL < 0) { losses++; totalLoss += tradePnL; }
-
-    // Track daily for chart (sample every ~5 trades)
-    if (i % 5 === 0) { equityCurve.push(Math.round(equity)); balanceCurve.push(Math.round(balance)); }
-    if (balance <= 0) break;
+    bal+=tradePnL;
+    if(bal<=0){bal=0;break;}
+    eq=bal+layerFL;
+    if(eq>peak)peak=eq;
+    const dd=(peak-eq)/peak*100;
+    if(dd>maxDD)maxDD=dd;
+    if(tradePnL>0){wins++;gw+=tradePnL;}
+    else if(tradePnL<0){losses++;gl+=Math.abs(tradePnL);}
+    if(i%5===0){eqC.push(Math.round(eq));balC.push(Math.round(bal));}
   }
 
-  const totalTr = wins + losses;
-  const pf = totalLoss !== 0 ? Math.abs(totalProfit / totalLoss) : 0;
-  const netPnL = balance - params.deposit;
-  return {
-    balance, equity, netPnL, maxDD,
-    winRate: totalTr > 0 ? wins / totalTr * 100 : 0,
-    profitFactor: pf,
-    wins, losses, totalTrades: totalTr,
-    equityCurve, balanceCurve,
-    returnPct: netPnL / params.deposit * 100,
-    peakBalance: Math.max(...balanceCurve)
+  const tt=wins+losses;
+  return{
+    netPnL:bal-p.dep, retPct:(bal-p.dep)/p.dep*100,
+    maxDD, pf:gl>0?gw/gl:0,
+    wr:tt>0?wins/tt*100:0,
+    wins,losses,total:tt,
+    eqC,balC
   };
 }
 
-function runSingleSim() {
-  const params = getParams();
-  document.getElementById('waiting-state').style.display = 'none';
-  document.getElementById('result-content').style.display = 'block';
+// ── Single simulation ─────────────────────────────────────
+function runSim(){
+  const p=getP();
+  show();
+  const r=simOnce(p);
+  const bt={net:10725.6,dd:35.74,wr:79.72,pf:1.256,ret:107.3};
+  const ddC=r.maxDD>30?'r':r.maxDD>20?'a':'g';
+  const pfC=r.pf>1.5?'g':r.pf>1.2?'a':'r';
+  const wrC=r.wr>75?'g':r.wr>60?'a':'r';
+  const risk=r.maxDD>30?'<span class="rb rh">HIGH RISK</span>':r.maxDD>20?'<span class="rb rm">MED RISK</span>':'<span class="rb rl">LOW RISK</span>';
 
-  const result = simulateOnce(params);
-  const backtest = { netPnL: 10725.6, maxDD: 35.74, winRate: 79.72, pf: 1.256, returnPct: 107.3 };
+  document.getElementById('rc').innerHTML=`
+  <div class="tab-row">
+    <button class="tab active" onclick="showTab('t-sim',this)">Simulasi</button>
+    <button class="tab" onclick="showTab('t-cmp',this)">Perbandingan</button>
+    ${jsonData?'<button class="tab" onclick="showTab(\'t-top\',this)">Top Kombinasi JSON</button>':''}
+  </div>
 
-  const ddClass = result.maxDD > 30 ? 'neg' : result.maxDD > 20 ? 'neu' : 'pos';
-  const pfClass = result.profitFactor > 1.5 ? 'pos' : result.profitFactor > 1.2 ? 'neu' : 'neg';
-  const wrClass = result.winRate > 75 ? 'pos' : result.winRate > 60 ? 'neu' : 'neg';
-  const retClass = result.netPnL > 0 ? 'pos' : 'neg';
-
-  const riskLabel = result.maxDD > 30 ? '<span class="risk-badge risk-high">HIGH RISK</span>' : result.maxDD > 20 ? '<span class="risk-badge risk-med">MEDIUM RISK</span>' : '<span class="risk-badge risk-low">LOW RISK</span>';
-
-  const diffPnL = result.netPnL - backtest.netPnL;
-  const diffDD = result.maxDD - backtest.maxDD;
-  const diffPF = result.profitFactor - backtest.pf;
-
-  document.getElementById('result-content').innerHTML = `
-    <div class="results-header">
-      <div>
-        <div class="results-title">Hasil Simulasi · LotSize=${params.lot} · MaxLayer=${params.maxLayer} · Deposit=$${params.deposit.toLocaleString()}</div>
-        <div class="run-count">${result.totalTrades} trades · ${params.days} hari · ${riskLabel}</div>
-      </div>
+  <div id="t-sim">
+    <div style="font-size:11px;color:var(--text2);margin-bottom:12px;">
+      Lot=${p.lot} · Layer=${p.ml} · LkP=$${p.lp} · MFL=$${p.mfl} · ${['FIXED','LINEAR','MARTINGALE'][p.lm]} · ${p.days}d · ${risk}
     </div>
-
     <div class="metrics-grid">
-      <div class="metric-card ${result.netPnL > 0 ? 'positive' : 'negative'}">
-        <div class="metric-label">Net Profit</div>
-        <div class="metric-val ${retClass}">$${result.netPnL.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',')}</div>
-        <div class="metric-sub">+${result.returnPct.toFixed(1)}% dari deposit</div>
+      <div class="mc ${r.netPnL>0?'pos':'neg'}">
+        <div class="ml">Net Profit</div>
+        <div class="mv ${r.netPnL>0?'g':'r'}">$${fmt(r.netPnL)}</div>
+        <div class="ms">${r.retPct.toFixed(1)}% return</div>
       </div>
-      <div class="metric-card ${result.maxDD > 25 ? 'negative' : 'warn'}">
-        <div class="metric-label">Max Equity DD</div>
-        <div class="metric-val ${ddClass}">-${result.maxDD.toFixed(1)}%</div>
-        <div class="metric-sub">Backtest: -35.74%</div>
+      <div class="mc ${r.maxDD>25?'neg':'warn'}">
+        <div class="ml">Max DD</div>
+        <div class="mv ${ddC}">-${r.maxDD.toFixed(1)}%</div>
+        <div class="ms">BT: -35.74%</div>
       </div>
-      <div class="metric-card ${result.profitFactor > 1.4 ? 'positive' : 'warn'}">
-        <div class="metric-label">Profit Factor</div>
-        <div class="metric-val ${pfClass}">${result.profitFactor.toFixed(3)}</div>
-        <div class="metric-sub">Backtest: 1.256</div>
+      <div class="mc ${r.pf>1.4?'pos':'warn'}">
+        <div class="ml">Profit Factor</div>
+        <div class="mv ${pfC}">${r.pf.toFixed(3)}</div>
+        <div class="ms">BT: 1.256</div>
       </div>
-      <div class="metric-card">
-        <div class="metric-label">Win Rate</div>
-        <div class="metric-val ${wrClass}">${result.winRate.toFixed(1)}%</div>
-        <div class="metric-sub">${result.wins}W / ${result.losses}L</div>
-      </div>
-    </div>
-
-    <div class="charts-grid">
-      <div class="chart-card" style="grid-column: span 2;">
-        <div class="chart-title">Equity Curve Simulasi</div>
-        <div style="position:relative; height:220px;"><canvas id="singleChart" role="img" aria-label="Equity curve simulation"></canvas></div>
+      <div class="mc">
+        <div class="ml">Win Rate</div>
+        <div class="mv ${wrC}">${r.wr.toFixed(1)}%</div>
+        <div class="ms">${r.wins}W / ${r.losses}L</div>
       </div>
     </div>
+    <div class="cc">
+      <div class="ct">Equity Curve</div>
+      <div style="position:relative;height:220px;"><canvas id="ch1"></canvas></div>
+    </div>
+  </div>
 
-    <div class="compare-card">
-      <div class="compare-title">Perbandingan dengan Backtest Original</div>
-      <table class="compare-table">
-        <thead><tr><th>Metrik</th><th>Backtest Original</th><th>Simulasi Sekarang</th><th>Selisih</th><th>Status</th></tr></thead>
+  <div id="t-cmp" style="display:none;">
+    <div class="cc">
+      <div class="ct">Perbandingan vs Backtest Original</div>
+      <table>
+        <thead><tr><th>Metrik</th><th>Backtest MT5</th><th>Simulasi</th><th>Delta</th><th>Status</th></tr></thead>
         <tbody>
-          <tr>
-            <td>Net Profit</td>
-            <td class="td-pos td-mono">+$10,726</td>
-            <td class="${result.netPnL > 0 ? 'td-pos' : 'td-neg'} td-mono">$${result.netPnL >= 0 ? '+' : ''}${result.netPnL.toFixed(0)}</td>
-            <td class="${diffPnL >= 0 ? 'td-pos' : 'td-neg'} td-mono">${diffPnL >= 0 ? '+' : ''}$${diffPnL.toFixed(0)}</td>
-            <td>${result.netPnL > 8000 ? '✅ Comparable' : result.netPnL > 0 ? '⚠️ Lower but profitable' : '❌ Loss'}</td>
-          </tr>
-          <tr>
-            <td>Max Drawdown</td>
-            <td class="td-neg td-mono">-35.74%</td>
-            <td class="${ddClass} td-mono">-${result.maxDD.toFixed(1)}%</td>
-            <td class="${diffDD < 0 ? 'td-pos' : 'td-neg'} td-mono">${diffDD >= 0 ? '+' : ''}${diffDD.toFixed(1)}%</td>
-            <td>${result.maxDD < 20 ? '✅ Jauh lebih aman' : result.maxDD < 30 ? '⚠️ Lebih baik' : '❌ Masih tinggi'}</td>
-          </tr>
-          <tr>
-            <td>Profit Factor</td>
-            <td class="td-neu td-mono">1.256</td>
-            <td class="${pfClass} td-mono">${result.profitFactor.toFixed(3)}</td>
-            <td class="${diffPF >= 0 ? 'td-pos' : 'td-neg'} td-mono">${diffPF >= 0 ? '+' : ''}${diffPF.toFixed(3)}</td>
-            <td>${result.profitFactor > 1.5 ? '✅ Layak live' : result.profitFactor > 1.2 ? '⚠️ Borderline' : '❌ Terlalu rendah'}</td>
-          </tr>
-          <tr>
-            <td>Win Rate</td>
-            <td class="td-pos td-mono">79.7%</td>
-            <td class="${wrClass} td-mono">${result.winRate.toFixed(1)}%</td>
-            <td class="${result.winRate - 79.7 >= 0 ? 'td-pos' : 'td-neg'} td-mono">${(result.winRate - 79.7) >= 0 ? '+' : ''}${(result.winRate - 79.7).toFixed(1)}%</td>
-            <td>${result.winRate > 75 ? '✅ Baik' : '⚠️ Perlu filter lebih ketat'}</td>
-          </tr>
+          <tr><td>Net Profit</td><td class="tp">+$10,726</td><td class="${r.netPnL>0?'tp':'tn'} tm">$${r.netPnL>=0?'+':''}${fmt(r.netPnL)}</td><td class="${r.netPnL-bt.net>=0?'tp':'tn'} tm">${r.netPnL-bt.net>=0?'+':''}$${fmt(r.netPnL-bt.net)}</td><td>${r.netPnL>8000?'✅ Comparable':r.netPnL>0?'⚠️ Profitable':'❌ Loss'}</td></tr>
+          <tr><td>Max DD</td><td class="tn">-35.74%</td><td class="${ddC} tm">-${r.maxDD.toFixed(1)}%</td><td class="${r.maxDD-bt.dd<0?'tp':'tn'} tm">${(r.maxDD-bt.dd)>=0?'+':''}${(r.maxDD-bt.dd).toFixed(1)}%</td><td>${r.maxDD<20?'✅ Jauh aman':r.maxDD<30?'⚠️ Lebih baik':'❌ Masih tinggi'}</td></tr>
+          <tr><td>Profit Factor</td><td class="ta">1.256</td><td class="${pfC} tm">${r.pf.toFixed(3)}</td><td class="${r.pf-bt.pf>=0?'tp':'tn'} tm">${r.pf-bt.pf>=0?'+':''}${(r.pf-bt.pf).toFixed(3)}</td><td>${r.pf>1.5?'✅ Layak live':r.pf>1.2?'⚠️ Borderline':'❌ Rendah'}</td></tr>
+          <tr><td>Win Rate</td><td class="tp">79.7%</td><td class="${wrC} tm">${r.wr.toFixed(1)}%</td><td class="${r.wr-bt.wr>=0?'tp':'tn'} tm">${(r.wr-bt.wr)>=0?'+':''}${(r.wr-bt.wr).toFixed(1)}%</td><td>${r.wr>75?'✅ Baik':'⚠️ Filter lebih ketat'}</td></tr>
+          <tr><td>Total Trades</td><td class="tm">641</td><td class="tm">${r.total}</td><td class="tm">${r.total-641>=0?'+':''}${r.total-641}</td><td>${Math.abs(r.total-641)<200?'✅ Wajar':'⚠️ Beda jauh'}</td></tr>
         </tbody>
       </table>
     </div>
-
-    <div id="mc-placeholder" style="padding: 14px; background: var(--bg3); border-radius: 8px; font-size: 12px; color: var(--text3); text-align: center;">
-      Klik <strong style="color:var(--blue)">🎲 MONTE CARLO</strong> di sidebar untuk stress test dengan 500+ skenario berbeda.
+    <div class="info-box">
+      📌 Parameter aktif: LotMode=${['FIXED','LINEAR','MARTINGALE'][p.lm]} · FloatingMode=${p.fm===0?'LAYER':'TOTAL'} · BE+${p.beo}pip · TrailStart=${p.tst}pip · TrailFixed=${p.tfx}pip · EMA aktif: ${p.ema.map((v,i)=>v?['3','7','50','100','200'][i]:'').filter(Boolean).join(',')} · SignalFlip=${p.sf?'ON':'OFF'}
     </div>
+  </div>
+
+  ${jsonData?`<div id="t-top" style="display:none;">${buildTopTable()}</div>`:''}
   `;
 
-  if (singleChart) singleChart.destroy();
-  singleChart = new Chart(document.getElementById('singleChart'), {
-    type: 'line',
-    data: {
-      labels: result.equityCurve.map((_, i) => i),
-      datasets: [
-        {
-          label: 'Equity',
-          data: result.equityCurve,
-          borderColor: result.netPnL > 0 ? '#22c55e' : '#ef4444',
-          backgroundColor: result.netPnL > 0 ? 'rgba(34,197,94,0.05)' : 'rgba(239,68,68,0.05)',
-          borderWidth: 1.5, pointRadius: 0, tension: 0.3, fill: true
-        },
-        {
-          label: 'Balance',
-          data: result.balanceCurve,
-          borderColor: '#f0a500', borderWidth: 1,
-          pointRadius: 0, tension: 0.3, borderDash: [3,3]
-        }
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: { mode: 'index', intersect: false }
-      },
-      scales: {
-        y: {
-          ticks: { callback: v => '$' + v.toLocaleString(), color: '#475569', font: { size: 10 } },
-          grid: { color: 'rgba(255,255,255,0.04)' }
-        },
-        x: { display: false }
-      }
-    }
+  // Draw chart
+  if(ch1)ch1.destroy();
+  ch1=new Chart(document.getElementById('ch1'),{
+    type:'line',
+    data:{labels:r.eqC.map((_,i)=>i),datasets:[
+      {label:'Equity',data:r.eqC,borderColor:r.netPnL>0?'#22c55e':'#ef4444',backgroundColor:r.netPnL>0?'rgba(34,197,94,.05)':'rgba(239,68,68,.05)',borderWidth:1.5,pointRadius:0,tension:.3,fill:true},
+      {label:'Balance',data:r.balC,borderColor:'#f0a500',borderWidth:1,pointRadius:0,tension:.3,borderDash:[3,3]}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
+      scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString(),color:'#475569',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},x:{display:false}}}
   });
 }
 
-function runMonteCarlo() {
-  const params = getParams();
-  const nRuns = params.mcRuns;
-
-  document.getElementById('waiting-state').style.display = 'none';
-  document.getElementById('result-content').style.display = 'block';
-  document.getElementById('result-content').innerHTML = `
-    <div style="padding: 40px; text-align: center; color: var(--text3);">
-      <div style="font-size: 24px; margin-bottom: 12px;">🎲</div>
-      <div style="font-size: 14px; color: var(--text2); margin-bottom: 8px;">Menjalankan ${nRuns} simulasi Monte Carlo...</div>
-      <div class="progress-bar"><div class="progress-fill" id="mc-prog" style="width:0%"></div></div>
+// ── Monte Carlo ───────────────────────────────────────────
+function runMC(){
+  const p=getP();
+  show();
+  document.getElementById('rc').innerHTML=`
+    <div style="padding:60px;text-align:center;color:var(--text3);">
+      <div style="font-size:28px;margin-bottom:12px;">🎲</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:8px;">Menjalankan ${p.mc} simulasi Monte Carlo...</div>
+      <div class="pb"><div class="pf" id="prog" style="width:0%"></div></div>
     </div>`;
 
-  setTimeout(() => {
-    const results = [];
-    for (let i = 0; i < nRuns; i++) {
-      results.push(simulateOnce(params, i));
-      if (i % 100 === 0) {
-        const prog = document.getElementById('mc-prog');
-        if (prog) prog.style.width = (i / nRuns * 100) + '%';
-      }
+  setTimeout(()=>{
+    const rs=[];
+    for(let i=0;i<p.mc;i++){
+      rs.push(simOnce(p));
+      if(i%100===0){const pr=document.getElementById('prog');if(pr)pr.style.width=(i/p.mc*100)+'%';}
     }
+    const profits=rs.map(r=>r.netPnL).sort((a,b)=>a-b);
+    const dds=rs.map(r=>r.maxDD);
+    const mean=a=>a.reduce((x,y)=>x+y,0)/a.length;
+    const pct=(a,p)=>a[Math.floor(a.length*p/100)];
+    const profC=rs.filter(r=>r.netPnL>0).length;
+    const avgDD=mean(dds);
+    const ruin=rs.filter(r=>r.maxDD>90).length;
 
-    const profits = results.map(r => r.netPnL).sort((a,b) => a-b);
-    const dds = results.map(r => r.maxDD);
-    const pfs = results.map(r => r.profitFactor);
-    const wrs = results.map(r => r.winRate);
-
-    const pctile = (arr, p) => arr[Math.floor(arr.length * p / 100)];
-    const mean = arr => arr.reduce((a,b) => a+b, 0) / arr.length;
-
-    const profitableCount = results.filter(r => r.netPnL > 0).length;
-    const profitablePct = (profitableCount / nRuns * 100).toFixed(1);
-    const worstDD = Math.max(...dds);
-    const avgDD = mean(dds);
-    const ruin = results.filter(r => r.maxDD > 90).length;
-
-    document.getElementById('result-content').innerHTML = `
-      <div class="results-header">
-        <div>
-          <div class="results-title">Monte Carlo · ${nRuns} simulasi · ${params.days} hari masing-masing</div>
-          <div class="run-count">Profitable: ${profitablePct}% dari simulasi · Ruin (DD>90%): ${ruin} kali</div>
-        </div>
+    document.getElementById('rc').innerHTML=`
+    <div style="font-size:11px;color:var(--text2);margin-bottom:12px;">Monte Carlo · ${p.mc} simulasi · ${p.days} hari · Lot=${p.lot} · Layer=${p.ml}</div>
+    <div class="metrics-grid">
+      <div class="mc ${profC/p.mc>0.7?'pos':'warn'}">
+        <div class="ml">Peluang Profit</div>
+        <div class="mv ${profC/p.mc>0.7?'g':'a'}">${(profC/p.mc*100).toFixed(1)}%</div>
+        <div class="ms">${profC} dari ${p.mc} run</div>
       </div>
-
-      <div class="metrics-grid">
-        <div class="metric-card ${parseFloat(profitablePct) > 70 ? 'positive' : 'warn'}">
-          <div class="metric-label">Peluang Profit</div>
-          <div class="metric-val ${parseFloat(profitablePct) > 70 ? 'pos' : 'neu'}">${profitablePct}%</div>
-          <div class="metric-sub">${profitableCount} dari ${nRuns} run</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-label">Median Net Profit</div>
-          <div class="metric-val ${pctile(profits,50) > 0 ? 'pos' : 'neg'}">$${pctile(profits,50).toFixed(0)}</div>
-          <div class="metric-sub">50th percentile</div>
-        </div>
-        <div class="metric-card ${avgDD > 25 ? 'negative' : 'warn'}">
-          <div class="metric-label">Avg Max DD</div>
-          <div class="metric-val ${avgDD > 30 ? 'neg' : 'neu'}">-${avgDD.toFixed(1)}%</div>
-          <div class="metric-sub">Worst: -${worstDD.toFixed(1)}%</div>
-        </div>
-        <div class="metric-card ${ruin === 0 ? 'positive' : 'negative'}">
-          <div class="metric-label">Ruin Risk</div>
-          <div class="metric-val ${ruin === 0 ? 'pos' : 'neg'}">${(ruin/nRuns*100).toFixed(1)}%</div>
-          <div class="metric-sub">DD > 90% = margin call risk</div>
-        </div>
+      <div class="mc">
+        <div class="ml">Median Profit</div>
+        <div class="mv ${pct(profits,50)>0?'g':'r'}">$${fmt(pct(profits,50))}</div>
+        <div class="ms">50th percentile</div>
       </div>
-
-      <div class="charts-grid">
-        <div class="chart-card">
-          <div class="chart-title">Distribusi Net Profit (${nRuns} simulasi)</div>
-          <div style="position:relative;height:200px;"><canvas id="mcDistChart" role="img" aria-label="Monte Carlo profit distribution"></canvas></div>
-        </div>
-        <div class="chart-card">
-          <div class="chart-title">Profit Percentiles</div>
-          <div style="position:relative;height:200px;"><canvas id="mcPctChart" role="img" aria-label="Profit percentile chart"></canvas></div>
-        </div>
+      <div class="mc ${avgDD>25?'neg':'warn'}">
+        <div class="ml">Avg Max DD</div>
+        <div class="mv ${avgDD>30?'r':'a'}">-${avgDD.toFixed(1)}%</div>
+        <div class="ms">Worst: -${Math.max(...dds).toFixed(1)}%</div>
       </div>
+      <div class="mc ${ruin===0?'pos':'neg'}">
+        <div class="ml">Ruin Risk</div>
+        <div class="mv ${ruin===0?'g':'r'}">${(ruin/p.mc*100).toFixed(1)}%</div>
+        <div class="ms">DD>90% = margin call</div>
+      </div>
+    </div>
+    <div class="cg">
+      <div class="cc"><div class="ct">Distribusi Net Profit</div><div style="height:180px;"><canvas id="ch2"></canvas></div></div>
+      <div class="cc"><div class="ct">Profit Percentiles</div><div style="height:180px;"><canvas id="ch3"></canvas></div></div>
+    </div>
+    <div class="cc">
+      <div class="ct">Analisis Skenario</div>
+      <table>
+        <thead><tr><th>Skenario</th><th>Net Profit</th><th>Interpretasi</th></tr></thead>
+        <tbody>
+          <tr><td>🐻 Worst 5%</td><td class="tn tm">$${fmt(pct(profits,5))}</td><td style="font-size:10px">Skenario sangat buruk</td></tr>
+          <tr><td>📉 Worst 10%</td><td class="tn tm">$${fmt(pct(profits,10))}</td><td style="font-size:10px">Skenario buruk</td></tr>
+          <tr><td>⚖️ Median</td><td class="${pct(profits,50)>0?'tp':'tn'} tm">$${fmt(pct(profits,50))}</td><td style="font-size:10px">Hasil paling mungkin</td></tr>
+          <tr><td>📈 Top 25%</td><td class="tp tm">$${fmt(pct(profits,75))}</td><td style="font-size:10px">Skenario bagus</td></tr>
+          <tr><td>🚀 Best 10%</td><td class="tp tm">$${fmt(pct(profits,90))}</td><td style="font-size:10px">Skenario sangat bagus</td></tr>
+        </tbody>
+      </table>
+    </div>`;
 
-      <div class="compare-card">
-        <div class="compare-title">Analisis Percentile Profit</div>
-        <table class="compare-table">
-          <thead><tr><th>Skenario</th><th>Net Profit</th><th>Interpretasi</th></tr></thead>
-          <tbody>
-            <tr><td>🐻 Worst 5%</td><td class="td-neg td-mono">$${pctile(profits,5).toFixed(0)}</td><td style="font-size:11px;">Skenario sangat buruk (unlucky)</td></tr>
-            <tr><td>📉 Worst 10%</td><td class="td-neg td-mono">$${pctile(profits,10).toFixed(0)}</td><td style="font-size:11px;">Skenario buruk</td></tr>
-            <tr><td>⚖️ Median</td><td class="${pctile(profits,50) > 0 ? 'td-pos' : 'td-neg'} td-mono">$${pctile(profits,50).toFixed(0)}</td><td style="font-size:11px;">Hasil paling mungkin (50/50)</td></tr>
-            <tr><td>📈 Top 25%</td><td class="td-pos td-mono">$${pctile(profits,75).toFixed(0)}</td><td style="font-size:11px;">Skenario bagus</td></tr>
-            <tr><td>🚀 Best 10%</td><td class="td-pos td-mono">$${pctile(profits,90).toFixed(0)}</td><td style="font-size:11px;">Skenario sangat bagus (lucky)</td></tr>
-            <tr><td>💫 Avg DD</td><td class="td-neg td-mono">-${avgDD.toFixed(1)}%</td><td style="font-size:11px;">Rata-rata drawdown yang dialami</td></tr>
-          </tbody>
-        </table>
-      </div>`;
+    // Histogram
+    const minP=pct(profits,2),maxP=pct(profits,98);
+    const bw=(maxP-minP)/20;
+    const cnt=new Array(20).fill(0);
+    profits.forEach(p=>{if(p>=minP&&p<=maxP){const b=Math.min(19,Math.floor((p-minP)/bw));cnt[b]++;}});
+    if(ch2)ch2.destroy();
+    ch2=new Chart(document.getElementById('ch2'),{type:'bar',data:{labels:cnt.map((_,i)=>'$'+Math.round(minP+i*bw).toLocaleString()),datasets:[{data:cnt,backgroundColor:cnt.map((_,i)=>minP+i*bw>=0?'rgba(34,197,94,.7)':'rgba(239,68,68,.7)'),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{color:'#475569',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}},x:{ticks:{color:'#475569',font:{size:8},maxTicksLimit:6},grid:{display:false}}}}});
 
-    // Distribution histogram
-    const histBins = 20;
-    const minP = pctile(profits, 1), maxP = pctile(profits, 99);
-    const binW = (maxP - minP) / histBins;
-    const counts = new Array(histBins).fill(0);
-    profits.forEach(p => {
-      if (p >= minP && p <= maxP) {
-        const b = Math.min(histBins - 1, Math.floor((p - minP) / binW));
-        counts[b]++;
-      }
-    });
-    const histLabels = counts.map((_, i) => '$' + (minP + i * binW).toFixed(0));
-    const histColors = histLabels.map(l => parseInt(l.replace('$','')) >= 0 ? 'rgba(34,197,94,0.7)' : 'rgba(239,68,68,0.7)');
+    const pctVals=[5,10,25,50,75,90,95].map(x=>pct(profits,x));
+    if(ch3)ch3.destroy();
+    ch3=new Chart(document.getElementById('ch3'),{type:'bar',data:{labels:['5%','10%','25%','50%','75%','90%','95%'],datasets:[{data:pctVals,backgroundColor:pctVals.map(v=>v>=0?'rgba(34,197,94,.7)':'rgba(239,68,68,.7)'),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'$'+Math.round(v).toLocaleString(),color:'#475569',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}},x:{ticks:{color:'#475569',font:{size:10}},grid:{display:false}}}}});
+  },50);
+}
 
-    new Chart(document.getElementById('mcDistChart'), {
-      type: 'bar',
-      data: { labels: histLabels, datasets: [{ data: counts, backgroundColor: histColors, borderWidth: 0 }] },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { ticks: { color: '#475569', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
-          x: { ticks: { color: '#475569', font: { size: 8 }, maxRotation: 45, autoSkip: false, maxTicksLimit: 8 }, grid: { display: false } }
-        }
-      }
-    });
+// ── Load JSON dari processor ──────────────────────────────
+function loadJSON(input){
+  const file=input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      jsonData=JSON.parse(e.target.result);
+      document.getElementById('data-badge').textContent='● TICK DATA REAL';
+      document.getElementById('data-badge').className='badge badge-blue';
+      alert(`✅ JSON loaded!\n${jsonData.meta.candles_used.toLocaleString()} candles · ${jsonData.top_results.length} kombinasi teroptimasi\nRange: ${jsonData.meta.date_range}`);
+    }catch(err){alert('❌ File JSON tidak valid: '+err.message);}
+  };
+  reader.readAsText(file);
+}
 
-    const pctLabels = ['5%','10%','25%','50%','75%','90%','95%'];
-    const pctVals = [5,10,25,50,75,90,95].map(p => pctile(profits, p));
-    new Chart(document.getElementById('mcPctChart'), {
-      type: 'bar',
-      data: {
-        labels: pctLabels,
-        datasets: [{ data: pctVals, backgroundColor: pctVals.map(v => v >= 0 ? 'rgba(34,197,94,0.7)' : 'rgba(239,68,68,0.7)'), borderWidth: 0 }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { ticks: { callback: v => '$' + v.toFixed(0), color: '#475569', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
-          x: { ticks: { color: '#475569', font: { size: 10 } }, grid: { display: false } }
-        }
-      }
-    });
-  }, 50);
+function buildTopTable(){
+  if(!jsonData||!jsonData.top_results)return '<p style="color:var(--text3)">No data</p>';
+  const top=jsonData.top_results.slice(0,12);
+  const cards=top.map((r,i)=>{
+    const p=r.params;
+    const ddC=r.max_dd_pct>25?'r':r.max_dd_pct>15?'a':'g';
+    const pfC=r.profit_factor>1.5?'g':r.profit_factor>1.2?'a':'r';
+    return `<div class="combo-card" onclick="applyCombo(${i})">
+      <div class="combo-rank">#${i+1} — Score: ${r.score.toFixed(4)}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+        <span class="mv ${pfC}" style="font-size:16px;">PF ${r.profit_factor.toFixed(2)}</span>
+        <span class="mv ${ddC}" style="font-size:13px;">DD ${r.max_dd_pct.toFixed(1)}%</span>
+        <span class="mv g" style="font-size:13px;">+${r.return_pct.toFixed(0)}%</span>
+      </div>
+      <div class="combo-params">
+        Lot: ${p.lot_size} · Layer: ${p.max_layer} · LkP: $${p.lock_profit}<br>
+        MFL: $${p.max_float} · Step: ${p.layer_step}pip · KV: ${p.utbot_kv}<br>
+        Trail: BE${p.trail_be}→St${p.trail_start}→Fx${p.trail_fixed} · ATR: ${p.atr_period}<br>
+        WR: ${r.win_rate.toFixed(1)}% · Trades: ${r.total_trades}
+      </div>
+    </div>`;
+  }).join('');
+
+  const meta=jsonData.meta;
+  return `
+    <div class="cc" style="margin-bottom:12px;">
+      <div class="ct">Info Data</div>
+      <div style="font-size:10px;color:var(--text2);line-height:1.8;">
+        📅 Generated: ${new Date(meta.generated_at).toLocaleString('id-ID')}<br>
+        🕯️ Candles: ${meta.candles_used.toLocaleString()} M5 · Range: ${meta.date_range}<br>
+        🔬 Total kombinasi ditest: ${meta.total_combos.toLocaleString()}<br>
+        💰 Deposit simulasi: $${meta.initial_deposit.toLocaleString()}
+      </div>
+    </div>
+    <div class="ct">Top ${top.length} Kombinasi Parameter (klik untuk apply ke simulator)</div>
+    <div class="top-combo-grid">${cards}</div>
+    <div class="info-box">💡 Klik salah satu kartu untuk langsung apply parameter ke sidebar, lalu tekan JALANKAN SIMULASI untuk lihat detail.</div>`;
+}
+
+function applyCombo(idx){
+  if(!jsonData)return;
+  const r=jsonData.top_results[idx];
+  const p=r.params;
+  // Apply ke sliders
+  setSlider('p-lot',p.lot_size,'v-lot','','',2);
+  setSlider('p-ml',p.max_layer,'v-ml','','',0);
+  setSlider('p-lp',p.lock_profit,'v-lp','$','',0);
+  setSlider('p-mfl',p.max_float,'v-mfl','$','',0);
+  setSlider('p-lst',p.layer_step,'v-lst','','',0);
+  setSlider('p-tbe',p.trail_be,'v-tbe','','',0);
+  setSlider('p-tst',p.trail_start,'v-tst','','',0);
+  setSlider('p-tfx',p.trail_fixed,'v-tfx','','',0);
+  setSlider('p-kv',p.utbot_kv,'v-kv','','',1);
+  setSlider('p-atr',p.atr_period,'v-atr','','',0);
+  // Highlight selected
+  document.querySelectorAll('.combo-card').forEach((c,i)=>c.classList.toggle('selected',i===idx));
+  alert(`✅ Parameter combo #${idx+1} diterapkan!\nLot=${p.lot_size} · Layer=${p.max_layer} · LkP=$${p.lock_profit}\nSekarang tekan JALANKAN SIMULASI.`);
+}
+
+function setSlider(sliderId,val,valId,pre,suf,dec){
+  const el=document.getElementById(sliderId);
+  if(!el)return;
+  el.value=val;
+  sv(el,valId,pre,suf,dec);
+}
+
+function showTab(tabId,btn){
+  document.querySelectorAll('#rc > div[id^="t-"]').forEach(d=>d.style.display='none');
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  const el=document.getElementById(tabId);
+  if(el)el.style.display='block';
+  if(btn)btn.classList.add('active');
+}
+
+function show(){
+  document.getElementById('ws').style.display='none';
+  document.getElementById('rc').style.display='block';
+}
+
+function fmt(v){
+  const abs=Math.abs(Math.round(v));
+  return (v<0?'-':'+')+abs.toLocaleString();
 }
 </script>
 </body>
