@@ -134,6 +134,25 @@
             transform: translateY(-5px);
             transition: 0.3s ease;
         }
+        /* Styling Baru untuk Core Infrastructure */
+        .infra-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 25px; margin-bottom: 50px; }
+        
+        .infra-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 12px;
+            padding: 30px;
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            transition: 0.4s;
+            text-decoration: none;
+            color: inherit;
+        }
+        .infra-card:hover { background: rgba(212, 175, 55, 0.05); transform: translateY(-5px); border-color: var(--gold); }
+        .infra-card img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
+        .infra-card h3 { color: var(--gold); margin: 0 0 5px 0; letter-spacing: 1.5px; }
+        .infra-card p { margin: 0; color: #8b949e; font-size: 0.9em; line-height: 1.5; }
     </style>
 </head>
 <body>
@@ -228,43 +247,29 @@
         </p>
     </div>
     
-  <a href="labs.html" class="labs-banner" style="
-    background: rgba(255, 255, 255, 0.03); 
-    border: 1px dashed #f0f6fc; 
-    border-radius: 8px; 
-    display: flex; 
-    align-items: center; 
-    padding: 15px 25px; 
-    text-decoration: none; 
-    margin-bottom: 30px; 
-    transition: 0.4s;
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);">
-    
-    <img src="arnaid-labs-logo-2.jpg" alt="Arnaid Labs" style="
-        width: 120px; /* Ukuran lebar proporsional kotak */
-        height: auto; 
-        border: 1px solid rgba(240, 246, 252, 0.3); 
-        margin-right: 25px; 
-        filter: grayscale(0.5) brightness(1.1); /* Sedikit warna biar gak mati banget */
-        border-radius: 4px; /* Sudut halus dikit biar gak tajam bgt */">
-    
-    <div>
-        <h2 style="color: #f0f6fc; margin: 0; letter-spacing: 2px; font-size: 1.3rem; font-weight: 800;">
-            ARNAID LABS <span style="
-                background: #f0f6fc; 
-                color: #000; 
-                font-size: 0.6rem; 
-                padding: 2px 8px; 
-                border-radius: 2px; 
-                vertical-align: middle; 
-                margin-left: 10px; 
-                font-weight: 900;">IN DEVELOPMENT</span>
-        </h2>
-        <p style="margin: 5px 0 0; font-size: 0.85em; color: #8b949e; font-style: italic;">
-            "Data Doesn't Lie, It's Audited Here." — Divisi Riset Forensik & AI Falcon.
-        </p>
+ <div class="section">
+    <div class="section-header">
+        <h2>CORE INFRASTRUCTURE</h2><span>Technology Backbone</span>
     </div>
-</a>
+    
+    <div class="infra-grid">
+        <a href="labs.html" class="infra-card">
+            <img src="arnaid-labs-logo-2.jpg" alt="Arnaid Labs">
+            <div>
+                <h3>ARNAID LABS</h3>
+                <p>"Data Doesn't Lie, It's Audited Here." — Pusat forensik untuk membedah anomali transaksi.</p>
+            </div>
+        </a>
+
+        <div class="infra-card" style="border-style: dashed; opacity: 0.9;">
+            <img src="neuralforge-placeholder.jpg" alt="NeuralForge"> 
+            <div>
+                <h3 style="color: #00d2ff;">NEURALFORGE <span style="font-size: 0.5em; background: #00d2ff; color: #000; padding: 2px 6px; border-radius: 4px; vertical-align: middle;">WIP</span></h3>
+                <p><strong>The Apex Optimizer.</strong> Menempa parameter EA menggunakan data <em>real-tick</em> berbasis AI. <em>Currently in development.</em></p>
+            </div>
+        </div>
+    </div>
+</div>
 
     <div class="section">
         <div class="section-header">
