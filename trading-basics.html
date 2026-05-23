@@ -1,72 +1,1687 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trading Basics - Falcon Trading Ecosystem</title>
-    <style>
-        :root { --bg: #0b0e14; --gold: #d4af37; --text: #e2e8f0; --card: rgba(255,255,255,0.03); }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; line-height: 1.6; margin: 0; padding: 0; }
-        
-        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
-        header { text-align: center; padding: 60px 20px; }
-        h1 { color: #fff; font-size: 2.5rem; }
-        .segment { background: var(--card); padding: 30px; border-radius: 15px; margin-bottom: 25px; border-left: 4px solid var(--gold); }
-        h2 { color: var(--gold); margin-top: 0; }
-        .highlight { color: #fff; font-weight: bold; }
-        .btn-home { display: block; text-align: center; background: var(--gold); color: #000; padding: 15px; text-decoration: none; font-weight: bold; border-radius: 8px; margin: 40px 0; }
-        footer { text-align: center; font-size: 0.8rem; color: #666; padding-bottom: 40px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Falcon Trading Ecosystem — Jalan Keluar yang Selama Ini Kamu Cari</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E8C97A;
+    --gold-dim: #8B6E2A;
+    --dark: #0A0A0B;
+    --dark-2: #111113;
+    --dark-3: #18181C;
+    --dark-4: #222228;
+    --text: #E8E6E0;
+    --text-muted: #888880;
+    --text-dim: #555550;
+    --red: #E05252;
+    --green: #52C97A;
+    --accent-blue: #4A90D9;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 17px;
+    line-height: 1.75;
+    overflow-x: hidden;
+  }
+
+  /* ===== NOISE TEXTURE ===== */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  /* ===== SCROLLBAR ===== */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--dark-2); }
+  ::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
+
+  /* ===== HERO ===== */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 80px 24px 60px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(201,168,76,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 80% 80%, rgba(201,168,76,0.05) 0%, transparent 50%),
+      linear-gradient(180deg, #0A0A0B 0%, #0D0D10 100%);
+  }
+
+  .hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(201,168,76,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(201,168,76,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 70%);
+  }
+
+  .hero-ticker {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    background: rgba(201,168,76,0.08);
+    border-bottom: 1px solid rgba(201,168,76,0.15);
+    padding: 8px 0;
+    overflow: hidden;
+  }
+
+  .ticker-inner {
+    display: flex;
+    gap: 48px;
+    white-space: nowrap;
+    animation: ticker 25s linear infinite;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .ticker-item.up { color: var(--green); }
+  .ticker-item.down { color: var(--red); }
+  .ticker-sep { color: var(--gold-dim); }
+
+  @keyframes ticker {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  .hero-badge {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(201,168,76,0.1);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 100px;
+    padding: 8px 20px;
+    font-size: 13px;
+    color: var(--gold-light);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    animation: fadeUp 0.8s ease both;
+  }
+
+  .hero-badge::before {
+    content: '';
+    width: 7px; height: 7px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(82,201,122,0.4); }
+    50% { opacity: 0.8; box-shadow: 0 0 0 5px rgba(82,201,122,0); }
+  }
+
+  .hero h1 {
+    position: relative;
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(36px, 7vw, 80px);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 28px;
+    animation: fadeUp 0.8s 0.15s ease both;
+  }
+
+  .hero h1 em {
+    font-style: italic;
+    color: var(--gold);
+    display: block;
+  }
+
+  .hero-sub {
+    position: relative;
+    font-size: clamp(16px, 2.5vw, 20px);
+    color: var(--text-muted);
+    max-width: 640px;
+    margin: 0 auto 44px;
+    font-weight: 300;
+    animation: fadeUp 0.8s 0.3s ease both;
+  }
+
+  .hero-sub strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .hero-cta {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%);
+    background-size: 200% 100%;
+    color: #000;
+    font-weight: 700;
+    font-size: 16px;
+    padding: 18px 40px;
+    border-radius: 4px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.03em;
+    animation: fadeUp 0.8s 0.45s ease both, shimmer 3s 2s infinite;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .hero-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(201,168,76,0.3);
+  }
+
+  @keyframes shimmer {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  .hero-arrow {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-dim);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    animation: fadeUp 1s 1s ease both;
+  }
+
+  .hero-arrow svg {
+    animation: bounce 2s infinite;
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(6px); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ===== STATS BAR ===== */
+  .stats-bar {
+    background: var(--dark-3);
+    border-top: 1px solid rgba(201,168,76,0.1);
+    border-bottom: 1px solid rgba(201,168,76,0.1);
+    padding: 28px 24px;
+  }
+
+  .stats-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 24px;
+  }
+
+  .stat-item {
+    text-align: center;
+  }
+
+  .stat-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--gold);
+    display: block;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 4px;
+  }
+
+  /* ===== SECTIONS ===== */
+  .section {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 80px 24px;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .section.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .section-divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(201,168,76,0.15), transparent);
+    margin: 0 auto;
+  }
+
+  /* ===== SEGMENT LABELS ===== */
+  .seg-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--gold-dim);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .seg-label::before {
+    content: '';
+    display: block;
+    width: 24px;
+    height: 1px;
+    background: var(--gold-dim);
+  }
+
+  /* ===== HEADINGS ===== */
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(28px, 5vw, 46px);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 24px;
+  }
+
+  h2 .gold { color: var(--gold); }
+  h2 em { font-style: italic; color: var(--gold-light); }
+
+  h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(20px, 3vw, 28px);
+    font-weight: 700;
+    margin-bottom: 14px;
+    color: var(--text);
+  }
+
+  p {
+    color: #C8C5BC;
+    margin-bottom: 18px;
+    font-weight: 300;
+  }
+
+  p strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  p em {
+    color: var(--gold-light);
+    font-style: italic;
+  }
+
+  /* ===== CALLOUT BOX ===== */
+  .callout {
+    background: var(--dark-3);
+    border-left: 3px solid var(--gold);
+    border-radius: 0 8px 8px 0;
+    padding: 24px 28px;
+    margin: 32px 0;
+    position: relative;
+  }
+
+  .callout-icon {
+    position: absolute;
+    top: -14px;
+    left: 20px;
+    background: var(--dark);
+    border: 1px solid var(--gold-dim);
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+  }
+
+  .callout p:last-child { margin-bottom: 0; }
+
+  /* ===== WARNING BOX ===== */
+  .warning-box {
+    background: rgba(224,82,82,0.06);
+    border: 1px solid rgba(224,82,82,0.2);
+    border-radius: 8px;
+    padding: 24px 28px;
+    margin: 32px 0;
+  }
+
+  .warning-box .warn-title {
+    color: var(--red);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .warning-box p { color: #C8C5BC; margin-bottom: 0; }
+
+  /* ===== SUCCESS BOX ===== */
+  .success-box {
+    background: rgba(82,201,122,0.06);
+    border: 1px solid rgba(82,201,122,0.2);
+    border-radius: 8px;
+    padding: 24px 28px;
+    margin: 32px 0;
+  }
+
+  .success-box .succ-title {
+    color: var(--green);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .success-box p { margin-bottom: 0; }
+
+  /* ===== INFO BOX ===== */
+  .info-box {
+    background: rgba(74,144,217,0.07);
+    border: 1px solid rgba(74,144,217,0.2);
+    border-radius: 8px;
+    padding: 24px 28px;
+    margin: 32px 0;
+  }
+
+  .info-box .info-title {
+    color: var(--accent-blue);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .info-box p { margin-bottom: 0; }
+
+  /* ===== COMPARISON TABLE ===== */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 32px 0;
+    font-size: 15px;
+  }
+
+  .compare-table thead th {
+    padding: 14px 18px;
+    text-align: left;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--dark-4);
+  }
+
+  .compare-table tbody tr {
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.2s;
+  }
+
+  .compare-table tbody tr:hover { background: rgba(201,168,76,0.04); }
+
+  .compare-table td {
+    padding: 14px 18px;
+    color: #C8C5BC;
+    vertical-align: top;
+  }
+
+  .compare-table td:first-child {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .compare-table .bad { color: var(--red); }
+  .compare-table .good { color: var(--green); }
+
+  /* ===== BULLET LIST ===== */
+  .custom-list {
+    list-style: none;
+    margin: 24px 0;
+  }
+
+  .custom-list li {
+    padding: 12px 0 12px 32px;
+    position: relative;
+    color: #C8C5BC;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-weight: 300;
+  }
+
+  .custom-list li:last-child { border-bottom: none; }
+
+  .custom-list li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--gold);
+    font-size: 14px;
+    top: 14px;
+  }
+
+  .custom-list li strong { color: var(--text); }
+
+  /* ===== NUMBERED STEPS ===== */
+  .steps {
+    margin: 32px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .step {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    background: var(--dark-3);
+    border-radius: 8px;
+    padding: 22px 24px;
+    border: 1px solid rgba(255,255,255,0.05);
+    transition: border-color 0.3s, transform 0.2s;
+  }
+
+  .step:hover {
+    border-color: rgba(201,168,76,0.2);
+    transform: translateX(4px);
+  }
+
+  .step-num {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    background: rgba(201,168,76,0.12);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  .step-content h4 {
+    color: var(--text);
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 16px;
+  }
+
+  .step-content p {
+    font-size: 15px;
+    margin-bottom: 0;
+    color: var(--text-muted);
+  }
+
+  /* ===== HIGHLIGHT QUOTE ===== */
+  .big-quote {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(20px, 3.5vw, 30px);
+    font-weight: 700;
+    font-style: italic;
+    color: var(--gold-light);
+    line-height: 1.4;
+    text-align: center;
+    padding: 40px 0;
+    border-top: 1px solid rgba(201,168,76,0.12);
+    border-bottom: 1px solid rgba(201,168,76,0.12);
+    margin: 40px 0;
+    position: relative;
+  }
+
+  .big-quote::before {
+    content: '"';
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 80px;
+    color: rgba(201,168,76,0.15);
+    font-family: 'Playfair Display', serif;
+    line-height: 1;
+  }
+
+  /* ===== CHART VISUAL ===== */
+  .chart-visual {
+    background: var(--dark-3);
+    border: 1px solid var(--dark-4);
+    border-radius: 8px;
+    padding: 28px;
+    margin: 32px 0;
+  }
+
+  .chart-title {
+    font-size: 13px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 20px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .bar-chart { display: flex; flex-direction: column; gap: 12px; }
+
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .bar-label {
+    width: 100px;
+    font-size: 13px;
+    color: var(--text-muted);
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 28px;
+    background: var(--dark-4);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    padding-left: 10px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+    width: 0%;
+  }
+
+  .bar-fill.gold { background: linear-gradient(90deg, var(--gold-dim), var(--gold)); color: #000; }
+  .bar-fill.red { background: linear-gradient(90deg, #8B1A1A, var(--red)); color: #fff; }
+  .bar-fill.green { background: linear-gradient(90deg, #1A5C2A, var(--green)); color: #000; }
+
+  /* ===== MM VISUAL ===== */
+  .mm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin: 28px 0;
+  }
+
+  .mm-card {
+    background: var(--dark-3);
+    border: 1px solid var(--dark-4);
+    border-radius: 8px;
+    padding: 22px;
+    transition: border-color 0.3s;
+  }
+
+  .mm-card:hover { border-color: rgba(201,168,76,0.25); }
+
+  .mm-card .mm-icon {
+    font-size: 28px;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .mm-card h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .mm-card p {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 0;
+  }
+
+  /* ===== FORMULA BOX ===== */
+  .formula {
+    background: var(--dark-4);
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 6px;
+    padding: 20px 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    color: var(--gold-light);
+    margin: 24px 0;
+    text-align: center;
+    letter-spacing: 0.04em;
+  }
+
+  .formula .formula-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  /* ===== EA SECTION ===== */
+  .ea-comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    margin: 32px 0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .ea-col {
+    background: var(--dark-3);
+    padding: 28px 24px;
+  }
+
+  .ea-col.bad .ea-col-title { color: var(--red); }
+  .ea-col.good .ea-col-title { color: var(--green); }
+
+  .ea-col-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .ea-col ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .ea-col ul li {
+    font-size: 14px;
+    color: var(--text-muted);
+    padding-left: 20px;
+    position: relative;
+    font-weight: 300;
+  }
+
+  .ea-col.bad ul li::before { content: '✗'; position: absolute; left: 0; color: var(--red); }
+  .ea-col.good ul li::before { content: '✓'; position: absolute; left: 0; color: var(--green); }
+
+  /* ===== FINAL CTA ===== */
+  .final-cta {
+    background: var(--dark-2);
+    border-top: 1px solid rgba(201,168,76,0.1);
+    text-align: center;
+    padding: 100px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .final-cta-bg {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 60% at 50% 100%, rgba(201,168,76,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .final-cta h2 {
+    position: relative;
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(30px, 5vw, 52px);
+    max-width: 700px;
+    margin: 0 auto 20px;
+  }
+
+  .final-cta p {
+    position: relative;
+    max-width: 560px;
+    margin: 0 auto 40px;
+    font-size: 18px;
+    color: var(--text-muted);
+  }
+
+  .cta-btn-group {
+    position: relative;
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    color: #000;
+    font-weight: 700;
+    font-size: 16px;
+    padding: 18px 40px;
+    border-radius: 4px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: inline-block;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 40px rgba(201,168,76,0.3);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--gold);
+    font-weight: 600;
+    font-size: 15px;
+    padding: 17px 32px;
+    border-radius: 4px;
+    text-decoration: none;
+    border: 1px solid rgba(201,168,76,0.3);
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.06);
+  }
+
+  /* ===== DISCLAIMER ===== */
+  .disclaimer {
+    background: var(--dark);
+    border-top: 1px solid var(--dark-4);
+    padding: 32px 24px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  /* ===== READING PROGRESS ===== */
+  .progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    z-index: 9999;
+    transition: width 0.1s;
+    box-shadow: 0 0 8px rgba(201,168,76,0.5);
+  }
+
+  /* ===== FLOATING NAV ===== */
+  .float-nav {
+    position: fixed;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 500;
+  }
+
+  .float-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--dark-4);
+    border: 1px solid var(--text-dim);
+    cursor: pointer;
+    transition: background 0.3s, transform 0.2s, border-color 0.3s;
+    title: '';
+  }
+
+  .float-dot.active {
+    background: var(--gold);
+    border-color: var(--gold);
+    transform: scale(1.3);
+  }
+
+  .float-dot:hover {
+    background: var(--gold-dim);
+    border-color: var(--gold-dim);
+    transform: scale(1.2);
+  }
+
+  /* ===== INLINE TAG ===== */
+  .tag {
+    display: inline-block;
+    background: rgba(201,168,76,0.1);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 3px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--gold-light);
+    vertical-align: middle;
+    margin: 0 2px;
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 600px) {
+    .float-nav { display: none; }
+    .ea-comparison { grid-template-columns: 1fr; }
+    .stats-inner { gap: 16px; }
+    .stat-num { font-size: 22px; }
+  }
+</style>
 </head>
 <body>
 
-<div class="container">
-    <header>
-        <h1>Roadmap Menuju Trader Profesional</h1>
-        <p>Mari berhenti menebak, mulailah membangun aset.</p>
-    </header>
+<!-- READING PROGRESS -->
+<div class="progress-bar" id="progressBar"></div>
 
-    <div class="segment">
-        <h2>1. Realita Keuangan: Mengapa Gaji Saja Tidak Cukup?</h2>
-        <p>Banyak orang merasa aman karena menabung. Faktanya, <span class="highlight">inflasi adalah pencuri diam-diam</span>. Tahun 2020, uang Rp50.000 bisa mengisi keranjang belanjaan dengan minyak, telur, dan bumbu. Di 2026? Mungkin hanya cukup untuk beli minyak saja. Jika uang Anda hanya didiamkan, nilainya terus menyusut. Saatnya uang yang bekerja untuk Anda.</p>
+<!-- FLOATING NAV DOTS -->
+<nav class="float-nav" id="floatNav">
+  <div class="float-dot active" data-section="0" onclick="scrollTo(0,0)" title="Atas"></div>
+  <div class="float-dot" data-section="1" onclick="scrollToSection(1)" title="Keresahan"></div>
+  <div class="float-dot" data-section="2" onclick="scrollToSection(2)" title="Kenapa Bisa?"></div>
+  <div class="float-dot" data-section="3" onclick="scrollToSection(3)" title="Apa itu Trading?"></div>
+  <div class="float-dot" data-section="4" onclick="scrollToSection(4)" title="Broker & Leverage"></div>
+  <div class="float-dot" data-section="5" onclick="scrollToSection(5)" title="Analisis Teknikal"></div>
+  <div class="float-dot" data-section="6" onclick="scrollToSection(6)" title="Money Management"></div>
+  <div class="float-dot" data-section="7" onclick="scrollToSection(7)" title="EA & Solusi"></div>
+</nav>
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-ticker">
+    <div class="ticker-inner">
+      <span class="ticker-item up">XAU/USD ▲ $2.341,50</span><span class="ticker-sep">|</span>
+      <span class="ticker-item down">BTC/USD ▼ $67.210</span><span class="ticker-sep">|</span>
+      <span class="ticker-item up">EUR/USD ▲ 1.0852</span><span class="ticker-sep">|</span>
+      <span class="ticker-item down">USD/IDR ▼ 16.245</span><span class="ticker-sep">|</span>
+      <span class="ticker-item up">OIL/USD ▲ $78.30</span><span class="ticker-sep">|</span>
+      <span class="ticker-item up">GBP/USD ▲ 1.2740</span><span class="ticker-sep">|</span>
+      <!-- repeat for seamless loop -->
+      <span class="ticker-item up">XAU/USD ▲ $2.341,50</span><span class="ticker-sep">|</span>
+      <span class="ticker-item down">BTC/USD ▼ $67.210</span><span class="ticker-sep">|</span>
+      <span class="ticker-item up">EUR/USD ▲ 1.0852</span><span class="ticker-sep">|</span>
+      <span class="ticker-item down">USD/IDR ▼ 16.245</span><span class="ticker-sep">|</span>
+      <span class="ticker-item up">OIL/USD ▲ $78.30</span><span class="ticker-sep">|</span>
+      <span class="ticker-item up">GBP/USD ▲ 1.2740</span><span class="ticker-sep">|</span>
     </div>
+  </div>
+  <div class="hero-badge">Falcon Trading Ecosystem</div>
+  <h1>
+    Gaji Habis Sebelum<br>
+    <em>Akhir Bulan?</em>
+  </h1>
+  <p class="hero-sub">
+    Kamu bukan sendiri. <strong>Jutaan orang Indonesia</strong> merasakannya setiap bulan.
+    Dan kabar baiknya — ada jalan keluarnya. Bukan tipu-tipu. <strong>Ini ilmu.</strong>
+  </p>
+  <a href="#start" class="hero-cta">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+    Baca Selengkapnya — Gratis
+  </a>
+  <div class="hero-arrow">
+    <span>Scroll ke bawah</span>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+  </div>
+</section>
 
-    <div class="segment">
-        <h2>2. Trading Bukan Judi</h2>
-        <p>Trading adalah aktivitas ekonomi global. Grafik yang Anda lihat bukan tebak-tebakan, melainkan <span class="highlight">jejak transaksi nyata</span>. Bank sentral, korporasi besar, dan investor sedang bertransaksi miliaran dolar berdasarkan data ekonomi. Kita hanya mengambil porsi kecil dari pergerakan tersebut.</p>
+<!-- ===== STATS ===== -->
+<div class="stats-bar">
+  <div class="stats-inner">
+    <div class="stat-item">
+      <span class="stat-num" data-target="78">0</span><span class="stat-num">%</span>
+      <div class="stat-label">Orang RI gaji habis sebelum tanggal 20</div>
     </div>
-
-    <div class="segment">
-        <h2>3. Memulai Langkah</h2>
-        <p>Untuk memulai, Anda butuh <b>Broker</b> (seperti makelar resmi) atau <b>Exchange</b> (untuk crypto). Jangan asal daftar, pilih yang memiliki regulasi jelas. Mereka adalah gerbang Anda untuk bisa masuk ke pasar global.</p>
+    <div class="stat-item">
+      <span class="stat-num" data-target="5">0</span><span class="stat-num">T</span>
+      <div class="stat-label">Nilai pasar forex global per hari (USD)</div>
     </div>
-
-    <div class="segment">
-        <h2>4. Instrumen & Mekanisme</h2>
-        <p>Ada Forex, Crypto, dan Saham. Pahami istilah <span class="highlight">Leverage</span> (daya ungkit) dan <span class="highlight">Lot</span> (ukuran volume). Ingat, leverage seperti pisau tajam; jika digunakan dengan bijak, ia akselerator profit, jika ceroboh, ia bisa menguras modal dengan cepat.</p>
+    <div class="stat-item">
+      <span class="stat-num" data-target="15">0</span><span class="stat-num">%+</span>
+      <div class="stat-label">Inflasi barang kebutuhan 5 tahun terakhir</div>
     </div>
-
-    <div class="segment">
-        <h2>5. Strategi & Analisis</h2>
-        <p>Manusia mudah panik saat harga turun atau serakah saat harga naik. Strategi (indikator teknikal) membantu Anda melihat pasar dengan <span class="highlight">objektif</span>. Inilah titik awal di mana Anda mulai membutuhkan bantuan sistem untuk tetap tenang.</p>
+    <div class="stat-item">
+      <span class="stat-num" data-target="24">0</span><span class="stat-num">jam</span>
+      <div class="stat-label">Pasar forex buka setiap hari kerja</div>
     </div>
-
-    <div class="segment">
-        <h2>6. Seni Bertahan Hidup (Money Management)</h2>
-        <p>Trader hebat bukan yang profit 1000% dalam sehari, tapi yang <span class="highlight">tidak bangkrut</span> dalam setahun. Kelola risiko dengan bijak, jangan pertaruhkan semua modal dalam satu posisi. Disiplin adalah segalanya.</p>
-    </div>
-
-    <div class="segment">
-        <h2>7. Peran Expert Advisor (EA)</h2>
-        <p>EA adalah asisten digital Anda. Ia tidak tidur, tidak panik, dan tidak serakah. Ia 100% menjalankan strategi dan money management sesuai aturan. <b>Catatan Penting:</b> EA bukan mesin cetak uang ajaib. Ia hanyalah alat bantu. Keberhasilannya bergantung pada disiplin Anda dalam memilih sistem yang tepat.</p>
-    </div>
-
-    <a href="index.html" class="btn-home">Saya Sudah Paham, Saya Siap Memilih Alat Trading Saya</a>
-    
-    <footer>
-        &copy; 2026 Falcon Trading Ecosystem. Trading dengan bijak, mulai dengan riset.
-    </footer>
+  </div>
 </div>
 
+<!-- ============================================================ -->
+<!-- SEGMEN 1: VALIDASI — KERESAHAN -->
+<!-- ============================================================ -->
+<div id="start"></div>
+<section class="section" id="sec1" data-nav="1">
+  <div class="seg-label">Segmen 01 — Validasi</div>
+  <h2>Jujur Saja — Hidup Terasa Makin <em>Berat</em>, Bukan?</h2>
+
+  <p>
+    Coba ingat lagi. Kamu kerja keras setiap hari — berangkat pagi, pulang malam, kadang lembur.
+    Tapi di akhir bulan, yang tersisa di rekening hanya... <strong>angka yang bikin sesak.</strong>
+  </p>
+
+  <p>
+    Belum lagi harga-harga naik terus. Bensin naik. Listrik naik. Bahan makanan naik. Sementara
+    gaji? Paling naik <em>5–10% per tahun</em> — yang faktanya tidak cukup untuk mengikuti inflasi
+    yang nyatanya sudah memakan daya beli kamu pelan-pelan.
+  </p>
+
+  <div class="callout">
+    <div class="callout-icon">FAKTA</div>
+    <p>
+      Menurut data Badan Pusat Statistik (BPS), <strong>inflasi kumulatif Indonesia dalam 5 tahun terakhir
+      sudah melampaui 20%.</strong> Artinya, uang Rp 1.000.000 yang kamu simpan di bawah kasur pada 2019,
+      kini hanya punya daya beli setara Rp 800.000-an. Uangmu berkurang nilainya — tanpa kamu menyentuhnya
+      sekalipun.
+    </p>
+  </div>
+
+  <p>
+    Dan mungkin kamu pernah mikir: <em>"Gimana caranya orang-orang itu bisa punya penghasilan tambahan?
+    Apa yang mereka tahu yang aku enggak tahu?"</em>
+  </p>
+
+  <p>
+    Jawabannya bukan karena mereka lebih beruntung. Bukan juga karena mereka punya modal gede dari awal.
+    <strong>Mereka tahu cara kerja uang.</strong> Dan salah satu cara yang paling terbuka untuk siapa pun
+    adalah apa yang akan kita bahas di sini: <strong>Trading finansial.</strong>
+  </p>
+
+  <div class="big-quote">
+    "Orang yang tidak belajar cara kerja uang, akan selamanya bekerja untuk orang yang sudah belajar."
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ============================================================ -->
+<!-- SEGMEN 2: KERESAHAN LANJUTAN — KENAPA BISA BEGINI? -->
+<!-- ============================================================ -->
+<section class="section" id="sec2" data-nav="2">
+  <div class="seg-label">Segmen 02 — Akar Masalah</div>
+  <h2>Kenapa Gaji Selalu <em>Tidak Pernah Cukup</em>?</h2>
+
+  <p>
+    Sebelum bicara solusi, penting banget kita pahami dulu kenapa masalah ini terjadi. Supaya kamu
+    enggak sekadar teriak "butuh penghasilan tambahan!" tapi benar-benar ngerti akar permasalahannya.
+  </p>
+
+  <h3>1. Kamu Cuma Punya Satu Sumber Penghasilan</h3>
+  <p>
+    Mayoritas orang mengandalkan <strong>satu sumber income</strong>: gaji dari pekerjaan. Ini masalah besar.
+    Karena kalau satu-satunya sumber itu hilang — misalnya kena PHK, sakit, atau perusahaan bangkrut —
+    kamu langsung tidak punya pegangan sama sekali.
+  </p>
+  <p>
+    Orang-orang kaya, rata-rata punya <strong>tujuh sumber penghasilan berbeda</strong>. Bukan karena
+    mereka rakus. Tapi karena mereka sadar bahwa ketergantungan pada satu sumber adalah risiko terbesar
+    dalam hidup finansial.
+  </p>
+
+  <div class="chart-visual" id="barChart">
+    <div class="chart-title">// Perbandingan Sumber Penghasilan</div>
+    <div class="bar-chart">
+      <div class="bar-row">
+        <span class="bar-label">Karyawan</span>
+        <div class="bar-track"><div class="bar-fill red" data-width="14" id="bar1">1 sumber</div></div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">Pengusaha</span>
+        <div class="bar-track"><div class="bar-fill gold" data-width="43" id="bar2">3 sumber</div></div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">Investor</span>
+        <div class="bar-track"><div class="bar-fill green" data-width="86" id="bar3">6-7 sumber</div></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>2. Inflasi Mencuri Nilai Uangmu Diam-diam</h3>
+  <p>
+    Ini yang paling sering tidak disadari. Setiap tahun, inflasi "memakan" nilai uangmu perlahan.
+    Kalau kamu menyimpan uang di tabungan biasa dengan bunga 1–2% per tahun, sementara inflasi
+    rata-rata 4–5% per tahun — <strong>artinya kamu rugi 2–3% setiap tahun</strong>, bahkan tanpa
+    melakukan apa-apa.
+  </p>
+
+  <div class="warning-box">
+    <div class="warn-title">⚠ Efek Inflasi yang Tidak Terasa</div>
+    <p>
+      Rp 10.000.000 yang disimpan di tabungan biasa selama 10 tahun, nilainya bisa setara
+      hanya Rp 6–7 juta dalam daya beli. Artinya kamu kehilangan Rp 3 juta lebih
+      tanpa kamu sadari — uangnya masih ada di rekening, tapi nilainya sudah berkurang drastis.
+    </p>
+  </div>
+
+  <h3>3. Sistem Pendidikan Tidak Mengajarkan Cara Kerja Uang</h3>
+  <p>
+    Kita dididik untuk <em>bekerja mencari uang</em>, bukan untuk <em>membuat uang bekerja</em>.
+    Di sekolah, tidak ada pelajaran tentang investasi, trading, atau manajemen keuangan personal.
+    Hasilnya, sebagian besar dari kita tumbuh dewasa tanpa kemampuan dasar untuk mengelola
+    dan mengembangkan keuangan sendiri.
+  </p>
+
+  <div class="success-box">
+    <div class="succ-title">✓ Kabar Baik</div>
+    <p>
+      Semua ini bisa dipelajari. Trading finansial adalah salah satu skill yang bisa dipelajari
+      oleh siapa pun dengan akses internet dan kemauan untuk belajar. Dan itulah yang akan
+      kita bahas mulai dari bagian berikutnya.
+    </p>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ============================================================ -->
+<!-- SEGMEN 3: EDUKASI — APA ITU TRADING? -->
+<!-- ============================================================ -->
+<section class="section" id="sec3" data-nav="3">
+  <div class="seg-label">Segmen 03 — Edukasi Dasar</div>
+  <h2>Apa Sebenarnya <em>Trading</em> Itu?</h2>
+
+  <p>
+    Banyak orang dengar kata "trading" langsung kepikiran dua hal: <em>kaya mendadak</em> atau
+    <em>tipu-tipu</em>. Padahal keduanya salah besar.
+  </p>
+
+  <p>
+    Trading, dalam pengertian sederhana, adalah kegiatan <strong>membeli dan menjual aset
+    finansial</strong> — seperti mata uang asing, emas, saham, atau komoditas — dengan tujuan
+    mendapatkan keuntungan dari <strong>selisih harga beli dan harga jual.</strong>
+  </p>
+
+  <div class="callout">
+    <div class="callout-icon">ANALOGI SEDERHANA</div>
+    <p>
+      Bayangkan kamu beli dolar AS seharga Rp 15.500. Keesokan harinya, harga dolar naik jadi
+      Rp 15.750. Kamu jual. Untung Rp 250 per dolar. Kalau kamu punya 1.000 dolar, itu
+      berarti kamu untung Rp 250.000 dalam satu hari — <strong>tanpa kerja fisik sama sekali.</strong>
+      Itulah konsep dasar trading mata uang (forex).
+    </p>
+  </div>
+
+  <h3>Apa Saja yang Bisa Di-trading-kan?</h3>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-content">
+        <h4>Forex (Foreign Exchange) — Mata Uang Asing</h4>
+        <p>Pasar terbesar di dunia. Kamu memperdagangkan pasangan mata uang seperti EUR/USD (Euro vs Dolar AS), GBP/USD, atau USD/IDR. Volume transaksi hariannya mencapai <strong>$7 triliun per hari</strong> — lebih besar dari gabungan semua bursa saham dunia.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-content">
+        <h4>Emas (Gold / XAU)</h4>
+        <p>Emas sudah menjadi aset penyimpan nilai sejak ribuan tahun lalu. Dalam trading modern, kamu bisa beli-jual emas secara digital tanpa harus memegang fisiknya. Emas sangat populer karena harganya relatif stabil dan cenderung naik saat ekonomi global tidak menentu.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-content">
+        <h4>Kripto (Cryptocurrency)</h4>
+        <p>Bitcoin, Ethereum, dan ribuan koin digital lainnya. Pasar kripto beroperasi 24 jam, 7 hari seminggu — bahkan hari libur. Volatilitasnya tinggi, artinya pergerakannya bisa besar dan cepat. Potensi untung besar, tapi risikonya juga nyata dan harus dikelola dengan serius.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">04</div>
+      <div class="step-content">
+        <h4>Saham & Indeks Saham</h4>
+        <p>Membeli "sebagian kecil kepemilikan" sebuah perusahaan. Atau bisa juga trading indeks seperti S&P 500 (kumpulan 500 perusahaan terbesar AS) tanpa harus beli satu per satu sahamnya. Lebih mudah dipahami karena mengikuti berita bisnis yang sudah kita dengar sehari-hari.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <div class="info-title">ℹ Penting Dipahami</div>
+    <p>
+      Trading adalah aktivitas yang <strong>legal, diatur, dan dilakukan oleh jutaan orang di seluruh dunia</strong>
+      — termasuk bank-bank besar, institusi keuangan, dan individu. Ini bukan judi, bukan arisan,
+      bukan money game. Ini adalah skill finansial yang dipelajari dan dikuasai secara bertahap.
+    </p>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ============================================================ -->
+<!-- SEGMEN 4: BROKER, LEVERAGE, CARA KERJA -->
+<!-- ============================================================ -->
+<section class="section" id="sec4" data-nav="4">
+  <div class="seg-label">Segmen 04 — Cara Kerja</div>
+  <h2>Broker & <em>Leverage</em> — Dua Hal yang Wajib Kamu Pahami</h2>
+
+  <p>
+    Sebelum kamu bisa mulai trading, ada dua konsep dasar yang wajib banget kamu pahami.
+    Banyak orang melewatkan bagian ini dan akhirnya kebingungan atau bahkan rugi karena tidak mengerti
+    cara kerja sistem yang mereka gunakan.
+  </p>
+
+  <h3>Broker: Jembatan Antara Kamu dan Pasar</h3>
+
+  <p>
+    Kamu tidak bisa langsung masuk ke pasar forex atau saham global sendirian. Kamu butuh
+    <strong>broker</strong> — perusahaan atau platform yang bertugas menjadi perantara antara
+    kamu (trader) dan pasar sesungguhnya.
+  </p>
+
+  <p>
+    Broker menyediakan platform trading (aplikasi atau software), akses ke berbagai instrumen
+    perdagangan, dan layanan eksekusi order. Mereka dapat komisi dari selisih harga jual-beli
+    yang disebut <span class="tag">SPREAD</span>.
+  </p>
+
+  <div class="callout">
+    <div class="callout-icon">CARA PILIH BROKER YANG AMAN</div>
+    <p>
+      Pastikan broker yang kamu pilih memiliki <strong>regulasi resmi</strong> dari otoritas keuangan
+      terpercaya. Untuk Indonesia, broker forex harus terdaftar di <strong>BAPPEBTI</strong>
+      (Badan Pengawas Perdagangan Berjangka Komoditi). Hindari broker yang tidak jelas regulasinya,
+      iming-iming profit tidak masuk akal, atau tidak bisa dicari informasinya secara transparan.
+    </p>
+  </div>
+
+  <h3>Leverage: Kekuatan dan Tanggung Jawab</h3>
+
+  <p>
+    Ini bagian yang paling sering disalahpahami — dan paling sering jadi biang kerok kerugian trader pemula.
+    <strong>Leverage</strong> adalah fasilitas dari broker yang memungkinkan kamu mengontrol modal
+    yang lebih besar dari uang yang kamu setorkan.
+  </p>
+
+  <div class="callout">
+    <div class="callout-icon">CONTOH NYATA LEVERAGE</div>
+    <p>
+      Kamu punya modal Rp 1.000.000. Broker memberikan leverage <span class="tag">1:100</span>.
+      Artinya, kamu bisa mengontrol posisi senilai <strong>Rp 100.000.000</strong> di pasar.
+      Keuntungan dihitung dari Rp 100 juta itu — bukan dari Rp 1 juta yang kamu setorkan.
+      Jadi keuntungan 1% dari posisi trading = Rp 1.000.000, atau sama dengan modal awalmu.
+    </p>
+  </div>
+
+  <div class="warning-box">
+    <div class="warn-title">⚠ Leverage adalah Pedang Bermata Dua</div>
+    <p>
+      Dengan leverage, keuntungan bisa berlipat ganda. Tapi <strong>kerugian juga bisa berlipat ganda.</strong>
+      Ini bukan menakut-nakuti. Ini fakta yang harus kamu terima dan kelola dengan baik.
+      Trader profesional tidak menggunakan leverage secara sembarangan — mereka menggunakannya
+      dengan perhitungan matang yang disebut Money Management (kita bahas di segmen berikutnya).
+    </p>
+  </div>
+
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>Situasi</th>
+        <th>Modal</th>
+        <th>Leverage</th>
+        <th>Kontrol Posisi</th>
+        <th>Pergerakan Harga +1%</th>
+        <th>Hasil</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Tanpa Leverage</td>
+        <td>Rp 10 juta</td>
+        <td>1:1</td>
+        <td>Rp 10 juta</td>
+        <td>+Rp 100.000</td>
+        <td class="good">+1%</td>
+      </tr>
+      <tr>
+        <td>Dengan Leverage</td>
+        <td>Rp 10 juta</td>
+        <td>1:100</td>
+        <td>Rp 1 miliar</td>
+        <td>+Rp 10.000.000</td>
+        <td class="good">+100% (tapi risiko sama besarnya)</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ============================================================ -->
+<!-- SEGMEN 5: ANALISIS TEKNIKAL -->
+<!-- ============================================================ -->
+<section class="section" id="sec5" data-nav="5">
+  <div class="seg-label">Segmen 05 — Ilmu Trading</div>
+  <h2>Analisis Teknikal: <em>Cara Membaca Arah Pasar</em></h2>
+
+  <p>
+    Sekarang pertanyaannya: <em>"Gimana caranya tahu kapan harus beli dan kapan harus jual?"</em>
+  </p>
+
+  <p>
+    Di sinilah ilmu sesungguhnya dimulai. Ada dua pendekatan utama dalam trading:
+    <strong>Analisis Fundamental</strong> (membaca kondisi ekonomi, berita, kebijakan bank sentral)
+    dan <strong>Analisis Teknikal</strong> (membaca grafik harga untuk memprediksi arah pergerakan
+    selanjutnya). Keduanya penting, tapi bagi pemula, analisis teknikal lebih mudah dipelajari
+    terlebih dahulu karena bersifat visual dan sistematis.
+  </p>
+
+  <h3>Apa itu Grafik (Chart) Harga?</h3>
+
+  <p>
+    Setiap pergerakan harga di pasar terekam dalam bentuk grafik. Ada tiga jenis grafik utama,
+    tapi yang paling populer digunakan trader profesional adalah <strong>Candlestick Chart</strong>
+    (grafik lilin).
+  </p>
+
+  <div class="callout">
+    <div class="callout-icon">CANDLESTICK — CARA MEMBACA</div>
+    <p>
+      Setiap "lilin" mewakili satu periode waktu (bisa 1 menit, 1 jam, 1 hari, dll). Sebuah
+      candlestick menunjukkan empat informasi sekaligus: <strong>harga pembukaan, harga tertinggi,
+      harga terendah, dan harga penutupan</strong> dalam periode tersebut. Warna lilin menunjukkan
+      apakah harga naik (biasanya hijau) atau turun (biasanya merah) dalam periode itu.
+    </p>
+  </div>
+
+  <h3>Tools Analisis yang Wajib Diketahui Pemula</h3>
+
+  <div class="mm-grid">
+    <div class="mm-card">
+      <span class="mm-icon">📈</span>
+      <h4>Support & Resistance</h4>
+      <p>Level harga di mana pasar cenderung berbalik arah. "Lantai" dan "langit-langit" harga yang bisa kita prediksi dari data historis.</p>
+    </div>
+    <div class="mm-card">
+      <span class="mm-icon">〰️</span>
+      <h4>Moving Average (MA)</h4>
+      <p>Rata-rata pergerakan harga dalam periode tertentu. Membantu menyaring "noise" dan menampilkan tren sesungguhnya dari sebuah aset.</p>
+    </div>
+    <div class="mm-card">
+      <span class="mm-icon">📊</span>
+      <h4>RSI (Relative Strength Index)</h4>
+      <p>Indikator yang menunjukkan apakah suatu aset sudah "terlalu mahal" (overbought) atau "terlalu murah" (oversold) — sinyal potensial pembalikan harga.</p>
+    </div>
+    <div class="mm-card">
+      <span class="mm-icon">🕯️</span>
+      <h4>Pola Candlestick</h4>
+      <p>Formasi-formasi tertentu dari beberapa lilin berturut-turut yang secara historis mengindikasikan kemungkinan arah harga selanjutnya (contoh: Doji, Hammer, Engulfing).</p>
+    </div>
+    <div class="mm-card">
+      <span class="mm-icon">📐</span>
+      <h4>Fibonacci Retracement</h4>
+      <p>Alat yang digunakan untuk mengidentifikasi level-level harga penting berdasarkan deret angka Fibonacci — sangat populer untuk menentukan titik entry dan exit.</p>
+    </div>
+    <div class="mm-card">
+      <span class="mm-icon">📉</span>
+      <h4>Tren & Trendline</h4>
+      <p>Identifikasi arah besar pergerakan pasar: uptrend (naik), downtrend (turun), atau sideways (datar). Prinsip dasar: "The trend is your friend."</p>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <div class="info-title">ℹ Ingat Selalu</div>
+    <p>
+      Tidak ada analisis yang 100% akurat. Analisis teknikal adalah tentang <strong>probabilitas</strong>,
+      bukan kepastian. Tujuannya adalah menemukan momen di mana peluang untung lebih besar dari
+      peluang rugi — bukan mencari trade yang "pasti menang". Tidak ada trade yang pasti.
+    </p>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ============================================================ -->
+<!-- SEGMEN 6: MONEY MANAGEMENT -->
+<!-- ============================================================ -->
+<section class="section" id="sec6" data-nav="6">
+  <div class="seg-label">Segmen 06 — Kunci Bertahan</div>
+  <h2>Money Management: <em>Inilah yang Membedakan Trader Profesional dan Pemula</em></h2>
+
+  <p>
+    Kalau analisis teknikal adalah tentang cara membaca pasar — <strong>Money Management adalah tentang
+    cara tetap hidup di pasar.</strong>
+  </p>
+
+  <p>
+    Ini bukan lebay. Ini serius. Banyak trader yang analisisnya bagus, tapi tetap bangkrut —
+    karena mereka tidak punya aturan yang jelas soal berapa besar risiko yang boleh diambil
+    dalam setiap transaksi. Dan sebaliknya, ada trader yang win rate-nya (persentase menang) hanya
+    40%, tapi tetap profitabel setiap bulan — karena money management mereka solid.
+  </p>
+
+  <div class="big-quote">
+    "Bukan tentang seberapa sering kamu menang. Tapi tentang seberapa kecil kamu rugi saat kalah, dan seberapa besar kamu untung saat menang."
+  </div>
+
+  <h3>Konsep Dasar Money Management</h3>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-content">
+        <h4>Risk Per Trade — Risiko per Transaksi</h4>
+        <p>Aturan umum: jangan pernah menaruhkan lebih dari <strong>1–2% dari total modal</strong> dalam satu transaksi. Kalau modal kamu Rp 10 juta, maksimal risiko per trade adalah Rp 100.000–200.000. Dengan aturan ini, bahkan kalau kamu salah 10 kali berturut-turut, kamu masih punya modal yang cukup untuk bangkit.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-content">
+        <h4>Stop Loss — Batas Kerugian Maksimal</h4>
+        <p>Setiap kali masuk posisi, kamu harus sudah menentukan di level harga berapa kamu akan "angkat kaki" jika harga bergerak berlawanan arah. Ini namanya <strong>Stop Loss</strong>. Tanpa stop loss, satu trade yang salah bisa menghabiskan seluruh modal. Stop loss adalah sabuk pengaman kamu.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-content">
+        <h4>Take Profit — Target Keuntungan</h4>
+        <p>Di sisi lain, kamu juga harus tentukan di level berapa kamu akan ambil keuntungan — <strong>Take Profit</strong>. Jangan tamak, jangan tunggu sampai "naik terus". Ambil profit sesuai rencana awal.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">04</div>
+      <div class="step-content">
+        <h4>Risk-Reward Ratio — Perbandingan Risiko vs Untung</h4>
+        <p>Ini kuncinya. Usahakan setiap trade punya risk-reward ratio minimal <strong>1:2</strong> — artinya, kalau kamu rela rugi Rp 100.000, targetkan untung minimal Rp 200.000. Dengan rasio ini, bahkan kalau dari 10 trade hanya 4 yang menang — kamu masih profit!</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="formula">
+    <div class="formula-label">// Simulasi Profitabilitas dengan Risk-Reward 1:2</div>
+    6 trade rugi × Rp 100.000 = &minus;Rp 600.000<br>
+    4 trade menang × Rp 200.000 = +Rp 800.000<br>
+    ─────────────────────────────────────<br>
+    <strong>NET PROFIT = +Rp 200.000</strong> 🟢
+  </div>
+
+  <p>
+    Lihat? Win rate 40% — lebih banyak kalah daripada menang — tapi tetap profit.
+    <em>Itulah kekuatan money management yang baik.</em>
+  </p>
+
+  <div class="warning-box">
+    <div class="warn-title">⚠ Kesalahan Terbesar Trader Pemula</div>
+    <p>
+      Tidak pasang stop loss. Berharap harga akan "balik" sendiri saat sedang rugi.
+      Menambah posisi (averaging down) tanpa perhitungan. Tiga hal ini adalah kombinasi
+      yang paling sering menghabiskan modal trader pemula — bahkan dalam satu hari trading.
+    </p>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ============================================================ -->
+<!-- SEGMEN 7: EA & FALCON ECOSYSTEM -->
+<!-- ============================================================ -->
+<section class="section" id="sec7" data-nav="7">
+  <div class="seg-label">Segmen 07 — Solusi</div>
+  <h2>Expert Advisor (EA): <em>Teknologi yang Bekerja saat Kamu Tidur</em></h2>
+
+  <p>
+    Setelah memahami semua dasar di atas, sekarang saatnya kita bicara tentang sebuah alat yang
+    mengubah cara orang modern melakukan trading — <strong>Expert Advisor (EA).</strong>
+  </p>
+
+  <p>
+    EA adalah <strong>program komputer (robot trading)</strong> yang berjalan di dalam platform
+    trading seperti MetaTrader 4 atau 5. EA dirancang untuk mengeksekusi strategi trading secara
+    otomatis — 24 jam, tanpa henti, tanpa emosi, tanpa lelah — berdasarkan parameter yang
+    sudah diprogramkan di dalamnya.
+  </p>
+
+  <div class="callout">
+    <div class="callout-icon">CARA KERJA EA</div>
+    <p>
+      Kamu pasang EA di platform trading. Kamu atur parameter seperti berapa lot yang digunakan,
+      kapan masuk pasar, kapan keluar, berapa stop loss dan take profit. Setelah itu,
+      <strong>EA bekerja otomatis</strong> — memantau pasar, mencari peluang, dan mengeksekusi
+      transaksi sesuai strategi yang diprogramkan. Kamu tidak perlu duduk di depan layar seharian.
+    </p>
+  </div>
+
+  <h3>EA Bukan Solusi Instan — Ini Alat Bantu yang Butuh Pemahaman</h3>
+
+  <div class="ea-comparison">
+    <div class="ea-col bad">
+      <div class="ea-col-title">✗ Ekspektasi yang Salah</div>
+      <ul>
+        <li>Pasang EA → langsung kaya dalam seminggu</li>
+        <li>EA bisa profit 100% per bulan tanpa risiko</li>
+        <li>EA tidak perlu dipantau sama sekali</li>
+        <li>Semua EA di internet itu bagus dan aman</li>
+        <li>Tidak perlu belajar trading, cukup pakai EA</li>
+        <li>Modal kecil + leverage besar = cepat kaya</li>
+      </ul>
+    </div>
+    <div class="ea-col good">
+      <div class="ea-col-title">✓ Realita Trader yang Serius</div>
+      <ul>
+        <li>EA adalah alat bantu, bukan mesin uang ajaib</li>
+        <li>EA perlu dikombinasikan dengan pemahaman dasar trading</li>
+        <li>EA tetap perlu dipantau dan disesuaikan kondisi pasar</li>
+        <li>EA yang baik memiliki track record transparan dan terverifikasi</li>
+        <li>Memahami cara kerja EA membuatmu bisa menggunakannya optimal</li>
+        <li>Money management tetap berlaku, bahkan untuk EA</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Falcon Trading Ecosystem: Lebih dari Sekadar EA</h3>
+
+  <p>
+    <strong>Falcon Trading Ecosystem</strong> bukan sekadar menjual EA dan membiarkanmu sendirian.
+    Kami membangun ekosistem lengkap yang membekali trader — dari level pemula hingga menengah —
+    dengan semua yang dibutuhkan untuk bisa konsisten di pasar.
+  </p>
+
+  <div class="mm-grid">
+    <div class="mm-card">
+      <span class="mm-icon">🤖</span>
+      <h4>EA Terverifikasi</h4>
+      <p>Expert Advisor dengan track record nyata, backtest transparan, dan strategi yang sudah teruji di berbagai kondisi pasar.</p>
+    </div>
+    <div class="mm-card">
+      <span class="mm-icon">📚</span>
+      <h4>Edukasi Lengkap</h4>
+      <p>Materi dari dasar sampai advanced, dikemas dengan bahasa yang mudah dipahami. Tidak ada yang tertinggal.</p>
+    </div>
+    <div class="mm-card">
+      <span class="mm-icon">👥</span>
+      <h4>Komunitas Aktif</h4>
+      <p>Bergabung dengan komunitas trader yang saling mendukung, berbagi sinyal, analisis, dan pengalaman nyata.</p>
+    </div>
+    <div class="mm-card">
+      <span class="mm-icon">🛡️</span>
+      <h4>Panduan Setup & Support</h4>
+      <p>Bantuan setup EA dari awal, monitoring berkala, dan support yang responsif. Kamu tidak akan pernah merasa sendirian.</p>
+    </div>
+  </div>
+
+  <div class="success-box">
+    <div class="succ-title">✓ Siapa yang Cocok?</div>
+    <p>
+      Kamu yang <strong>serius ingin membangun income tambahan yang konsisten</strong>,
+      bersedia meluangkan waktu untuk belajar dasar-dasarnya, dan tidak mengharapkan
+      kekayaan instan dalam semalam. Kalau itu kamu — Falcon Trading Ecosystem dirancang tepat untukmu.
+    </p>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ============================================================ -->
+<!-- FINAL CTA -->
+<!-- ============================================================ -->
+<section class="final-cta">
+  <div class="final-cta-bg"></div>
+  <div class="seg-label" style="justify-content:center; position:relative;">Langkah Selanjutnya</div>
+  <h2>
+    Kamu Sudah Tahu Lebih Banyak dari <em>95% Orang</em> di Sekitarmu.
+  </h2>
+  <p>
+    Sekarang pertanyaannya bukan lagi <em>"Apakah trading itu nyata?"</em> — kamu sudah tahu jawabannya.
+    Pertanyaannya sekarang adalah: <strong>kapan kamu mulai?</strong>
+  </p>
+  <div class="cta-btn-group">
+    <a href="#" class="btn-primary">Bergabung dengan Falcon Ecosystem →</a>
+    <a href="#" class="btn-secondary">Pelajari Lebih Lanjut</a>
+  </div>
+  <p style="margin-top: 32px; font-size: 14px; color: var(--text-dim); position:relative;">
+    Tidak ada biaya untuk belajar. Tidak ada tekanan. Hanya edukasi yang jujur.
+  </p>
+</section>
+
+<!-- DISCLAIMER -->
+<div class="disclaimer">
+  <p>
+    <strong>Disclaimer:</strong> Trading instrumen keuangan mengandung risiko kerugian yang signifikan dan tidak cocok untuk semua orang.
+    Konten di halaman ini bersifat edukatif dan tidak merupakan saran investasi atau keuangan.
+    Selalu lakukan riset mandiri (DYOR) dan pertimbangkan kemampuan finansialmu sebelum mengambil keputusan trading.
+    Kinerja masa lalu tidak menjamin hasil di masa depan.
+  </p>
+  <p style="margin-top: 12px;">© 2025 Falcon Trading Ecosystem. Semua hak dilindungi.</p>
+</div>
+
+<script>
+  // ===== READING PROGRESS =====
+  window.addEventListener('scroll', () => {
+    const doc = document.documentElement;
+    const scrollTop = window.scrollY || doc.scrollTop;
+    const scrollHeight = doc.scrollHeight - doc.clientHeight;
+    const progress = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+    document.getElementById('progressBar').style.width = progress + '%';
+  });
+
+  // ===== SCROLL REVEAL =====
+  const sections = document.querySelectorAll('.section');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        animateBarsInSection(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  sections.forEach(s => observer.observe(s));
+
+  // ===== ACTIVE NAV DOTS =====
+  const navSections = Array.from(document.querySelectorAll('[data-nav]'));
+  const dots = document.querySelectorAll('.float-dot');
+
+  const navObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const idx = entry.target.getAttribute('data-nav');
+        dots.forEach(d => d.classList.remove('active'));
+        const dot = document.querySelector(`.float-dot[data-section="${idx}"]`);
+        if (dot) dot.classList.add('active');
+      }
+    });
+  }, { threshold: 0.5 });
+
+  navSections.forEach(s => navObserver.observe(s));
+
+  function scrollToSection(idx) {
+    const el = document.querySelector(`[data-nav="${idx}"]`);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // ===== ANIMATE BAR CHART =====
+  let barsAnimated = false;
+  function animateBarsInSection(section) {
+    if (barsAnimated) return;
+    const chart = document.getElementById('barChart');
+    if (section.contains(chart) || section.id === 'sec2') {
+      barsAnimated = true;
+      setTimeout(() => {
+        document.querySelectorAll('.bar-fill').forEach(bar => {
+          bar.style.width = bar.getAttribute('data-width') + '%';
+        });
+      }, 300);
+    }
+  }
+
+  // ===== COUNTER ANIMATION =====
+  const counters = document.querySelectorAll('[data-target]');
+  const counterObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const el = entry.target;
+        const target = parseInt(el.getAttribute('data-target'));
+        let current = 0;
+        const increment = target / 40;
+        const timer = setInterval(() => {
+          current += increment;
+          if (current >= target) {
+            el.textContent = target;
+            clearInterval(timer);
+          } else {
+            el.textContent = Math.floor(current);
+          }
+        }, 40);
+        counterObserver.unobserve(el);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  counters.forEach(c => counterObserver.observe(c));
+</script>
 </body>
 </html>
