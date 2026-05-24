@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuralForge | Falcon Intelligence Division</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&family=Space+Mono&display=swap');
+
+        :root {
+            --bg-deep: #050609;
+            --card-dark: rgba(13, 16, 23, 0.9);
+            --gold-accent: #d4af37;
+            --neural-blue: #00d2ff;
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            height: 100%;
+        }
+
+        /* ----- VISUAL HOOK: BACKGROUND MATRIX ----- */
+        .background-matrix {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: 
+                linear-gradient(rgba(0, 0, 0, 0.93), rgba(5, 6, 9, 0.98)),
+                url('https://i.imgur.com/8QG3t7f.png'); /* Neural network nodes pattern */
+            background-size: cover;
+            background-position: center;
+            opacity: 0.15; /* Elegan, tidak mengganggu */
+            z-index: -2;
+            animation: pulseBg 10s infinite ease-in-out;
+        }
+
+        /* Efek partikel bergerak pelan di kejauhan */
+        .background-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('https://i.imgur.com/uR79h39.png'); /* Slow moving particles */
+            opacity: 0.03;
+            z-index: -1;
+            animation: drift 60s linear infinite;
+        }
+
+        @keyframes pulseBg {
+            0%, 100% { transform: scale(1); opacity: 0.15; }
+            50% { transform: scale(1.02); opacity: 0.18; }
+        }
+
+        @keyframes drift {
+            from { background-position: 0 0; }
+            to { background-position: 1000px 1000px; }
+        }
+
+        .main-wrapper {
+            max-width: 900px;
+            margin: 80px auto;
+            padding: 60px;
+            background: var(--card-dark);
+            border: 1px solid rgba(212, 175, 55, 0.15);
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        /* ----- PERSONAL BRANDING: LOGO ----- */
+        .logo-wrapper {
+            text-align: center;
+            margin-bottom: 50px;
+            position: relative;
+        }
+
+        .logo-wrapper::after {
+            content: "";
+            position: absolute;
+            bottom: -20px; left: 50%;
+            transform: translateX(-50%);
+            width: 100px; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold-accent), transparent);
+        }
+
+        .logo-wrapper img {
+            width: 130px;
+            border-radius: 50%;
+            border: 2px solid var(--gold-accent);
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+            transition: 0.4s;
+        }
+        
+        .logo-wrapper img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 40px rgba(212, 175, 55, 0.5);
+        }
+
+        /* ----- HEADERS & TEXT ----- */
+        h1 {
+            color: #fff;
+            font-size: 3rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            margin: 0;
+            text-align: center;
+            background: linear-gradient(180deg, #fff 0%, #a1a1a1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .sub-header {
+            font-family: 'Space Mono', monospace;
+            color: var(--neural-blue);
+            text-align: center;
+            font-size: 0.9rem;
+            letter-spacing: 3px;
+            margin-top: 10px;
+            text-transform: uppercase;
+        }
+
+        /* ----- STORY HOOK SECTION ----- */
+        .story-hook {
+            margin: 60px 0;
+            padding: 40px;
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            background: rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .story-hook::before {
+            content: "“";
+            position: absolute;
+            top: -20px; left: 30px;
+            font-size: 8rem;
+            color: rgba(212, 175, 55, 0.1);
+            font-family: serif;
+        }
+
+        .story-hook h2 {
+            font-size: 1.6rem;
+            color: #fff;
+            font-weight: 700;
+            margin-top: 0;
+            letter-spacing: 1px;
+        }
+
+        .story-hook p {
+            font-size: 1.1rem;
+            line-height: 1.9;
+            color: var(--text-main);
+            font-weight: 300;
+        }
+        
+        .story-hook strong {
+            font-weight: 700;
+            color: #fff;
+        }
+
+        /* ----- INFRASTRUCTURE SECTIONS ----- */
+        .section-title {
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 50px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .section-title::after {
+            content: ""; flex: 1; height: 1px;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .card {
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            transition: 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(212, 175, 55, 0.2);
+        }
+
+        .card h3 {
+            color: var(--gold-accent);
+            margin-top: 0;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        
+        .card p {
+            margin-bottom: 0;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: var(--text-muted);
+        }
+
+        /* ----- INTERFACE AREA ----- */
+        .interface-area {
+            text-align: center;
+            margin-top: 70px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding-top: 50px;
+        }
+        
+        .interface-area p {
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 30px auto;
+        }
+
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 16px 45px;
+            font-weight: 700;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: 0.3s;
+        }
+
+        .btn-dash {
+            background: var(--gold-accent);
+            color: #000;
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2);
+        }
+        
+        .btn-dash:hover {
+            background: #fff;
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-back {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .btn-back:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        footer {
+            margin-top: 80px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #444;
+            letter-spacing: 1px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        /* ----- RESPONSIF ----- */
+        @media (max-width: 768px) {
+            .main-wrapper { padding: 30px; margin: 40px 15px; }
+            h1 { font-size: 2.2rem; }
+            .grid { grid-template-columns: 1fr; }
+            .story-hook { padding: 25px; }
+            .btn-group { flex-direction: column; gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="background-matrix"></div>
+    <div class="background-overlay"></div>
+
+    <div class="main-wrapper">
+        
+        <div class="logo-wrapper">
+            <img src="neuralforge-placeholder.jpg" alt="NeuralForge Logic Core">
+        </div>
+
+        <h1>NEURALFORGE</h1>
+        <p class="sub-header">BEYOND SIMULATION | THE APEX OPTIMIZER</p>
+
+        <div class="story-hook">
+            <h2>Kebenaran Brutal: Mengapa 95% Robot Trading Menghancurkan Modal Anda?</h2>
+            <p>
+                Bayangkan Anda membeli peta harta karun yang indah. Penjualnya bersumpah peta itu akurat. Anda mengikuti setiap jalannya, penuh harap. Tapi saat Anda sampai di lokasi, **tidak ada emas**. Yang ada hanyalah tebing curam, dan Anda baru saja melompat.
+            </p>
+            <p>
+                Itulah realitas Expert Advisor (EA) ritel saat ini. Mereka menjual "Mimpi di Atas Kertas" (hasil *backtest* broker yang dipalsukan). Mereka menjanjikan profit konsisten tanpa memberi tahu Anda bahwa sistem mereka **buta terhadap realitas pasar**—buta terhadap *spread* yang mencekik, buta terhadap *spike* yang menghancurkan, dan buta terhadap likuiditas yang mengering di jam-jam kritis.
+            </p>
+            <p>
+                <strong>NeuralForge bukan untuk Anda yang mencari mimpi instan.</strong> Kami membangun sistem ini selama berbulan-bulan dengan rasa capek, frustrasi, dan obsesi murni terhadap data untuk satu tujuan: **Menyingkirkan bias manusia dan broker.** Kami membedah DNA pasar secara forensik untuk menciptakan kerangka kerja (framework) yang tidak sekadar beroperasi, tetapi **bertahan**.
+            </p>
+        </div>
+
+        <h2 class="section-title">THE ENGINEERING PHILOSOPHY</h2>
+        <div class="grid">
+            <div class="card">
+                <h3>Forensic Data Auditing</h3>
+                <p>Kami tidak bekerja dengan asumsi. Sistem ini dibangun di atas fondasi data yang diaudit dengan ketat untuk menyingkirkan bias. Jika pasar meninggalkan jejak, kami yang akan membacanya.</p>
+            </div>
+            <div class="card">
+                <h3>Microstructure Adaptation</h3>
+                <p>Pasar finansial bergerak dalam ritme yang tak terbaca oleh indikator standar. Kami membedah dinamika likuiditas dan anomali *spread* untuk memastikan posisi kita berada pada probabilitas kelangsungan modal tertinggi.</p>
+            </div>
+        </div>
+
+        <p style="margin-top: 40px; font-size: 1.05rem; line-height: 1.8; color: #d1d5db; border-left: 3px solid #d1d5db; padding-left: 20px;">
+            Halaman ini adalah pintu gerbang menuju hasil rekayasa probabilitas murni. Di balik tombol di bawah ini, tidak ada lagi spekulasi, tidak ada lagi harapan palsu. Hanya ada **Data yang Diverifikasi**.
+        </p>
+
+        <div class="interface-area">
+            <p>Siap melihat arsitektur presisi Falcon Intelligence dalam aksi nyata?</p>
+            <div class="btn-group">
+                <a href="index.html" class="btn btn-back">Return to HQ</a>
+                <a href="dashboard.html" class="btn btn-dash">ENTER THE ENGINE</a>
+            </div>
+        </div>
+
+        <footer>
+            "DATA IS THE ONLY CURRENCY THAT MATTERS."<br>
+            &copy; 2026 FALCON ECOSYSTEM | INTELLIGENCE DIVISION
+        </footer>
+    </div>
+
+</body>
+</html>
