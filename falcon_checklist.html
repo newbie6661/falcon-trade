@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FALCON QT — Pipeline Checklist</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --bg2: #111418;
+    --bg3: #181c22;
+    --border: #1e2530;
+    --border2: #2a3340;
+    --text: #d0d8e4;
+    --text2: #6b7d92;
+    --text3: #3d4f62;
+    --accent: #3b82f6;
+    --green: #22c55e;
+    --green-bg: #052010;
+    --green-border: #0f4020;
+    --amber: #f59e0b;
+    --amber-bg: #1a1200;
+    --amber-border: #3a2800;
+    --red: #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    padding: 0 0 60px;
+  }
+  header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text2);
+    letter-spacing: 0.15em;
+  }
+  .logo span { color: var(--accent); }
+  .stats {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+  }
+  .stats b { color: var(--green); }
+  .progress-track {
+    height: 3px;
+    background: var(--bg3);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.4s cubic-bezier(.4,0,.2,1);
+  }
+  .section { padding: 0 16px; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 0 8px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .section-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    color: var(--text3);
+    text-transform: uppercase;
+    flex: 1;
+  }
+  .section-count { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text3); }
+  .section-count.complete { color: var(--green); }
+  .chevron { width: 14px; height: 14px; color: var(--text3); transition: transform 0.2s; flex-shrink: 0; }
+  .chevron.open { transform: rotate(90deg); }
+  .item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    margin-bottom: 3px;
+    border: 1px solid transparent;
+    transition: background 0.1s, border-color 0.1s;
+  }
+  .item.done    { background: var(--green-bg);  border-color: var(--green-border); }
+  .item.running { background: var(--amber-bg);  border-color: var(--amber-border); }
+  .item-label {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.4;
+  }
+  .item.done .item-label    { color: var(--text2); text-decoration: line-through; text-decoration-color: var(--text3); }
+  .item.running .item-label { color: var(--amber); }
+  .btn-group { display: flex; gap: 4px; flex-shrink: 0; }
+  .btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 4px 9px;
+    border-radius: 4px;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    color: var(--text2);
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: all 0.12s;
+    -webkit-tap-highlight-color: transparent;
+    white-space: nowrap;
+  }
+  .btn:active { opacity: 0.7; transform: scale(0.96); }
+  .btn.run-btn.active  { background: var(--amber-bg); border-color: var(--amber); color: var(--amber); }
+  .btn.done-btn.active { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+  .divider { height: 1px; background: var(--border); margin: 4px 0 0; }
+  .reset-btn {
+    display: block;
+    margin: 24px 16px 0;
+    padding: 10px;
+    background: transparent;
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: var(--text2);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    text-align: center;
+    letter-spacing: 0.05em;
+    width: calc(100% - 32px);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .reset-btn:active { border-color: var(--red); color: var(--red); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="logo"><span>FALCON</span> QT · PIPELINE</div>
+    <div class="stats"><b id="done-count">0</b>/<span id="total-count">0</span> selesai</div>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+  </div>
+</header>
+
+<div id="app"></div>
+<button class="reset-btn" onclick="resetAll()">reset semua</button>
+
+<script>
+const SECTIONS = [
+  {
+    id: 's1', title: 'OHLC Generation',
+    items: [
+      { id:'ohlc_exness_m1',  label:'OHLC M1 — Exness'  },
+      { id:'ohlc_hfm_m1',     label:'OHLC M1 — HFM'     },
+      { id:'ohlc_exness_m3',  label:'OHLC M3 — Exness'  },
+      { id:'ohlc_hfm_m3',     label:'OHLC M3 — HFM'     },
+      { id:'ohlc_exness_m5',  label:'OHLC M5 — Exness'  },
+      { id:'ohlc_hfm_m5',     label:'OHLC M5 — HFM'     },
+      { id:'ohlc_exness_m15', label:'OHLC M15 — Exness' },
+      { id:'ohlc_hfm_m15',    label:'OHLC M15 — HFM'    },
+      { id:'ohlc_exness_m30', label:'OHLC M30 — Exness' },
+      { id:'ohlc_hfm_m30',    label:'OHLC M30 — HFM'    },
+      { id:'ohlc_exness_h1',  label:'OHLC H1 — Exness'  },
+      { id:'ohlc_hfm_h1',     label:'OHLC H1 — HFM'     },
+      { id:'ohlc_exness_h4',  label:'OHLC H4 — Exness'  },
+      { id:'ohlc_hfm_h4',     label:'OHLC H4 — HFM'     },
+      { id:'ohlc_exness_d1',  label:'OHLC D1 — Exness'  },
+      { id:'ohlc_hfm_d1',     label:'OHLC D1 — HFM'     },
+    ]
+  },
+  {
+    id: 's2', title: 'Swing Validation',
+    items: [
+      { id:'sv_exness_m1',  label:'Validasi swing — Exness M1'  },
+      { id:'sv_hfm_m1',     label:'Validasi swing — HFM M1'     },
+      { id:'sv_exness_m3',  label:'Validasi swing — Exness M3'  },
+      { id:'sv_hfm_m3',     label:'Validasi swing — HFM M3'     },
+      { id:'sv_exness_m5',  label:'Validasi swing — Exness M5'  },
+      { id:'sv_hfm_m5',     label:'Validasi swing — HFM M5'     },
+      { id:'sv_exness_m15', label:'Validasi swing — Exness M15' },
+      { id:'sv_hfm_m15',    label:'Validasi swing — HFM M15'    },
+      { id:'sv_exness_m30', label:'Validasi swing — Exness M30' },
+      { id:'sv_hfm_m30',    label:'Validasi swing — HFM M30'    },
+      { id:'sv_exness_h1',  label:'Validasi swing — Exness H1'  },
+      { id:'sv_hfm_h1',     label:'Validasi swing — HFM H1'     },
+      { id:'sv_exness_h4',  label:'Validasi swing — Exness H4'  },
+      { id:'sv_hfm_h4',     label:'Validasi swing — HFM H4'     },
+      { id:'sv_exness_d1',  label:'Validasi swing — Exness D1'  },
+      { id:'sv_hfm_d1',     label:'Validasi swing — HFM D1'     },
+    ]
+  },
+  {
+    id: 's3', title: 'Swing ke Database',
+    items: [
+      { id:'db_exness_m1',  label:'Swing DB — Exness M1'  },
+      { id:'db_hfm_m1',     label:'Swing DB — HFM M1'     },
+      { id:'db_exness_m3',  label:'Swing DB — Exness M3'  },
+      { id:'db_hfm_m3',     label:'Swing DB — HFM M3'     },
+      { id:'db_exness_m5',  label:'Swing DB — Exness M5'  },
+      { id:'db_hfm_m5',     label:'Swing DB — HFM M5'     },
+      { id:'db_exness_m15', label:'Swing DB — Exness M15' },
+      { id:'db_hfm_m15',    label:'Swing DB — HFM M15'    },
+      { id:'db_exness_m30', label:'Swing DB — Exness M30' },
+      { id:'db_hfm_m30',    label:'Swing DB — HFM M30'    },
+      { id:'db_exness_h1',  label:'Swing DB — Exness H1'  },
+      { id:'db_hfm_h1',     label:'Swing DB — HFM H1'     },
+      { id:'db_exness_h4',  label:'Swing DB — Exness H4'  },
+      { id:'db_hfm_h4',     label:'Swing DB — HFM H4'     },
+      { id:'db_exness_d1',  label:'Swing DB — Exness D1'  },
+      { id:'db_hfm_d1',     label:'Swing DB — HFM D1'     },
+    ]
+  },
+  {
+    id: 's4', title: 'Lainnya',
+    items: [
+      { id:'indicator_next', label:'Indikator berikutnya' },
+    ]
+  }
+];
+
+const KEY = 'falcon_checklist_v3';
+let state = {};
+let collapsed = {};
+
+function load() {
+  try { const r = localStorage.getItem(KEY); if (r) state = JSON.parse(r); } catch(e) {}
+}
+
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e) {}
+}
+
+// status: 'todo' | 'running' | 'done'
+function getStatus(id) { return state[id] || 'todo'; }
+
+function setStatus(id, status) {
+  const cur = getStatus(id);
+  // Tap same button again → kembali ke todo
+  state[id] = (cur === status) ? 'todo' : status;
+  save();
+  render();
+}
+
+function toggleSection(sid) {
+  collapsed[sid] = !collapsed[sid];
+  render();
+}
+
+function resetAll() {
+  if (!confirm('Reset semua status?')) return;
+  state = {};
+  save();
+  render();
+}
+
+function render() {
+  let totalAll = 0, doneAll = 0;
+  let html = '';
+
+  SECTIONS.forEach(sec => {
+    let secDone = 0;
+    sec.items.forEach(it => { if (getStatus(it.id) === 'done') secDone++; });
+    totalAll += sec.items.length;
+    doneAll  += secDone;
+    const allDone = secDone === sec.items.length;
+    const isOpen  = !collapsed[sec.id];
+
+    html += `<div class="section">`;
+    html += `<div class="section-header" onclick="toggleSection('${sec.id}')">
+      <svg class="chevron ${isOpen?'open':''}" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M5 3l4 4-4 4"/>
+      </svg>
+      <span class="section-title">${sec.title}</span>
+      <span class="section-count ${allDone?'complete':''}">${secDone}/${sec.items.length}</span>
+    </div>`;
+
+    if (isOpen) {
+      sec.items.forEach(it => {
+        const st = getStatus(it.id);
+        const itemCls = `item ${st}`;
+        html += `<div class="${itemCls}">
+          <span class="item-label">${it.label}</span>
+          <div class="btn-group">
+            <button class="btn run-btn ${st==='running'?'active':''}" onclick="setStatus('${it.id}','running')">Running</button>
+            <button class="btn done-btn ${st==='done'?'active':''}" onclick="setStatus('${it.id}','done')">Done</button>
+          </div>
+        </div>`;
+      });
+    }
+
+    html += `<div class="divider"></div></div>`;
+  });
+
+  document.getElementById('app').innerHTML = html;
+  document.getElementById('done-count').textContent  = doneAll;
+  document.getElementById('total-count').textContent = totalAll;
+  document.getElementById('progress-fill').style.width = Math.round(doneAll/totalAll*100) + '%';
+}
+
+load();
+render();
+</script>
+</body>
+</html>
