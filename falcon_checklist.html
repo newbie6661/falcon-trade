@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FALCON QT — Pipeline Checklist</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --bg2: #111418;
+    --bg3: #181c22;
+    --border: #1e2530;
+    --border2: #2a3340;
+    --text: #d0d8e4;
+    --text2: #6b7d92;
+    --text3: #3d4f62;
+    --accent: #3b82f6;
+    --accent2: #1d4ed8;
+    --green: #22c55e;
+    --green-bg: #052010;
+    --green-border: #0f4020;
+    --amber: #f59e0b;
+    --amber-bg: #1a1200;
+    --amber-border: #3a2800;
+    --red: #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', monospace;
+    font-size: 14px;
+    min-height: 100vh;
+    padding: 0 0 60px;
+  }
+  header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text2);
+    letter-spacing: 0.15em;
+  }
+  .logo span { color: var(--accent); }
+  .stats {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+  }
+  .stats b { color: var(--green); }
+  .progress-track {
+    height: 3px;
+    background: var(--bg3);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.4s cubic-bezier(.4,0,.2,1);
+  }
+  .section {
+    margin: 0;
+    padding: 0 16px;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 0 8px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .section-header:hover .section-title { color: var(--text); }
+  .section-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    color: var(--text3);
+    text-transform: uppercase;
+    flex: 1;
+    transition: color 0.15s;
+  }
+  .section-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+  }
+  .section-count.complete { color: var(--green); }
+  .chevron {
+    width: 14px;
+    height: 14px;
+    color: var(--text3);
+    transition: transform 0.2s;
+  }
+  .chevron.open { transform: rotate(90deg); }
+  .items { overflow: hidden; }
+  .item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 2px;
+    border: 1px solid transparent;
+    transition: background 0.1s, border-color 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .item:active { background: var(--bg3); }
+  .item.done {
+    background: var(--green-bg);
+    border-color: var(--green-border);
+  }
+  .item.done .item-label { color: var(--text2); text-decoration: line-through; text-decoration-color: var(--text3); }
+  .item.running {
+    background: var(--amber-bg);
+    border-color: var(--amber-border);
+  }
+  .check {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 1px solid var(--border2);
+    background: var(--bg2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .item.done .check {
+    background: var(--green);
+    border-color: var(--green);
+  }
+  .item.running .check {
+    border-color: var(--amber);
+  }
+  .check svg { display: none; }
+  .item.done .check svg { display: block; }
+  .item-label {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.4;
+  }
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    letter-spacing: 0.05em;
+  }
+  .badge.done   { background: var(--green-bg);  color: var(--green);  border: 1px solid var(--green-border); }
+  .badge.run    { background: var(--amber-bg);  color: var(--amber);  border: 1px solid var(--amber-border); }
+  .badge.todo   { background: var(--bg3);       color: var(--text3);  border: 1px solid var(--border); }
+  .badge.next   { background: var(--bg3);       color: var(--accent); border: 1px solid var(--border2); }
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0 0;
+  }
+  .reset-btn {
+    display: block;
+    margin: 24px 16px 0;
+    padding: 10px;
+    background: transparent;
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: var(--text2);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    text-align: center;
+    letter-spacing: 0.05em;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .reset-btn:hover { border-color: var(--red); color: var(--red); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="logo"><span>FALCON</span> QT · PIPELINE</div>
+    <div class="stats"><b id="done-count">0</b>/<span id="total-count">0</span> selesai</div>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+  </div>
+</header>
+
+<div id="app"></div>
+
+<button class="reset-btn" onclick="resetAll()">reset semua centang</button>
+
+<script>
+const SECTIONS = [
+  {
+    id: 's1',
+    title: 'OHLC Generation',
+    items: [
+      { id:'ohlc_exness_m1',  label:'OHLC M1 — Exness',  init:'done' },
+      { id:'ohlc_hfm_m1',     label:'OHLC M1 — HFM',     init:'run'  },
+      { id:'ohlc_exness_m3',  label:'OHLC M3 — Exness',  init:'todo' },
+      { id:'ohlc_hfm_m3',     label:'OHLC M3 — HFM',     init:'todo' },
+      { id:'ohlc_exness_m5',  label:'OHLC M5 — Exness',  init:'todo' },
+      { id:'ohlc_hfm_m5',     label:'OHLC M5 — HFM',     init:'todo' },
+      { id:'ohlc_exness_m15', label:'OHLC M15 — Exness', init:'todo' },
+      { id:'ohlc_hfm_m15',    label:'OHLC M15 — HFM',    init:'todo' },
+      { id:'ohlc_exness_m30', label:'OHLC M30 — Exness', init:'todo' },
+      { id:'ohlc_hfm_m30',    label:'OHLC M30 — HFM',    init:'todo' },
+      { id:'ohlc_exness_h1',  label:'OHLC H1 — Exness',  init:'todo' },
+      { id:'ohlc_hfm_h1',     label:'OHLC H1 — HFM',     init:'todo' },
+      { id:'ohlc_exness_h4',  label:'OHLC H4 — Exness',  init:'todo' },
+      { id:'ohlc_hfm_h4',     label:'OHLC H4 — HFM',     init:'todo' },
+      { id:'ohlc_exness_d1',  label:'OHLC D1 — Exness',  init:'todo' },
+      { id:'ohlc_hfm_d1',     label:'OHLC D1 — HFM',     init:'todo' },
+    ]
+  },
+  {
+    id: 's2',
+    title: 'Swing Validation',
+    items: [
+      { id:'sv_exness_m1',  label:'Validasi swing — Exness M1',  init:'todo' },
+      { id:'sv_hfm_m1',     label:'Validasi swing — HFM M1',     init:'todo' },
+      { id:'sv_exness_m3',  label:'Validasi swing — Exness M3',  init:'todo' },
+      { id:'sv_hfm_m3',     label:'Validasi swing — HFM M3',     init:'todo' },
+      { id:'sv_exness_m5',  label:'Validasi swing — Exness M5',  init:'todo' },
+      { id:'sv_hfm_m5',     label:'Validasi swing — HFM M5',     init:'todo' },
+      { id:'sv_exness_m15', label:'Validasi swing — Exness M15', init:'todo' },
+      { id:'sv_hfm_m15',    label:'Validasi swing — HFM M15',    init:'todo' },
+      { id:'sv_exness_m30', label:'Validasi swing — Exness M30', init:'todo' },
+      { id:'sv_hfm_m30',    label:'Validasi swing — HFM M30',    init:'todo' },
+      { id:'sv_exness_h1',  label:'Validasi swing — Exness H1',  init:'todo' },
+      { id:'sv_hfm_h1',     label:'Validasi swing — HFM H1',     init:'todo' },
+      { id:'sv_exness_h4',  label:'Validasi swing — Exness H4',  init:'todo' },
+      { id:'sv_hfm_h4',     label:'Validasi swing — HFM H4',     init:'todo' },
+      { id:'sv_exness_d1',  label:'Validasi swing — Exness D1',  init:'todo' },
+      { id:'sv_hfm_d1',     label:'Validasi swing — HFM D1',     init:'todo' },
+    ]
+  },
+  {
+    id: 's3',
+    title: 'Swing ke Database',
+    items: [
+      { id:'db_exness_m1',  label:'Swing DB — Exness M1',  init:'todo' },
+      { id:'db_hfm_m1',     label:'Swing DB — HFM M1',     init:'todo' },
+      { id:'db_exness_m3',  label:'Swing DB — Exness M3',  init:'todo' },
+      { id:'db_hfm_m3',     label:'Swing DB — HFM M3',     init:'todo' },
+      { id:'db_exness_m5',  label:'Swing DB — Exness M5',  init:'todo' },
+      { id:'db_hfm_m5',     label:'Swing DB — HFM M5',     init:'todo' },
+      { id:'db_exness_m15', label:'Swing DB — Exness M15', init:'todo' },
+      { id:'db_hfm_m15',    label:'Swing DB — HFM M15',    init:'todo' },
+      { id:'db_exness_m30', label:'Swing DB — Exness M30', init:'todo' },
+      { id:'db_hfm_m30',    label:'Swing DB — HFM M30',    init:'todo' },
+      { id:'db_exness_h1',  label:'Swing DB — Exness H1',  init:'todo' },
+      { id:'db_hfm_h1',     label:'Swing DB — HFM H1',     init:'todo' },
+      { id:'db_exness_h4',  label:'Swing DB — Exness H4',  init:'todo' },
+      { id:'db_hfm_h4',     label:'Swing DB — HFM H4',     init:'todo' },
+      { id:'db_exness_d1',  label:'Swing DB — Exness D1',  init:'todo' },
+      { id:'db_hfm_d1',     label:'Swing DB — HFM D1',     init:'todo' },
+    ]
+  },
+  {
+    id: 's4',
+    title: 'Lainnya',
+    items: [
+      { id:'indicator_next', label:'Indikator berikutnya', init:'next' },
+    ]
+  }
+];
+
+const STORAGE_KEY = 'falcon_checklist_v2';
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch(e) { return {}; }
+}
+
+function saveState(state) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+}
+
+let state = loadState();
+let collapsed = {};
+
+function isChecked(id, init) {
+  if (id in state) return state[id];
+  return init === 'done';
+}
+
+function toggle(id, init) {
+  state[id] = !isChecked(id, init);
+  saveState(state);
+  render();
+}
+
+function toggleSection(sid) {
+  collapsed[sid] = !collapsed[sid];
+  render();
+}
+
+function resetAll() {
+  if (!confirm('Reset semua centang?')) return;
+  state = {};
+  saveState(state);
+  render();
+}
+
+function render() {
+  let totalAll = 0, doneAll = 0;
+  let html = '';
+
+  SECTIONS.forEach(sec => {
+    const items = sec.items;
+    let secDone = 0;
+    items.forEach(it => { if (isChecked(it.id, it.init)) secDone++; });
+    totalAll += items.length;
+    doneAll  += secDone;
+    const allDone = secDone === items.length;
+    const isOpen  = !collapsed[sec.id];
+
+    html += `<div class="section">`;
+    html += `<div class="section-header" onclick="toggleSection('${sec.id}')">
+      <svg class="chevron ${isOpen?'open':''}" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M5 3l4 4-4 4"/>
+      </svg>
+      <span class="section-title">${sec.title}</span>
+      <span class="section-count ${allDone?'complete':''}">${secDone}/${items.length}</span>
+    </div>`;
+
+    if (isOpen) {
+      html += `<div class="items">`;
+      items.forEach(it => {
+        const checked = isChecked(it.id, it.init);
+        const isRun   = it.init === 'run' && !checked;
+        const itemCls = checked ? 'item done' : isRun ? 'item running' : 'item';
+        const badgeCls = checked ? 'badge done' : it.init === 'run' ? 'badge run' : it.init === 'next' ? 'badge next' : 'badge todo';
+        const badgeTxt = checked ? 'selesai' : it.init === 'run' ? 'running' : it.init === 'next' ? 'next' : 'todo';
+        html += `<div class="${itemCls}" onclick="toggle('${it.id}','${it.init}')">
+          <div class="check">
+            <svg width="10" height="8" viewBox="0 0 10 8" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 4l3 3 5-6"/>
+            </svg>
+          </div>
+          <span class="item-label">${it.label}</span>
+          <span class="${badgeCls}">${badgeTxt}</span>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+
+    html += `<div class="divider"></div></div>`;
+  });
+
+  document.getElementById('app').innerHTML = html;
+  document.getElementById('done-count').textContent  = doneAll;
+  document.getElementById('total-count').textContent = totalAll;
+  document.getElementById('progress-fill').style.width = Math.round(doneAll/totalAll*100) + '%';
+}
+
+render();
+</script>
+</body>
+</html>
